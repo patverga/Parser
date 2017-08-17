@@ -22,7 +22,6 @@ from __future__ import print_function
 import tensorflow as tf
 from lib.rnn_cells.base_cell import BaseCell
 
-
 def rnn(cell, inputs, initial_state=None, dtype=None, sequence_length=None, scope=None):
   """Creates a recurrent neural network specified by RNNCell "cell".
 
@@ -170,7 +169,7 @@ def state_saving_rnn(cell, inputs, state_saver, state_name, sequence_length=None
   return (outputs, state)
 
 
-def _rnn_step( time, sequence_length, min_sequence_length, max_sequence_length, zero_output, state, call_cell, skip_conditionals=False):
+def _rnn_step(time, sequence_length, min_sequence_length, max_sequence_length, zero_output, state, call_cell, skip_conditionals=False):
   """Calculate one step of a dynamic RNN minibatch.
 
   Returns an (output, state) pair conditioned on the sequence_lengths.
@@ -525,8 +524,7 @@ def dynamic_rnn(cell, inputs, sequence_length=None, initial_state=None, ff_keep_
 
     if sequence_length is not None:
       # Perform some shape validation
-      with tf.control_dependencies(
-          [_assert_has_shape(sequence_length, [batch_size])]):
+      with tf.control_dependencies([_assert_has_shape(sequence_length, [batch_size])]):
         sequence_length = tf.identity(
             sequence_length, name="CheckSeqLen")
 
@@ -589,7 +587,7 @@ def _dynamic_rnn_loop(cell, inputs, initial_state, ff_keep_prob, recur_keep_prob
 
   time = tf.constant(0, dtype=tf.int32, name="time")
 
-  with tf.name_scope("dynamic_rnn") as scope:
+  with tf.name_scope(values=[], name="dynamic_rnn") as scope:
     base_name = scope
 
   output_ta = tf.TensorArray(

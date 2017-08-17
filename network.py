@@ -42,7 +42,6 @@ class Network(Configurable):
   #=============================================================
   def __init__(self, model, *args, **kwargs):
     """"""
-    
     if args:
       if len(args) > 1:
         raise TypeError('Parser takes at most one argument')
@@ -73,9 +72,9 @@ class Network(Configurable):
     self._trainset = Dataset(self.train_file, self._vocabs, model, self._config, name='Trainset')
     self._validset = Dataset(self.valid_file, self._vocabs, model, self._config, name='Validset')
     self._testset = Dataset(self.test_file, self._vocabs, model, self._config, name='Testset')
-    
+
     self._ops = self._gen_ops()
-    self._save_vars = filter(lambda x: u'Pretrained' not in x.name, tf.all_variables())
+    self._save_vars = filter(lambda x: u'Pretrained' not in x.name, tf.global_variables())
     self.history = {
       'train_loss': [],
       'train_accuracy': [],
@@ -115,7 +114,7 @@ class Network(Configurable):
   # assumes the sess has already been initialized
   def train(self, sess):
     """"""
-    
+
     save_path = os.path.join(self.save_dir, self.name.lower() + '-pretrained')
     saver = tf.train.Saver(self.save_vars, max_to_keep=1)
     
@@ -178,6 +177,7 @@ class Network(Configurable):
             train_accuracy = 100 * n_train_correct / n_train_tokens
             train_time = n_train_sents / train_time
             print('%6d) Train loss: %.4f    Train acc: %5.2f%%    Train rate: %6.1f sents/sec\n\tValid loss: %.4f    Valid acc: %5.2f%%    Valid rate: %6.1f sents/sec' % (total_train_iters, train_loss, train_accuracy, train_time, valid_loss, valid_accuracy, valid_time))
+            sys.stdout.flush()
             train_time = 0
             train_loss = 0
             n_train_sents = 0
@@ -365,13 +365,13 @@ if __name__ == '__main__':
   print('*** '+args.model+' ***')
   model = getattr(models, args.model)
   
-  if 'save_dir' in cargs and os.path.isdir(cargs['save_dir']) and not (args.test or args.matrix or args.load):
-    raw_input('Save directory already exists. Press <Enter> to overwrite or <Ctrl-C> to exit.')
+  # if 'save_dir' in cargs and os.path.isdir(cargs['save_dir']) and not (args.test or args.matrix or args.load):
+  #   raw_input('Save directory already exists. Press <Enter> to overwrite or <Ctrl-C> to exit.')
   if (args.test or args.load or args.matrix) and 'save_dir' in cargs:
     cargs['config_file'] = os.path.join(cargs['save_dir'], 'config.cfg')
   network = Network(model, **cargs)
   os.system('echo Model: %s > %s/MODEL' % (network.model.__class__.__name__, network.save_dir))
-  #print([v.name for v in network.save_vars])
+  print([v.name for v in network.save_vars])
   config_proto = tf.ConfigProto()
   config_proto.gpu_options.per_process_gpu_memory_fraction = network.per_process_gpu_memory_fraction
   with tf.Session(config=config_proto) as sess:
