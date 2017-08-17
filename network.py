@@ -42,6 +42,8 @@ class Network(Configurable):
   #=============================================================
   def __init__(self, model, *args, **kwargs):
     """"""
+
+    print("Doing init")
     
     if args:
       if len(args) > 1:
@@ -73,7 +75,9 @@ class Network(Configurable):
     self._trainset = Dataset(self.train_file, self._vocabs, model, self._config, name='Trainset')
     self._validset = Dataset(self.valid_file, self._vocabs, model, self._config, name='Validset')
     self._testset = Dataset(self.test_file, self._vocabs, model, self._config, name='Testset')
-    
+
+    print("loaded data and shit")
+
     self._ops = self._gen_ops()
     self._save_vars = filter(lambda x: u'Pretrained' not in x.name, tf.global_variables())
     self.history = {
@@ -115,7 +119,8 @@ class Network(Configurable):
   # assumes the sess has already been initialized
   def train(self, sess):
     """"""
-    
+    print("in train")
+
     save_path = os.path.join(self.save_dir, self.name.lower() + '-pretrained')
     saver = tf.train.Saver(self.save_vars, max_to_keep=1)
     
@@ -364,6 +369,7 @@ if __name__ == '__main__':
   cargs = {k: v for (k, v) in vars(Configurable.argparser.parse_args(extra_args)).iteritems() if v is not None}
   
   print('*** '+args.model+' ***')
+  sys.stdout.flush()
   model = getattr(models, args.model)
   
   if 'save_dir' in cargs and os.path.isdir(cargs['save_dir']) and not (args.test or args.matrix or args.load):
