@@ -222,7 +222,7 @@ class Vocab(Configurable):
     """"""
     
     if self.use_pretrained:
-      initializer = tf.zeros_initializer
+      initializer = tf.zeros_initializer()
       embed_size = self.pretrained_embeddings.shape[1]
     else:
       initializer = tf.random_normal_initializer()
@@ -269,7 +269,7 @@ class Vocab(Configurable):
     
     embed_input = tf.matmul(tf.reshape(inputs, [-1, input_size]),
                             trainable_embeddings)
-    embed_input = tf.reshape(embed_input, tf.pack([batch_size, bucket_size, self.embed_size]))
+    embed_input = tf.reshape(embed_input, tf.stack([batch_size, bucket_size, self.embed_size]))
     embed_input.set_shape([tf.Dimension(None), tf.Dimension(None), tf.Dimension(self.embed_size)]) 
     if moving_params is None:
       tf.add_to_collection('Weights', embed_input)

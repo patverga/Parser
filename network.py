@@ -42,10 +42,6 @@ class Network(Configurable):
   #=============================================================
   def __init__(self, model, *args, **kwargs):
     """"""
-
-    print("Doing init")
-    sys.stdout.flush()
-    
     if args:
       if len(args) > 1:
         raise TypeError('Parser takes at most one argument')
@@ -76,9 +72,6 @@ class Network(Configurable):
     self._trainset = Dataset(self.train_file, self._vocabs, model, self._config, name='Trainset')
     self._validset = Dataset(self.valid_file, self._vocabs, model, self._config, name='Validset')
     self._testset = Dataset(self.test_file, self._vocabs, model, self._config, name='Testset')
-
-    print("loaded data and shit")
-    sys.stdout.flush()
 
     self._ops = self._gen_ops()
     self._save_vars = filter(lambda x: u'Pretrained' not in x.name, tf.global_variables())
@@ -374,8 +367,6 @@ if __name__ == '__main__':
   cargs = {k: v for (k, v) in vars(Configurable.argparser.parse_args(extra_args)).iteritems() if v is not None}
   
   print('*** '+args.model+' ***')
-  print("cargs: %s" % str(cargs))
-  sys.stdout.flush()
   model = getattr(models, args.model)
   
   # if 'save_dir' in cargs and os.path.isdir(cargs['save_dir']) and not (args.test or args.matrix or args.load):
