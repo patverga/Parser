@@ -63,7 +63,7 @@ class Parser(BaseParser):
     output = {}
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])
-    output['predictions'] = tf.pack([arc_output['predictions'],
+    output['predictions'] = tf.stack([arc_output['predictions'],
                                      rel_output['predictions']])
     output['correct'] = arc_output['correct'] * rel_output['correct']
     output['tokens'] = arc_output['tokens']

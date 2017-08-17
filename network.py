@@ -375,7 +375,7 @@ if __name__ == '__main__':
   config_proto = tf.ConfigProto()
   config_proto.gpu_options.per_process_gpu_memory_fraction = network.per_process_gpu_memory_fraction
   with tf.Session(config=config_proto) as sess:
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
     if not (args.test or args.matrix):
       if args.load:
         os.system('echo Training: > %s/HEAD' % network.save_dir)

@@ -70,7 +70,7 @@ class KGParser(BaseParser):
     output = {}
     output['probabilities'] = tf.tuple([parse_output['probabilities'],
                                         rel_output['probabilities']])
-    output['predictions'] = tf.pack([parse_output['predictions'],
+    output['predictions'] = tf.stack([parse_output['predictions'],
                                      rel_output['predictions']])
     output['correct'] = parse_output['correct'] * rel_output['correct']
     output['tokens'] = parse_output['tokens']
@@ -79,7 +79,7 @@ class KGParser(BaseParser):
     output['accuracy'] = output['n_correct'] / output['n_tokens']
     output['loss'] = parse_output['loss'] + rel_output['loss'] 
     
-    output['embed'] = tf.pack([word_inputs, tag_inputs])
+    output['embed'] = tf.stack([word_inputs, tag_inputs])
     output['recur'] = top_recur
     output['parse_mlp'] = parse_mlp
     output['rel_mlp'] = rel_mlp

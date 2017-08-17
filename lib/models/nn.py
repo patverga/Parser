@@ -62,7 +62,7 @@ class NN(Configurable):
       word_keep_prob = self.word_keep_prob
       tag_keep_prob = self.tag_keep_prob
       rel_keep_prob = self.rel_keep_prob
-      noise_shape = tf.pack([tf.shape(word_inputs)[0], tf.shape(word_inputs)[1], 1])
+      noise_shape = tf.stack([tf.shape(word_inputs)[0], tf.shape(word_inputs)[1], 1])
       
       if word_keep_prob < 1:
         word_mask = tf.nn.dropout(tf.ones(noise_shape), word_keep_prob)*word_keep_prob
@@ -98,7 +98,7 @@ class NN(Configurable):
       tag_embed_size = 0 if tag_inputs is None else tag_inputs.get_shape().as_list()[-1]
       rel_embed_size = 0 if rel_inputs is None else rel_inputs.get_shape().as_list()[-1]
     
-    return tf.concat(2, filter(lambda x: x is not None, [word_inputs, tag_inputs, rel_inputs]))
+    return tf.concat(axis=2, values=filter(lambda x: x is not None, [word_inputs, tag_inputs, rel_inputs]))
   
   #=============================================================
   def RNN(self, inputs):
@@ -121,9 +121,9 @@ class NN(Configurable):
                                                                     ff_keep_prob=ff_keep_prob,
                                                                     recur_keep_prob=recur_keep_prob,
                                                                     dtype=tf.float32)
-      fw_cell, fw_out = tf.split(1, 2, fw_recur)
-      bw_cell, bw_out = tf.split(1, 2, bw_recur)
-      end_recur = tf.concat(1, [fw_out, bw_out])
+      fw_cell, fw_out = tf.split(axis=1, num_or_size_splits=2, value=fw_recur)
+      bw_cell, bw_out = tf.split(axis=1, num_or_size_splits=2, value=bw_recur)
+      end_recur = tf.concat(axis=1, values=[fw_out, bw_out])
       top_recur.set_shape([tf.Dimension(None), tf.Dimension(None), tf.Dimension(2*self.recur_size)])
     else:
       top_recur, end_recur = rnn.dynamic_rnn(cell, inputs,
@@ -149,8 +149,8 @@ class NN(Configurable):
     with tf.variable_scope('Arcs', reuse=reuse):
       arc_logits = self.bilinear_classifier(dep_mlp, head_mlp, keep_prob=self.info_keep_prob)
       arc_prob = self.softmax(arc_logits)
-      head_lin = tf.batch_matmul(arc_prob, top_recur)
-      top_recur = tf.concat(2, [top_recur, head_lin])
+      head_lin = tf.matmul(arc_prob, top_recur)
+      top_recur = tf.concat(axis=2, values=[top_recur, head_lin])
     top_recur.set_shape([tf.Dimension(None), tf.Dimension(None), tf.Dimension(4*self.recur_size)])
     return top_recur
 
@@ -162,7 +162,7 @@ class NN(Configurable):
     batch_size = tf.shape(inputs)[0]
     bucket_size = tf.shape(inputs)[1]
     input_size = inputs.get_shape().as_list()[-1]
-    output_shape = tf.pack([batch_size] + [bucket_size]*(n_dims-2) + [output_size])
+    output_shape = tf.stack([batch_size] + [bucket_size]*(n_dims-2) + [output_size])
     shape_to_set = [tf.Dimension(None)]*(n_dims-1) + [tf.Dimension(output_size)]
     
     if self.moving_params is None:
@@ -171,7 +171,7 @@ class NN(Configurable):
       keep_prob = 1
     
     if keep_prob < 1:
-      noise_shape = tf.pack([batch_size] + [1]*(n_dims-2) + [input_size])
+      noise_shape = tf.stack([batch_size] + [1]*(n_dims-2) + [input_size])
       inputs = tf.nn.dropout(inputs, keep_prob, noise_shape=noise_shape)
 
     lin = linalg.linear(inputs,
@@ -196,9 +196,9 @@ class NN(Configurable):
     batch_size = input_shape[0]
     bucket_size = input_shape[1]
     input_size = input_shape[2]
-    inputs = tf.reshape(inputs, tf.pack([-1, input_size]))
+    inputs = tf.reshape(inputs, tf.stack([-1, input_size]))
     probs = tf.nn.softmax(inputs)
-    probs = tf.reshape(probs, tf.pack([batch_size, bucket_size, input_size]))
+    probs = tf.reshape(probs, tf.stack([batch_size, bucket_size, input_size]))
     return probs
   
   #=============================================================
@@ -209,7 +209,7 @@ class NN(Configurable):
     batch_size = tf.shape(inputs)[0]
     bucket_size = tf.shape(inputs)[1]
     input_size = inputs.get_shape().as_list()[-1]
-    output_shape = tf.pack([batch_size] + [bucket_size]*(n_dims-2) + [output_size])
+    output_shape = tf.stack([batch_size] + [bucket_size]*(n_dims-2) + [output_size])
     shape_to_set = [tf.Dimension(None)]*(n_dims-1) + [tf.Dimension(output_size)]
     if func is None:
       func = self.mlp_func
@@ -220,7 +220,7 @@ class NN(Configurable):
     else:
       keep_prob = 1
     if keep_prob < 1:
-      noise_shape = tf.pack([batch_size] + [1]*(n_dims-2) + [input_size])
+      noise_shape = tf.stack([batch_size] + [1]*(n_dims-2) + [input_size])
       inputs = tf.nn.dropout(inputs, keep_prob, noise_shape=noise_shape)
     
     linear = linalg.linear(inputs,
@@ -229,7 +229,7 @@ class NN(Configurable):
                         add_bias=True,
                         moving_params=self.moving_params)
     if func.__name__ in ('gated_tanh', 'gated_identity'):
-      linear = [tf.concat(n_dims-1, [lin1, lin2]) for lin1, lin2 in zip(linear[:len(linear)//2], linear[len(linear)//2:])]
+      linear = [tf.concat(axis=n_dims-1, values=[lin1, lin2]) for lin1, lin2 in zip(linear[:len(linear)//2], linear[len(linear)//2:])]
     if n_splits == 1:
       linear = [linear]
     for i, split in enumerate(linear):
@@ -249,7 +249,7 @@ class NN(Configurable):
     bucket_size = tf.shape(inputs)[1]
     input_size = inputs.get_shape().as_list()[-1]
     output_size = self.attn_mlp_size
-    output_shape = tf.pack([batch_size, bucket_size, bucket_size, output_size])
+    output_shape = tf.stack([batch_size, bucket_size, bucket_size, output_size])
     shape_to_set = [tf.Dimension(None), tf.Dimension(None), tf.Dimension(None), tf.Dimension(output_size)]
     
     if self.moving_params is None:
@@ -257,7 +257,7 @@ class NN(Configurable):
     else:
       keep_prob = 1
     if isinstance(keep_prob, tf.Tensor) or keep_prob < 1:
-      noise_shape = tf.pack([batch_size, 1, input_size])
+      noise_shape = tf.stack([batch_size, 1, input_size])
       inputs = tf.nn.dropout(inputs, keep_prob, noise_shape=noise_shape)
     
     lin1, lin2 = linalg.linear(inputs,
@@ -265,12 +265,12 @@ class NN(Configurable):
                                n_splits=2,
                                add_bias=True,
                                moving_params=self.moving_params)
-    lin1 = tf.reshape(tf.transpose(lin1, [0, 2, 1]), tf.pack([-1, bucket_size, 1]))
-    lin2 = tf.reshape(tf.transpose(lin2, [0, 2, 1]), tf.pack([-1, 1, bucket_size]))
+    lin1 = tf.reshape(tf.transpose(lin1, [0, 2, 1]), tf.stack([-1, bucket_size, 1]))
+    lin2 = tf.reshape(tf.transpose(lin2, [0, 2, 1]), tf.stack([-1, 1, bucket_size]))
     lin = lin1 + lin2
-    lin = tf.reshape(lin, tf.pack([batch_size, n_splits*output_size, bucket_size, bucket_size]))
+    lin = tf.reshape(lin, tf.stack([batch_size, n_splits*output_size, bucket_size, bucket_size]))
     lin = tf.transpose(lin, [0,2,3,1])
-    top_mlps = tf.split(3, n_splits, self.mlp_func(lin))
+    top_mlps = tf.split(axis=3, num_or_size_splits=n_splits, value=self.mlp_func(lin))
     for top_mlp in top_mlps:
       top_mlp.set_shape(shape_to_set)
     if n_splits == 1:
@@ -287,7 +287,7 @@ class NN(Configurable):
     bucket_size = tf.shape(inputs)[1]
     input_size = inputs.get_shape().as_list()[-1]
     output_size = n_classes
-    output_shape = tf.pack([batch_size] + [bucket_size]*(n_dims-2) + [output_size])
+    output_shape = tf.stack([batch_size] + [bucket_size]*(n_dims-2) + [output_size])
     
     if self.moving_params is None:
       if keep_prob is None:
@@ -295,14 +295,14 @@ class NN(Configurable):
     else:
       keep_prob = 1
     if isinstance(keep_prob, tf.Tensor) or keep_prob < 1:
-      noise_shape = tf.pack([batch_size] + [1]*(n_dims-2) +[input_size])
+      noise_shape = tf.stack([batch_size] + [1]*(n_dims-2) +[input_size])
       inputs = tf.nn.dropout(inputs, keep_prob, noise_shape=noise_shape)
     
     inputs = tf.reshape(inputs, [-1, input_size])
     output = linalg.linear(inputs,
                     output_size,
                     add_bias=add_bias,
-                    initializer=tf.zeros_initializer,
+                    initializer=tf.zeros_initializer(),
                     moving_params=self.moving_params)
     output = tf.reshape(output, output_shape)
     output.set_shape([tf.Dimension(None)]*(n_dims-1) + [tf.Dimension(output_size)])
@@ -323,7 +323,7 @@ class NN(Configurable):
     else:
       keep_prob = 1
     if isinstance(keep_prob, tf.Tensor) or keep_prob < 1:
-      noise_shape = tf.pack([batch_size, 1, input_size])
+      noise_shape = tf.stack([batch_size, 1, input_size])
       # Experimental
       #inputs1 = tf.nn.dropout(inputs1, keep_prob if add_bias2 else tf.sqrt(keep_prob), noise_shape=noise_shape)
       #inputs2 = tf.nn.dropout(inputs2, keep_prob if add_bias1 else tf.sqrt(keep_prob), noise_shape=noise_shape)
@@ -333,7 +333,7 @@ class NN(Configurable):
     bilin = linalg.bilinear(inputs1, inputs2, 1,
                             add_bias1=add_bias1,
                             add_bias2=add_bias2,
-                            initializer=tf.zeros_initializer,
+                            initializer=tf.zeros_initializer(),
                             moving_params=self.moving_params)
     output = tf.squeeze(bilin)
     return output
@@ -346,21 +346,21 @@ class NN(Configurable):
     batch_size = input_shape[0]
     bucket_size = input_shape[1]
     input_size = inputs1.get_shape().as_list()[-1]
-    shape_to_set = tf.pack([batch_size, bucket_size, input_size+1])
+    shape_to_set = tf.stack([batch_size, bucket_size, input_size+1])
     
     if self.moving_params is None:
       keep_prob = self.mlp_keep_prob
     else:
       keep_prob = 1
     if isinstance(keep_prob, tf.Tensor) or keep_prob < 1:
-      noise_shape = tf.pack([batch_size, 1, input_size])
+      noise_shape = tf.stack([batch_size, 1, input_size])
       inputs1 = tf.nn.dropout(inputs1, tf.sqrt(keep_prob), noise_shape=noise_shape)
       inputs2 = tf.nn.dropout(inputs2, tf.sqrt(keep_prob), noise_shape=noise_shape)
     
     bilin = linalg.diagonal_bilinear(inputs1, inputs2, 1,
                                      add_bias1=add_bias1,
                                      add_bias2=add_bias2,
-                                     initializer=tf.zeros_initializer,
+                                     initializer=tf.zeros_initializer(),
                                      moving_params=self.moving_params)
     output = tf.squeeze(bilin)
     return output
@@ -384,15 +384,15 @@ class NN(Configurable):
     else:
       keep_prob = 1
     if isinstance(keep_prob, tf.Tensor) or keep_prob < 1:
-      noise_shape = tf.pack([batch_size, 1, 1, input_size])
+      noise_shape = tf.stack([batch_size, 1, 1, input_size])
       inputs = tf.nn.dropout(inputs, keep_prob, noise_shape=noise_shape)
     
     lin = linalg.linear(inputs,
                         n_classes,
                         add_bias=add_bias,
-                        initializer=tf.zeros_initializer,
+                        initializer=tf.zeros_initializer(),
                         moving_params=self.moving_params)
-    weighted_lin = tf.batch_matmul(lin, tf.expand_dims(probs, 3), adj_x=True)
+    weighted_lin = tf.matmul(lin, tf.expand_dims(probs, 3), adjoint_a=True)
     
     return weighted_lin, lin
   
@@ -405,7 +405,7 @@ class NN(Configurable):
     bucket_size = input_shape[1]
     input_size = inputs1.get_shape().as_list()[-1]
     input_shape_to_set = [tf.Dimension(None), tf.Dimension(None), input_size+1]
-    output_shape = tf.pack([batch_size, bucket_size, n_classes, bucket_size])
+    output_shape = tf.stack([batch_size, bucket_size, n_classes, bucket_size])
     if len(probs.get_shape().as_list()) == 2:
       probs = tf.to_float(tf.one_hot(tf.to_int64(probs), bucket_size, 1, 0))
     else:
@@ -416,22 +416,22 @@ class NN(Configurable):
     else:
       keep_prob = 1
     if isinstance(keep_prob, tf.Tensor) or keep_prob < 1:
-      noise_shape = tf.pack([batch_size, 1, input_size])
+      noise_shape = tf.stack([batch_size, 1, input_size])
       inputs1 = tf.nn.dropout(inputs1, tf.sqrt(keep_prob), noise_shape=noise_shape)
       inputs2 = tf.nn.dropout(inputs2, tf.sqrt(keep_prob), noise_shape=noise_shape)
     
-    inputs1 = tf.concat(2, [inputs1, tf.ones(tf.pack([batch_size, bucket_size, 1]))])
+    inputs1 = tf.concat(axis=2, values=[inputs1, tf.ones(tf.stack([batch_size, bucket_size, 1]))])
     inputs1.set_shape(input_shape_to_set)
-    inputs2 = tf.concat(2, [inputs2, tf.ones(tf.pack([batch_size, bucket_size, 1]))])
+    inputs2 = tf.concat(axis=2, values=[inputs2, tf.ones(tf.stack([batch_size, bucket_size, 1]))])
     inputs2.set_shape(input_shape_to_set)
     
     bilin = linalg.diagonal_bilinear(inputs1, inputs2,
                                      n_classes,
                                      add_bias1=add_bias1,
                                      add_bias2=add_bias2,
-                                     initializer=tf.zeros_initializer,
+                                     initializer=tf.zeros_initializer(),
                                      moving_params=self.moving_params)
-    weighted_bilin = tf.batch_matmul(bilin, tf.expand_dims(probs, 3))
+    weighted_bilin = tf.matmul(bilin, tf.expand_dims(probs, 3))
     
     return weighted_bilin, bilin
   
@@ -444,7 +444,7 @@ class NN(Configurable):
     bucket_size = input_shape[1]
     input_size = inputs1.get_shape().as_list()[-1]
     input_shape_to_set = [tf.Dimension(None), tf.Dimension(None), input_size+1]
-    output_shape = tf.pack([batch_size, bucket_size, n_classes, bucket_size])
+    output_shape = tf.stack([batch_size, bucket_size, n_classes, bucket_size])
     if len(probs.get_shape().as_list()) == 2:
       probs = tf.to_float(tf.one_hot(tf.to_int64(probs), bucket_size, 1, 0))
     else:
@@ -455,22 +455,22 @@ class NN(Configurable):
     else:
       keep_prob = 1
     if isinstance(keep_prob, tf.Tensor) or keep_prob < 1:
-      noise_shape = tf.pack([batch_size, 1, input_size])
+      noise_shape = tf.stack([batch_size, 1, input_size])
       inputs1 = tf.nn.dropout(inputs1, keep_prob, noise_shape=noise_shape)
       inputs2 = tf.nn.dropout(inputs2, keep_prob, noise_shape=noise_shape)
     
-    inputs1 = tf.concat(2, [inputs1, tf.ones(tf.pack([batch_size, bucket_size, 1]))])
+    inputs1 = tf.concat(axis=2, values=[inputs1, tf.ones(tf.stack([batch_size, bucket_size, 1]))])
     inputs1.set_shape(input_shape_to_set)
-    inputs2 = tf.concat(2, [inputs2, tf.ones(tf.pack([batch_size, bucket_size, 1]))])
+    inputs2 = tf.concat(axis=2, values=[inputs2, tf.ones(tf.stack([batch_size, bucket_size, 1]))])
     inputs2.set_shape(input_shape_to_set)
     
     bilin = linalg.bilinear(inputs1, inputs2,
                      n_classes,
                      add_bias1=add_bias1,
                      add_bias2=add_bias2,
-                     initializer=tf.zeros_initializer,
+                     initializer=tf.zeros_initializer(),
                      moving_params=self.moving_params)
-    weighted_bilin = tf.batch_matmul(bilin, tf.expand_dims(probs, 3))
+    weighted_bilin = tf.matmul(bilin, tf.expand_dims(probs, 3))
     
     return weighted_bilin, bilin
   
@@ -481,15 +481,15 @@ class NN(Configurable):
     original_shape = tf.shape(logits3D)
     batch_size = original_shape[0]
     bucket_size = original_shape[1]
-    flat_shape = tf.pack([batch_size, bucket_size])
+    flat_shape = tf.stack([batch_size, bucket_size])
     
-    logits2D = tf.reshape(logits3D, tf.pack([batch_size*bucket_size, -1]))
+    logits2D = tf.reshape(logits3D, tf.stack([batch_size*bucket_size, -1]))
     targets1D = tf.reshape(targets3D, [-1])
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
     
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     probabilities2D = tf.nn.softmax(logits2D)
-    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits2D, targets1D)
+    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
     
     correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
     n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
@@ -518,7 +518,7 @@ class NN(Configurable):
     original_shape = tf.shape(logits4D)
     n_classes = original_shape[3]
     
-    logits2D = tf.reshape(logits4D, tf.pack([-1, n_classes]))
+    logits2D = tf.reshape(logits4D, tf.stack([-1, n_classes]))
     probabilities2D = tf.nn.softmax(logits2D)
     return tf.reshape(probabilities2D, original_shape)
   

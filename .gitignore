@@ -1,0 +1,5 @@
+*.pyc
+saves
+data
+lib-old
+.idea

@@ -51,7 +51,7 @@ class BaseOptimizer(Configurable):
       raise ValueError('Loss is not float32')
     
     # Compute gradients
-    var_refs = [x_tm1.ref() for x_tm1 in var_list]
+    var_refs = [x_tm1.read_value() for x_tm1 in var_list]
     grads = tf.gradients(loss, var_refs,
                                 colocate_gradients_with_ops=True,
                                 gate_gradients=True,
@@ -64,16 +64,16 @@ class BaseOptimizer(Configurable):
     # Apply gradients
     with tf.control_dependencies(None):
       self._init_acc(var_list, grads)
-    with tf.op_scope([], name, self._name) as name:
+    with tf.name_scope(values=[], name=name, default_name=self._name) as name:
       caches = filter(lambda cache: cache['g_t'] is not None, self._prepare(var_list, grads))
       for cache in caches:
         x_tm1, g_t = cache['x_tm1'], cache['g_t']
         with tf.name_scope("update_" + x_tm1.op.name), tf.device(x_tm1.device):
           if isinstance(g_t, tf.Tensor):
-            cache['g_t'] = tf.select(tf.is_finite(g_t), g_t, tf.zeros_like(g_t))
+            cache['g_t'] = tf.where(tf.is_finite(g_t), g_t, tf.zeros_like(g_t))
             self._apply_dense(cache)
           else:
-            cache['g_t'] = tf.select(tf.is_finite(g_t.values), g_t.values, tf.zeros_like(g_t.values))
+            cache['g_t'] = tf.where(tf.is_finite(g_t.values), g_t.values, tf.zeros_like(g_t.values))
             cache['idxs'] = g_t.indices
             self._apply_sparse(cache)
       with tf.control_dependencies([self._finish(caches)]):
@@ -246,7 +246,7 @@ class BaseOptimizer(Configurable):
     for v in moving_avg_variables:
       name_map[self.average_name(v)] = v
     # Make sure we restore variables without moving average as well.
-    for v in list(set(tf.all_variables()) - moving_avg_variables):
+    for v in list(set(tf.global_variables()) - moving_avg_variables):
       if v.op.name not in name_map:
         name_map[v.op.name] = v
     return name_map

@@ -33,9 +33,9 @@ class LSTMCell(BaseCell):
     """"""
     
     with tf.variable_scope(scope or type(self).__name__):
-      cell_tm1, hidden_tm1 = tf.split(1, 2, state)
+      cell_tm1, hidden_tm1 = tf.split(axis=1, num_or_size_splits=2, value=state)
       if self.recur_diag_bilin:
-        inputs1, inputs2 = tf.split(1, 2, inputs)
+        inputs1, inputs2 = tf.split(axis=1, num_or_size_splits=2, value=inputs)
         input_list = [inputs1*inputs2, inputs1+inputs2, hidden_tm1]
       else:
         input_list = [inputs, hidden_tm1]
@@ -45,8 +45,8 @@ class LSTMCell(BaseCell):
                              n_splits=4,
                              moving_params=self.moving_params)
       with tf.variable_scope('Linear'):
-        biases = tf.get_variable('Biases', [4*self.output_size], initializer=tf.zeros_initializer)
-      biases = tf.split(0, 4, biases)
+        biases = tf.get_variable('Biases', [4*self.output_size], initializer=tf.zeros_initializer())
+      biases = tf.split(axis=0, num_or_size_splits=4, value=biases)
       cell_act, input_act, forget_act, output_act = linear
       cell_bias, input_bias, forget_bias, output_bias = biases
       
@@ -65,7 +65,7 @@ class LSTMCell(BaseCell):
         cell_mask = tf.nn.dropout(tf.ones_like(cell_t), self.cell_include_prob)*self.cell_include_prob
         cell_t = cell_mask * cell_t + (1-cell_mask) * cell_tm1
       
-      return hidden_t, tf.concat(1, [cell_t, hidden_t])
+      return hidden_t, tf.concat(axis=1, values=[cell_t, hidden_t])
   
   #=============================================================
   @property
