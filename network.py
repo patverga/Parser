@@ -75,7 +75,7 @@ class Network(Configurable):
     self._testset = Dataset(self.test_file, self._vocabs, model, self._config, name='Testset')
     
     self._ops = self._gen_ops()
-    self._save_vars = filter(lambda x: u'Pretrained' not in x.name, tf.all_variables())
+    self._save_vars = filter(lambda x: u'Pretrained' not in x.name, tf.global_variables())
     self.history = {
       'train_loss': [],
       'train_accuracy': [],
@@ -122,6 +122,7 @@ class Network(Configurable):
     n_bkts = self.n_bkts
     train_iters = self.train_iters
     print_every = self.print_every
+    print("printing every %d steps" % print_every)
     validate_every = self.validate_every
     save_every = self.save_every
     try:
