@@ -378,8 +378,8 @@ if __name__ == '__main__':
   sys.stdout.flush()
   model = getattr(models, args.model)
   
-  if 'save_dir' in cargs and os.path.isdir(cargs['save_dir']) and not (args.test or args.matrix or args.load):
-    raw_input('Save directory already exists. Press <Enter> to overwrite or <Ctrl-C> to exit.')
+  # if 'save_dir' in cargs and os.path.isdir(cargs['save_dir']) and not (args.test or args.matrix or args.load):
+  #   raw_input('Save directory already exists. Press <Enter> to overwrite or <Ctrl-C> to exit.')
   if (args.test or args.load or args.matrix) and 'save_dir' in cargs:
     cargs['config_file'] = os.path.join(cargs['save_dir'], 'config.cfg')
   network = Network(model, **cargs)
