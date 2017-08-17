@@ -128,6 +128,7 @@ class Network(Configurable):
     train_iters = self.train_iters
     print_every = self.print_every
     print("printing every %d steps" % print_every)
+    sys.stdout.flush()
     validate_every = self.validate_every
     save_every = self.save_every
     try:
@@ -184,6 +185,7 @@ class Network(Configurable):
             train_accuracy = 100 * n_train_correct / n_train_tokens
             train_time = n_train_sents / train_time
             print('%6d) Train loss: %.4f    Train acc: %5.2f%%    Train rate: %6.1f sents/sec\n\tValid loss: %.4f    Valid acc: %5.2f%%    Valid rate: %6.1f sents/sec' % (total_train_iters, train_loss, train_accuracy, train_time, valid_loss, valid_accuracy, valid_time))
+            sys.stdout.flush()
             train_time = 0
             train_loss = 0
             n_train_sents = 0
@@ -369,7 +371,6 @@ if __name__ == '__main__':
   cargs = {k: v for (k, v) in vars(Configurable.argparser.parse_args(extra_args)).iteritems() if v is not None}
   
   print('*** '+args.model+' ***')
-  sys.stdout.flush()
   model = getattr(models, args.model)
   
   if 'save_dir' in cargs and os.path.isdir(cargs['save_dir']) and not (args.test or args.matrix or args.load):
