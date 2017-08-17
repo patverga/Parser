@@ -374,6 +374,7 @@ if __name__ == '__main__':
   cargs = {k: v for (k, v) in vars(Configurable.argparser.parse_args(extra_args)).iteritems() if v is not None}
   
   print('*** '+args.model+' ***')
+  print("cargs: %s" % str(cargs))
   sys.stdout.flush()
   model = getattr(models, args.model)
   
