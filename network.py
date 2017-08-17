@@ -114,8 +114,6 @@ class Network(Configurable):
   # assumes the sess has already been initialized
   def train(self, sess):
     """"""
-    print("in train")
-    sys.stdout.flush()
 
     save_path = os.path.join(self.save_dir, self.name.lower() + '-pretrained')
     saver = tf.train.Saver(self.save_vars, max_to_keep=1)
@@ -123,7 +121,6 @@ class Network(Configurable):
     n_bkts = self.n_bkts
     train_iters = self.train_iters
     print_every = self.print_every
-    print("printing every %d steps" % print_every)
     sys.stdout.flush()
     validate_every = self.validate_every
     save_every = self.save_every
