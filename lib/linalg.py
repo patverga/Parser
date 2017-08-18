@@ -51,8 +51,8 @@ def orthonormal_initializer(input_size, output_size):
       if np.max(Q) > 1e6 or loss > 1e6 or not np.isfinite(loss):
         tries += 1
         lr /= 2
-        break
-    success = True
+      else:
+        success = True
   if success:
     print('Orthogonal pretrainer loss: %.2e' % loss)
   else:

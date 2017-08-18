@@ -147,6 +147,7 @@ class NN(Configurable):
     inputs = tf.expand_dims(inputs, 1)
     conv_out = tf.nn.conv2d(inputs, params, [1, 1, 1, 1], 'SAME')
     conv_out = tf.squeeze(conv_out, 1)
+    conv_out = self.recur_func(conv_out)
     conv_out = tf.nn.dropout(conv_out, dropout_keep_rate)
     return conv_out
   
