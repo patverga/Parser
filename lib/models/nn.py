@@ -47,7 +47,7 @@ def layer_norm(inputs, reuse, epsilon=1e-6):
     mean, variance = tf.nn.moments(inputs, [-1], keep_dims=True)
     beta = tf.get_variable("beta", params_shape, initializer=tf.zeros_initializer())
     gamma = tf.get_variable("gamma", params_shape, initializer=tf.ones_initializer())
-    normalized = (inputs - mean) / ((variance + epsilon) ** .5)
+    normalized = (inputs - mean) * tf.rsqrt(variance + epsilon)
     outputs = gamma * normalized + beta
   return outputs
 
@@ -403,12 +403,12 @@ class NN(Configurable):
     with tf.variable_scope("self_attention"):
       x = layer_norm(inputs, reuse)
       y = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout)
-      x = x + tf.nn.dropout(y, prepost_dropout)
+      x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
     with tf.variable_scope("ffnn"):
       x = layer_norm(x, reuse)
       y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout, nonlinearity)
-      x = x + tf.nn.dropout(y, prepost_dropout)
+      x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
     return x
   
