@@ -60,10 +60,11 @@ class Parser(BaseParser):
                              self.recur_keep_prob if i < self.n_recur - 1 else 1.0,
                              self.info_func if i < self.n_recur - 1 else tf.identity)
 
-    top_recur = tf.expand_dims(top_recur, 1)
-    params = tf.get_variable("proj", [1, 1, cnn_dim, hidden_size])
-    top_recur = tf.nn.conv2d(top_recur, params, [1, 1, 1, 1], "SAME")
-    top_recur = tf.squeeze(top_recur, 1)
+    with tf.variable_scope('proj', reuse=reuse):
+      top_recur = tf.expand_dims(top_recur, 1)
+      params = tf.get_variable("proj", [1, 1, cnn_dim, hidden_size])
+      top_recur = tf.nn.conv2d(top_recur, params, [1, 1, 1, 1], "SAME")
+      top_recur = tf.squeeze(top_recur, 1)
 
     for i in xrange(self.n_recur):
       # RNN:
