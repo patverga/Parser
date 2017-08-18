@@ -133,6 +133,19 @@ class NN(Configurable):
                                              dtype=tf.float32)
       top_recur.set_shape([tf.Dimension(None), tf.Dimension(None), tf.Dimension(self.recur_size)])
     return top_recur, end_recur
+
+  # =============================================================
+  def CNN(self, inputs):
+    """"""
+
+    kernel = 3
+    input_size = inputs.get_shape().as_list()[-1]
+    params = tf.get_variable('CNN', [1, kernel, input_size, input_size], initializer=tf.contrib.layers.xavier_initializer())
+    # lengths = tf.reshape(tf.to_int64(self.sequence_lengths), [-1])
+    inputs = tf.expand_dims(inputs, 1)
+    conv_out = tf.nn.conv2d(inputs, params, [1, 1, 1, 1], 'SAME')
+    conv_out = tf.squeeze(inputs, 1)
+    return conv_out
   
   #=============================================================
   def soft_attn(self, top_recur):

@@ -40,8 +40,10 @@ class Parser(BaseParser):
     
     top_recur = embed_inputs
     for i in xrange(self.n_recur):
-      with tf.variable_scope('RNN%d' % i, reuse=reuse):
-        top_recur, _ = self.RNN(top_recur)
+      # with tf.variable_scope('RNN%d' % i, reuse=reuse):
+      #   top_recur, _ = self.RNN(top_recur)
+      with tf.variable_scope('CNN%d' % i, reuse=reuse):
+        top_recur = self.CNN(top_recur)
     
     with tf.variable_scope('MLP', reuse=reuse):
       dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
