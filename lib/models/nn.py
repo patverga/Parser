@@ -29,7 +29,7 @@ from configurable import Configurable
 from vocab import Vocab
 
 
-def layer_norm(inputs, epsilon=1e-6):
+def layer_norm(inputs, reuse, epsilon=1e-6):
   """Applies layer normalization.
 
   Args:
@@ -40,7 +40,7 @@ def layer_norm(inputs, epsilon=1e-6):
   Returns:
     A tensor with the same shape and data dtype as `inputs`.
   """
-  with tf.variable_scope("layer_norm"):
+  with tf.variable_scope("layer_norm", reuse=reuse):
     inputs_shape = inputs.get_shape()
     params_shape = inputs_shape[-1:]
 
@@ -97,7 +97,7 @@ def attention_bias_ignore_padding(lengths):
   Returns:
     a `Tensor` with shape [batch, 1, 1, memory_length].
   """
-  mask = tf.sequence_mask(lengths)
+  mask = tf.sequence_mask(lengths, tf.reduce_max(lengths)+1)
   memory_padding = tf.cast(tf.logical_not(mask), tf.float32)
   ret = memory_padding * -1e9
   return tf.expand_dims(tf.expand_dims(ret, axis=1), axis=1)
@@ -377,8 +377,9 @@ class NN(Configurable):
     """"""
     input_size = inputs.get_shape().as_list()[-1]
 
-    mat = linalg.orthonormal_initializer(input_size, output_size)
-    initializer = tf.constant_initializer(mat)
+    initializer = tf.contrib.layers.xavier_initializer()
+    # mat = linalg.orthonormal_initializer(input_size, output_size)
+    # initializer = tf.constant_initializer(mat)
 
     params = tf.get_variable('CNN', [1, kernel, input_size, output_size], initializer=initializer)
     inputs = tf.expand_dims(inputs, 1)
@@ -390,7 +391,7 @@ class NN(Configurable):
 
   # =============================================================
   def transformer(self, inputs, hidden_size, num_heads, attn_dropout, relu_dropout, prepost_dropout, relu_hidden_size,
-                  nonlinearity):
+                  nonlinearity, reuse):
     """"""
     # input_size = inputs.get_shape().as_list()[-1]
     lengths = tf.reshape(tf.to_int64(self.sequence_lengths), [-1])
@@ -400,12 +401,12 @@ class NN(Configurable):
     # initializer = tf.constant_initializer(mat)
 
     with tf.variable_scope("self_attention"):
-      x = layer_norm(inputs)
+      x = layer_norm(inputs, reuse)
       y = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout)
       x = x + tf.nn.dropout(y, prepost_dropout)
 
     with tf.variable_scope("ffnn"):
-      x = layer_norm(x)
+      x = layer_norm(x, reuse)
       y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout, nonlinearity)
       x = x + tf.nn.dropout(y, prepost_dropout)
 

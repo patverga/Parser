@@ -84,11 +84,11 @@ class Parser(BaseParser):
       with tf.variable_scope('Transformer%d' % i, reuse=reuse):
         top_recur = self.transformer(top_recur, hidden_size, num_heads,
                                      attn_dropout, mlp_dropout, relu_dropout, relu_hidden_size,
-                                     self.info_func)
+                                     self.info_func, reuse)
     # if normalization is done in layer_preprocess, then it shuold also be done
     # on the output, since the output can grow very large, being the sum of
     # a whole stack of unnormalized layer outputs.
-    top_recur = nn.layer_norm(top_recur)
+    top_recur = nn.layer_norm(top_recur, reuse)
 
     with tf.variable_scope('MLP', reuse=reuse):
       dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
