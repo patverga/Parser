@@ -41,7 +41,6 @@ class Parser(BaseParser):
     embed_inputs = self.embed_concat(word_inputs, tag_inputs)
     
     top_recur = embed_inputs
-    top_recur = nn.add_timing_signal_1d(top_recur)
 
     kernel = 3
     cnn_dim = 768
@@ -65,6 +64,8 @@ class Parser(BaseParser):
       params = tf.get_variable("proj", [1, 1, cnn_dim, hidden_size])
       top_recur = tf.nn.conv2d(top_recur, params, [1, 1, 1, 1], "SAME")
       top_recur = tf.squeeze(top_recur, 1)
+
+    top_recur = nn.add_timing_signal_1d(top_recur)
 
     for i in xrange(self.n_recur):
       # RNN:
