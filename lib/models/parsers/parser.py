@@ -47,7 +47,9 @@ class Parser(BaseParser):
       # CNN:
       with tf.variable_scope('CNN%d' % i, reuse=reuse):
         kernel = 3
-        top_recur = self.CNN(top_recur, kernel, self.recur_size, self.recur_keep_prob if i < self.n_recur-1 else 1.0)
+        top_recur = self.CNN(top_recur, kernel, self.recur_size,
+                             self.recur_keep_prob if i < self.n_recur-1 else 1.0,
+                             self.info_func if i < self.n_recur-1 else tf.identity)
     
     with tf.variable_scope('MLP', reuse=reuse):
       dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
