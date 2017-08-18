@@ -44,6 +44,7 @@ class Parser(BaseParser):
       #   top_recur, _ = self.RNN(top_recur)
       with tf.variable_scope('CNN%d' % i, reuse=reuse):
         kernel = 3
+        print('CNN%d' % i, kernel, self.recur_size, self.recur_keep_prob if i < self.n_recur-1 else 1.0)
         top_recur = self.CNN(top_recur, kernel, self.recur_size, self.recur_keep_prob if i < self.n_recur-1 else 1.0)
     
     with tf.variable_scope('MLP', reuse=reuse):
