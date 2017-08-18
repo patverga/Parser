@@ -177,7 +177,6 @@ class Network(Configurable):
             train_accuracy = 100 * n_train_correct / n_train_tokens
             train_time = n_train_sents / train_time
             print('%6d) Train loss: %.4f    Train acc: %5.2f%%    Train rate: %6.1f sents/sec\n\tValid loss: %.4f    Valid acc: %5.2f%%    Valid rate: %6.1f sents/sec' % (total_train_iters, train_loss, train_accuracy, train_time, valid_loss, valid_accuracy, valid_time))
-            sys.stdout.flush()
             train_time = 0
             train_loss = 0
             n_train_sents = 0
@@ -186,6 +185,7 @@ class Network(Configurable):
             n_train_iters = 0
         sess.run(self._global_epoch.assign_add(1.))
         if save_every and (total_train_iters % save_every == 0):
+          print("Writing model to %s" % (os.path.join(self.save_dir, self.name.lower() + '-trained')))
           saver.save(sess, os.path.join(self.save_dir, self.name.lower() + '-trained'),
                      latest_filename=self.name.lower(),
                      global_step=self.global_epoch,
