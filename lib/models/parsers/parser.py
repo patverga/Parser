@@ -8,6 +8,8 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
+from lib.models import nn
+
 from vocab import Vocab
 from lib.models.parsers.base_parser import BaseParser
 
@@ -39,18 +41,54 @@ class Parser(BaseParser):
     embed_inputs = self.embed_concat(word_inputs, tag_inputs)
     
     top_recur = embed_inputs
+    top_recur = nn.add_timing_signal_1d(top_recur)
+
+    kernel = 3
+    cnn_dim = 768
+    cnn_layers = 2
+    num_heads = 4
+    head_size = 128
+    hidden_size = num_heads * head_size
+    attn_dropout = 0.67
+    mlp_dropout = 0.67
+    relu_dropout = 0.67
+    relu_hidden_size = 512
+
+    for i in xrange(cnn_layers):
+      with tf.variable_scope('CNN%d' % i, reuse=reuse):
+        top_recur = self.CNN(top_recur, kernel, cnn_dim,
+                             self.recur_keep_prob if i < self.n_recur - 1 else 1.0,
+                             self.info_func if i < self.n_recur - 1 else tf.identity)
+
+    top_recur = tf.expand_dims(top_recur, 1)
+    params = tf.get_variable("proj", [1, 1, cnn_dim, hidden_size])
+    top_recur = tf.nn.conv2d(top_recur, params, [1, 1, 1, 1], "SAME")
+    top_recur = tf.squeeze(top_recur, 1)
+
     for i in xrange(self.n_recur):
       # RNN:
       # with tf.variable_scope('RNN%d' % i, reuse=reuse):
       #   top_recur, _ = self.RNN(top_recur)
 
       # CNN:
-      with tf.variable_scope('CNN%d' % i, reuse=reuse):
-        kernel = 3
-        top_recur = self.CNN(top_recur, kernel, self.recur_size,
-                             self.recur_keep_prob if i < self.n_recur-1 else 1.0,
-                             self.info_func if i < self.n_recur-1 else tf.identity)
-    
+      # with tf.variable_scope('CNN%d' % i, reuse=reuse):
+      #   top_recur = self.CNN(top_recur, kernel, cnn_dim,
+      #                        self.recur_keep_prob if i < self.n_recur-1 else 1.0,
+      #                        self.info_func if i < self.n_recur-1 else tf.identity)
+      #
+      # params = tf.get_variable("proj", [1, 1, cnn_dim, hidden_size])
+      # top_recur = tf.nn.conv2d(top_recur, params, [1, 1, 1, 1], "SAME")
+
+      # Transformer:
+      with tf.variable_scope('Transformer%d' % i, reuse=reuse):
+        top_recur = self.transformer(top_recur, hidden_size, num_heads,
+                                     attn_dropout, mlp_dropout, relu_dropout, relu_hidden_size,
+                                     self.info_func)
+    # if normalization is done in layer_preprocess, then it shuold also be done
+    # on the output, since the output can grow very large, being the sum of
+    # a whole stack of unnormalized layer outputs.
+    top_recur = nn.layer_norm(top_recur)
+
     with tf.variable_scope('MLP', reuse=reuse):
       dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
       dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
