@@ -121,7 +121,6 @@ class Network(Configurable):
     n_bkts = self.n_bkts
     train_iters = self.train_iters
     print_every = self.print_every
-    sys.stdout.flush()
     validate_every = self.validate_every
     save_every = self.save_every
     try:
@@ -372,7 +371,7 @@ if __name__ == '__main__':
     cargs['config_file'] = os.path.join(cargs['save_dir'], 'config.cfg')
   network = Network(model, **cargs)
   os.system('echo Model: %s > %s/MODEL' % (network.model.__class__.__name__, network.save_dir))
-  #print([v.name for v in network.save_vars])
+  print([v.name for v in network.save_vars])
   config_proto = tf.ConfigProto()
   config_proto.gpu_options.per_process_gpu_memory_fraction = network.per_process_gpu_memory_fraction
   with tf.Session(config=config_proto) as sess:
