@@ -144,7 +144,7 @@ class NN(Configurable):
     # lengths = tf.reshape(tf.to_int64(self.sequence_lengths), [-1])
     inputs = tf.expand_dims(inputs, 1)
     conv_out = tf.nn.conv2d(inputs, params, [1, 1, 1, 1], 'SAME')
-    conv_out = tf.squeeze(inputs, 1)
+    conv_out = tf.squeeze(conv_out, 1)
     return conv_out
   
   #=============================================================
