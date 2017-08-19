@@ -49,9 +49,15 @@ class Parser(BaseParser):
     head_size = 128
     hidden_size = num_heads * head_size
     attn_dropout = 0.67
-    mlp_dropout = 0.67
+    prepost_dropout = 0.67
     relu_dropout = 0.67
     relu_hidden_size = 512
+
+    # if moving_params is not None:
+    #   attn_dropout = 1.0
+    #   prepost_dropout = 1.0
+    #   relu_dropout = 1.0
+    #   self.recur_keep_prob = 1.0
 
     for i in xrange(cnn_layers):
       with tf.variable_scope('CNN%d' % i, reuse=reuse):
@@ -84,7 +90,7 @@ class Parser(BaseParser):
       # Transformer:
       with tf.variable_scope('Transformer%d' % i, reuse=reuse):
         top_recur = self.transformer(top_recur, hidden_size, num_heads,
-                                     attn_dropout, mlp_dropout, relu_dropout, relu_hidden_size,
+                                     attn_dropout, relu_dropout, prepost_dropout, relu_hidden_size,
                                      self.info_func, reuse)
     # if normalization is done in layer_preprocess, then it shuold also be done
     # on the output, since the output can grow very large, being the sum of
