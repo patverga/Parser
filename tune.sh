@@ -44,7 +44,7 @@ for lr in ${lrs[@]}; do
                                 --decay $decay \
                                 --train_batch_size $batch_size \
                                 --decay_steps $decay_steps \
-                                --learning_rate $learning_rate \
+                                --learning_rate $lr \
                                 --mu $mu \
                                 --nu $nu \
                                 --epsilon $epsilon \
