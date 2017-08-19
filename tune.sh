@@ -42,7 +42,7 @@ for lr in ${lrs[@]}; do
                                 --save_dir $OUT_LOG/scores-$fname_append \
                                 --save_every 500 \
                                 --decay $decay \
-                                --batch_size $batch_size \
+                                --train_batch_size $batch_size \
                                 --decay_steps $decay_steps \
                                 --mu $mu \
                                 --nu $nu \
