@@ -14,16 +14,17 @@ echo "Writing to $OUT_LOG"
 
 num_gpus=108
 
-lrs="0.00075 0.0005 0.001"
-mus="0.9 0.1"
-nus="0.9"
+lrs="0.04 0.08 0.06 0.02 0.1 0.01"
+mus="0.9"
+nus="0.9, 0.98"
 epsilons="1e-12 1e-8 1e-4"
-decays="0.75 0.9"
-decay_step_vals="1000 2500 5000 50000"
-batch_sizes="5000 1500"
+warmup_steps="4000 2000 8000"
+batch_sizes="5000 2048 1024"
 reps="3"
 
-# 3*3*3*3*4*3*2 = 1944
+# 6*2*3*3*3*3
+
+
 
 # array to hold all the commands we'll distribute
 declare -a commands
@@ -36,14 +37,14 @@ for lr in ${lrs[@]}; do
                     for decay_steps in ${decay_step_vals[@]}; do
                         for batch_size in ${batch_sizes[@]}; do
                             for rep in `seq $reps`; do
-                                fname_append="$rep-$lr-$mu-$nu-$epsilon-$decay-$decay_steps-$batch_size"
+                                fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size"
                                 commands+=("srun --gres=gpu:1 --partition=titanx-short python network.py \
                                 --config_file config/myconf.cfg \
                                 --save_dir $OUT_LOG/scores-$fname_append \
                                 --save_every 500 \
-                                --decay $decay \
+                                --train_iters 100000 \
                                 --train_batch_size $batch_size \
-                                --decay_steps $decay_steps \
+                                --warmup_steps $warmup_steps \
                                 --learning_rate $lr \
                                 --mu $mu \
                                 --nu $nu \
