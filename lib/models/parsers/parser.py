@@ -52,6 +52,7 @@ class Parser(BaseParser):
     prepost_dropout = 0.67
     relu_dropout = 0.67
     # relu_hidden_size = 512
+    print("num heads: ", self.num_heads)
 
     # if moving_params is not None:
     #   attn_dropout = 1.0
