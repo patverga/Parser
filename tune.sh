@@ -33,24 +33,22 @@ for lr in ${lrs[@]}; do
     for mu in ${mus[@]}; do
         for nu in ${nus[@]}; do
             for epsilon in ${epsilons[@]}; do
-                for decay in ${decays[@]}; do
-                    for decay_steps in ${decay_step_vals[@]}; do
-                        for batch_size in ${batch_sizes[@]}; do
-                            for rep in `seq $reps`; do
-                                fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size"
-                                commands+=("srun --gres=gpu:1 --partition=titanx-short python network.py \
-                                --config_file config/myconf.cfg \
-                                --save_dir $OUT_LOG/scores-$fname_append \
-                                --save_every 500 \
-                                --train_iters 100000 \
-                                --train_batch_size $batch_size \
-                                --warmup_steps $warmup_steps \
-                                --learning_rate $lr \
-                                --mu $mu \
-                                --nu $nu \
-                                --epsilon $epsilon \
-                                &> $OUT_LOG/train-$fname_append.log")
-                            done
+                for warmup_steps in ${warmup_steps[@]}; do
+                    for batch_size in ${batch_sizes[@]}; do
+                        for rep in `seq $reps`; do
+                            fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size"
+                            commands+=("srun --gres=gpu:1 --partition=titanx-short python network.py \
+                            --config_file config/myconf.cfg \
+                            --save_dir $OUT_LOG/scores-$fname_append \
+                            --save_every 500 \
+                            --train_iters 100000 \
+                            --train_batch_size $batch_size \
+                            --warmup_steps $warmup_steps \
+                            --learning_rate $lr \
+                            --mu $mu \
+                            --nu $nu \
+                            --epsilon $epsilon \
+                            &> $OUT_LOG/train-$fname_append.log")
                         done
                     done
                 done
