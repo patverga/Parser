@@ -301,6 +301,10 @@ class Configurable(object):
   def clip(self):
     return self._config.getfloat('Learning rate', 'clip')
   argparser.add_argument('--clip')
+  @property
+  def warmup_steps(self):
+    return self._config.getint('Learning rate', 'warmup_steps')
+  argparser.add_argument('--warmup_steps')
   
   #=============================================================
   # [Radam]
@@ -359,4 +363,27 @@ class Configurable(object):
   def per_process_gpu_memory_fraction(self):
     return self._config.getfloat('Training', 'per_process_gpu_memory_fraction')
   argparser.add_argument('--per_process_gpu_memory_fraction')
+
+  #=============================================================
+  # [Transformer]
+  @property
+  def num_heads(self):
+    return self._config.getint('Training', 'num_heads')
+  argparser.add_argument('--num_heads')
+  @property
+  def head_size(self):
+    return self._config.getint('Training', 'head_size')
+  argparser.add_argument('--head_size')
+  @property
+  def cnn_dim(self):
+    return self._config.getint('Training', 'cnn_dim')
+  argparser.add_argument('--cnn_dim')
+  @property
+  def cnn_layers(self):
+    return self._config.getint('Training', 'cnn_layers')
+  argparser.add_argument('--cnn_layers')
+  @property
+  def relu_hidden_size(self):
+    return self._config.getint('Training', 'relu_hidden_size')
+  argparser.add_argument('--relu_hidden_size')
   

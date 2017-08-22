@@ -43,15 +43,15 @@ class Parser(BaseParser):
     top_recur = embed_inputs
 
     kernel = 3
-    cnn_dim = 768
-    cnn_layers = 2
-    num_heads = 4
-    head_size = 128
-    hidden_size = num_heads * head_size
+    # cnn_dim = 768
+    # cnn_layers = 2
+    # num_heads = 4
+    # head_size = 128
+    hidden_size = self.num_heads * self.head_size
     attn_dropout = 0.67
     prepost_dropout = 0.67
     relu_dropout = 0.67
-    relu_hidden_size = 512
+    # relu_hidden_size = 512
 
     # if moving_params is not None:
     #   attn_dropout = 1.0
@@ -59,15 +59,15 @@ class Parser(BaseParser):
     #   relu_dropout = 1.0
     #   self.recur_keep_prob = 1.0
 
-    for i in xrange(cnn_layers):
+    for i in xrange(self.cnn_layers):
       with tf.variable_scope('CNN%d' % i, reuse=reuse):
-        top_recur = self.CNN(top_recur, kernel, cnn_dim,
+        top_recur = self.CNN(top_recur, kernel, self.cnn_dim,
                              self.recur_keep_prob if i < self.n_recur - 1 else 1.0,
                              self.info_func if i < self.n_recur - 1 else tf.identity)
 
     with tf.variable_scope('proj', reuse=reuse):
       top_recur = tf.expand_dims(top_recur, 1)
-      params = tf.get_variable("proj", [1, 1, cnn_dim, hidden_size])
+      params = tf.get_variable("proj", [1, 1, self.cnn_dim, hidden_size])
       top_recur = tf.nn.conv2d(top_recur, params, [1, 1, 1, 1], "SAME")
       top_recur = tf.squeeze(top_recur, 1)
 
@@ -89,8 +89,8 @@ class Parser(BaseParser):
 
       # Transformer:
       with tf.variable_scope('Transformer%d' % i, reuse=reuse):
-        top_recur = self.transformer(top_recur, hidden_size, num_heads,
-                                     attn_dropout, relu_dropout, prepost_dropout, relu_hidden_size,
+        top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
+                                     attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                      self.info_func, reuse)
     # if normalization is done in layer_preprocess, then it shuold also be done
     # on the output, since the output can grow very large, being the sum of
