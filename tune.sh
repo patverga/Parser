@@ -23,13 +23,13 @@ batch_sizes="5000"
 
 trans_layers="3 4 5"
 cnn_dims="768 1048"
-num_heads="4 6"
+num_heads="4 6 8"
 head_sizes="64 128"
 relu_hidden_sizes="256"
 
 reps="3"
 
-# 3*3*2*2*2*3
+# 3*3*2*3*2*3
 
 
 
