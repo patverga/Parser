@@ -250,10 +250,11 @@ def conv_hidden_relu(inputs,
                      nonlinearity):
   """Hidden layer with RELU activation followed by linear projection."""
   with tf.variable_scope("conv_hidden_relu", [inputs]):
-    inputs = tf.expand_dims(inputs, 2)
+    inputs = tf.expand_dims(inputs, 1)
     in_size = inputs.get_shape().as_list()[-1]
+    kernel = 3
     params1 = tf.get_variable("ff1", [1, 1, in_size, hidden_size])
-    params2 = tf.get_variable("ff2", [1, 1, hidden_size, hidden_size])
+    params2 = tf.get_variable("ff2", [1, kernel, hidden_size, hidden_size])
     params3 = tf.get_variable("ff3", [1, 1, hidden_size, output_size])
     h = tf.nn.conv2d(inputs, params1, [1, 1, 1, 1], "SAME")
     h = nonlinearity(h)
@@ -262,7 +263,7 @@ def conv_hidden_relu(inputs,
     h = nonlinearity(h)
     h = tf.nn.dropout(h, dropout)
     ret = tf.nn.conv2d(h, params3, [1, 1, 1, 1], "SAME")
-    ret = tf.squeeze(ret, 2)
+    ret = tf.squeeze(ret, 1)
     return ret
 
 
