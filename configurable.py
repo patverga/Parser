@@ -363,6 +363,10 @@ class Configurable(object):
   def per_process_gpu_memory_fraction(self):
     return self._config.getfloat('Training', 'per_process_gpu_memory_fraction')
   argparser.add_argument('--per_process_gpu_memory_fraction')
+  @property
+  def eval_criterion(self):
+    return self._config.getint('Training', 'eval_criterion')
+  argparser.add_argument('--eval_criterion')
 
   #=============================================================
   # [Transformer]

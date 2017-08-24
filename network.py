@@ -123,6 +123,7 @@ class Network(Configurable):
     print_every = self.print_every
     validate_every = self.validate_every
     save_every = self.save_every
+    current_best = 0.0
     try:
       train_time = 0
       train_loss = 0
@@ -184,14 +185,19 @@ class Network(Configurable):
             n_train_tokens = 0
             n_train_iters = 0
           if save_every and (total_train_iters % save_every == 0):
-            print("Writing model to %s" % (os.path.join(self.save_dir, self.name.lower() + '-trained')))
-            saver.save(sess, os.path.join(self.save_dir, self.name.lower() + '-trained'),
-                       latest_filename=self.name.lower(),
-                       global_step=self.global_epoch,
-                       write_meta_graph=False)
             with open(os.path.join(self.save_dir, 'history.pkl'), 'w') as f:
               pkl.dump(self.history, f)
-            self.test(sess, validate=True)
+            scores = self.test(sess, validate=True)
+            if scores[self.eval_criterion] > current_best:
+              current_best = scores[self.eval_criterion]
+              print("Writing model to %s" % (os.path.join(self.save_dir, self.name.lower() + '-trained')))
+              saver.save(sess, os.path.join(self.save_dir, self.name.lower() + '-trained'),
+                         latest_filename=self.name.lower(),
+                         global_step=self.global_epoch,
+                         write_meta_graph=False)
+            # with open(os.path.join(self.save_dir, 'history.pkl'), 'w') as f:
+            #   pkl.dump(self.history, f)
+            # self.test(sess, validate=True)
         sess.run(self._global_epoch.assign_add(1.))
     except KeyboardInterrupt:
       try:
@@ -259,9 +265,9 @@ class Network(Configurable):
           f.write('%s\t%s\t_\t%s\t%s\t_\t%s\t%s\t%s\t%s\n' % tup)
         f.write('\n')
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
-      s, _ = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
+      s, scores = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
       f.write(s)
-    return
+    return scores
   
   #=============================================================
   def savefigs(self, sess, optimizer=False):
