@@ -188,6 +188,9 @@ class Network(Configurable):
             with open(os.path.join(self.save_dir, 'history.pkl'), 'w') as f:
               pkl.dump(self.history, f)
             correct = self.test(sess, validate=True)
+            las = np.mean(correct["LAS"]) * 100
+            uas = np.mean(correct["UAS"]) * 100
+            print('UAS: %.2f    LAS: %.2f\n' % (las, uas))
             current_score = np.mean(correct[self.eval_criterion]) * 100
             if current_score > current_best:
               current_best = current_score
