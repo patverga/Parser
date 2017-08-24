@@ -382,6 +382,9 @@ class NN(Configurable):
     # mat = linalg.orthonormal_initializer(input_size, output_size)
     # initializer = tf.constant_initializer(mat)
 
+    if self.moving_params is not None:
+      dropout_keep_rate = 1.0
+
     params = tf.get_variable('CNN', [1, kernel, input_size, output_size], initializer=initializer)
     inputs = tf.expand_dims(inputs, 1)
     conv_out = tf.nn.conv2d(inputs, params, [1, 1, 1, 1], 'SAME')
@@ -400,6 +403,10 @@ class NN(Configurable):
 
     # mat = linalg.orthonormal_initializer(input_size, output_size)
     # initializer = tf.constant_initializer(mat)
+    if self.moving_params is not None:
+      attn_dropout = 1.0
+      relu_dropout = 1.0
+      prepost_dropout = 1.0
 
     with tf.variable_scope("self_attention"):
       x = layer_norm(inputs, reuse)
