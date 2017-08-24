@@ -48,12 +48,12 @@ declare -a commands
 for p in ${params[@]}; do
     cm=`echo ${p} | sed 's/1e-12/.000000000001/g' | \
     awk -F'-' '{ printf \
-        "--lr %s \
+        "--learning_rate %s \
         \n--mu %s \
         \n--nu %s \
         \n--epsilon %s \
         \n--warmup_steps %s \
-        \n--batch_size %s \
+        \n--train_batch_size %s \
         \n--cnn_dim %s \
         \n--n_recur %s \
         \n--num_heads %s \
