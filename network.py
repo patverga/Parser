@@ -188,6 +188,8 @@ class Network(Configurable):
             with open(os.path.join(self.save_dir, 'history.pkl'), 'w') as f:
               pkl.dump(self.history, f)
             scores = self.test(sess, validate=True)
+            print(scores)
+            print(self.eval_criterion)
             if scores[self.eval_criterion] > current_best:
               current_best = scores[self.eval_criterion]
               print("Writing model to %s" % (os.path.join(self.save_dir, self.name.lower() + '-trained')))
