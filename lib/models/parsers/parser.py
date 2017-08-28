@@ -53,6 +53,8 @@ class Parser(BaseParser):
     relu_dropout = 0.67
     # relu_hidden_size = 512
     print("num heads: ", self.num_heads)
+    print("cnn dim: ", self.cnn_dim)
+    print("relu hidden size: ", self.relu_hidden_size)
 
     # if moving_params is not None:
     #   attn_dropout = 1.0
@@ -78,15 +80,6 @@ class Parser(BaseParser):
       # RNN:
       # with tf.variable_scope('RNN%d' % i, reuse=reuse):
       #   top_recur, _ = self.RNN(top_recur)
-
-      # CNN:
-      # with tf.variable_scope('CNN%d' % i, reuse=reuse):
-      #   top_recur = self.CNN(top_recur, kernel, cnn_dim,
-      #                        self.recur_keep_prob if i < self.n_recur-1 else 1.0,
-      #                        self.info_func if i < self.n_recur-1 else tf.identity)
-      #
-      # params = tf.get_variable("proj", [1, 1, cnn_dim, hidden_size])
-      # top_recur = tf.nn.conv2d(top_recur, params, [1, 1, 1, 1], "SAME")
 
       # Transformer:
       with tf.variable_scope('Transformer%d' % i, reuse=reuse):
