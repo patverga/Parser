@@ -66,11 +66,13 @@ class BaseParser(NN):
     
     sents = []
     mb_parse_probs, mb_rel_probs = mb_probs
+    total_time = 0.0
     for inputs, targets, parse_probs, rel_probs in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
-      parse_preds, rel_preds = self.prob_argmax(parse_probs, rel_probs, tokens_to_keep)
-      
+      parse_preds, rel_preds, argmax_time = self.prob_argmax(parse_probs, rel_probs, tokens_to_keep)
+      total_time += argmax_time
+
       sent = -np.ones( (length, 9), dtype=int)
       tokens = np.arange(1, length+1)
       sent[:,0] = tokens
@@ -80,6 +82,7 @@ class BaseParser(NN):
       sent[:,6] = rel_preds[tokens]
       sent[:,7:] = targets[tokens, 1:]
       sents.append(sent)
+    print("Total time in prob_argmax: %f" % total_time)
     return sents
   
   #=============================================================

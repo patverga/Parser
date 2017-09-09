@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import time
 import tensorflow as tf
 
 from lib.models import nn
@@ -135,8 +136,9 @@ class Parser(BaseParser):
   #=============================================================
   def prob_argmax(self, parse_probs, rel_probs, tokens_to_keep):
     """"""
-    
+    start_time = time.time()
     parse_preds = self.parse_argmax(parse_probs, tokens_to_keep)
     rel_probs = rel_probs[np.arange(len(parse_preds)), parse_preds]
     rel_preds = self.rel_argmax(rel_probs, tokens_to_keep)
-    return parse_preds, rel_preds
+    total_time = time.time() - start_time
+    return parse_preds, rel_preds, total_time
