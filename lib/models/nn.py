@@ -28,6 +28,8 @@ from lib.models import rnn
 from configurable import Configurable
 from vocab import Vocab
 
+import scipy.linalg as linalg
+
 
 def layer_norm(inputs, reuse, epsilon=1e-6):
   """Applies layer normalization.
@@ -892,6 +894,19 @@ class NN(Configurable):
       # block and pad heads
       parse_probs = parse_probs * tokens_to_keep
       parse_preds = np.argmax(parse_probs, axis=1)
+
+      laplacian = np.zeros((length, length))
+      for i,p in enumerate(parse_preds):
+        if p != 0:
+          laplacian[i,p-1] = -1.
+      degrees = -np.sum(laplacian, axis=1)
+      for i, d in enumerate(degrees):
+        laplacian[i,i] = d
+      print("laplacian", laplacian)
+      Q, R, P = linalg.qr(laplacian, pivoting=True)
+      print("P", P)
+
+
       return parse_preds
   
   #=============================================================
