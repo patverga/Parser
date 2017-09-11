@@ -858,8 +858,10 @@ class NN(Configurable):
       # remove cycles
       tarjan = Tarjan(parse_preds, tokens)
       cycles = tarjan.SCCs
+      has_cycle = False
       for SCC in tarjan.SCCs:
         if len(SCC) > 1:
+          has_cycle = True
           dependents = set()
           to_visit = set(SCC)
           while len(to_visit) > 0:
@@ -887,19 +889,14 @@ class NN(Configurable):
           parse_preds[changed_cycle] = new_head
           tarjan.edges[new_head].add(changed_cycle)
           tarjan.edges[old_head].remove(changed_cycle)
-      return parse_preds
-    else:
-      tokens_to_keep[0] = True
-      length = np.sum(tokens_to_keep)
-      # block and pad heads
-      parse_probs = parse_probs * tokens_to_keep
-      parse_preds = np.argmax(parse_probs, axis=1)
 
+      print("Tarjan has cycle: ", has_cycle)
       print("parse_probs", parse_probs)
       laplacian = np.zeros((length, length))
       print(parse_preds)
       for i,p in enumerate(parse_preds):
-          laplacian[i,p] = -1.
+        print(i, p)
+        laplacian[i,p] = -1.
       degrees = -np.sum(laplacian, axis=0)
       print("degress", degrees)
       for i, d in enumerate(degrees):
@@ -912,12 +909,19 @@ class NN(Configurable):
 
       e = np.diagonal(R)
       print("eig", e)
-      rank = np.count_nonzero(e)
+      rank = np.count_zero(e)
 
       has_cycle = 0.5*np.trace(laplacian) >= rank + 1
 
       print(has_cycle)
 
+      return parse_preds
+    else:
+      tokens_to_keep[0] = True
+      length = np.sum(tokens_to_keep)
+      # block and pad heads
+      parse_probs = parse_probs * tokens_to_keep
+      parse_preds = np.argmax(parse_probs, axis=1)
       return parse_preds
   
   #=============================================================
