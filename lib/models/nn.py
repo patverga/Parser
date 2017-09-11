@@ -28,7 +28,7 @@ from lib.models import rnn
 from configurable import Configurable
 from vocab import Vocab
 
-import scipy.linalg as linalg
+import scipy.linalg
 
 
 def layer_norm(inputs, reuse, epsilon=1e-6):
@@ -903,7 +903,7 @@ class NN(Configurable):
       for i, d in enumerate(degrees):
         laplacian[i,i] = d
       print("laplacian", laplacian)
-      Q, R, P = linalg.qr(laplacian, pivoting=True)
+      Q, R, P = scipy.linalg.qr(laplacian, pivoting=True)
       print("P", P)
 
 
