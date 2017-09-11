@@ -896,15 +896,18 @@ class NN(Configurable):
       parse_preds = np.argmax(parse_probs, axis=1)
 
       laplacian = np.zeros((length, length))
+      print(parse_preds)
       for i,p in enumerate(parse_preds):
         if p != 0:
           laplacian[i,p-1] = -1.
-      degrees = -np.sum(laplacian, axis=1)
+      degrees = -np.sum(laplacian, axis=0)
       for i, d in enumerate(degrees):
         laplacian[i,i] = d
       print("laplacian", laplacian)
       Q, R, P = scipy.linalg.qr(laplacian, pivoting=True)
       print("P", P)
+      print("Q", Q)
+      print("R", R)
 
 
       return parse_preds
