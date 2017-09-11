@@ -910,6 +910,13 @@ class NN(Configurable):
       print("Q", Q)
       print("R", R)
 
+      e = np.diagonal(R)
+      print("eig", e)
+      rank = np.count_nonzero(e)
+
+      has_cycle = 0.5*np.trace(laplacian) >= rank + 1
+
+      print(has_cycle)
 
       return parse_preds
   
