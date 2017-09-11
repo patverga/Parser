@@ -858,10 +858,10 @@ class NN(Configurable):
       # remove cycles
       tarjan = Tarjan(parse_preds, tokens)
       cycles = tarjan.SCCs
-      has_cycle = False
+      tarjan_has_cycle = False
       for SCC in tarjan.SCCs:
         if len(SCC) > 1:
-          has_cycle = True
+          tarjan_has_cycle = True
           dependents = set()
           to_visit = set(SCC)
           while len(to_visit) > 0:
@@ -890,30 +890,39 @@ class NN(Configurable):
           tarjan.edges[new_head].add(changed_cycle)
           tarjan.edges[old_head].remove(changed_cycle)
 
-      print("Tarjan has cycle: ", has_cycle)
-      print("parse_probs", parse_probs)
+      # print("Tarjan has cycle: ", has_cycle)
+      # print("parse_probs", parse_probs)
       laplacian = np.zeros((length, length))
       print(parse_preds)
       for i,p in enumerate(parse_preds[:length]):
-        print(i, p)
+        if p != 0:
+        # print(i, p)
         laplacian[i,p] = -1.
       degrees = -np.sum(laplacian, axis=0)
-      print("degress", degrees)
+      # print("degress", degrees)
       for i, d in enumerate(degrees):
         laplacian[i,i] = d
-      print("laplacian", laplacian)
+      # print("laplacian", laplacian)
       Q, R, P = scipy.linalg.qr(laplacian, pivoting=True)
-      print("P", P)
-      print("Q", Q)
-      print("R", R)
+      # print("P", P)
+      # print("Q", Q)
+      # print("R", R)
 
       e = np.diagonal(R)
-      print("eig", e)
+      # print("eig", e)
       rank = e.shape[0]-np.count_nonzero(e)
 
       has_cycle = 0.5*np.trace(laplacian) >= rank + 1
 
-      print(has_cycle)
+      if has_cycle != tarjan_has_cycle:
+        print("Tarjan has cycle: ", tarjan_has_cycle)
+        print("QR has cycle: ", has_cycle)
+        print("parse_probs", parse_probs)
+        print("degress", degrees)
+        print("laplacian", laplacian)
+        print("R", R)
+        print("eig", e)
+        print("================")
 
       return parse_preds
     else:
