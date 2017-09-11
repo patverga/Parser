@@ -893,7 +893,7 @@ class NN(Configurable):
       # print("Tarjan has cycle: ", has_cycle)
       # print("parse_probs", parse_probs)
       laplacian = np.zeros((length, length))
-      print(parse_preds)
+      # print(parse_preds)
       for i,p in enumerate(parse_preds[:length]):
         if p != 0:
         # print(i, p)
@@ -917,6 +917,8 @@ class NN(Configurable):
       if has_cycle != tarjan_has_cycle:
         print("Tarjan has cycle: ", tarjan_has_cycle)
         print("QR has cycle: ", has_cycle)
+        print(range(length))
+        print(parse_preds)
         print("parse_probs", parse_probs)
         print("degress", degrees)
         print("laplacian", laplacian)
