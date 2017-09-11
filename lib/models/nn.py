@@ -895,6 +895,7 @@ class NN(Configurable):
       parse_probs = parse_probs * tokens_to_keep
       parse_preds = np.argmax(parse_probs, axis=1)
 
+      print("parse_probs", parse_probs)
       laplacian = np.zeros((length, length))
       print(parse_preds)
       for i,p in enumerate(parse_preds):
