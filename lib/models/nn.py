@@ -899,9 +899,9 @@ class NN(Configurable):
       laplacian = np.zeros((length, length))
       print(parse_preds)
       for i,p in enumerate(parse_preds):
-        if p != 0:
-          laplacian[i,p-1] = -1.
+          laplacian[i,p] = -1.
       degrees = -np.sum(laplacian, axis=0)
+      print("degress", degrees)
       for i, d in enumerate(degrees):
         laplacian[i,i] = d
       print("laplacian", laplacian)
