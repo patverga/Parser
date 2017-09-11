@@ -909,7 +909,7 @@ class NN(Configurable):
 
       e = np.diagonal(R)
       print("eig", e)
-      rank = np.count_zero(e)
+      rank = e.shape[0]-np.count_nonzero(e)
 
       has_cycle = 0.5*np.trace(laplacian) >= rank + 1
 
