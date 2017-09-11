@@ -892,12 +892,12 @@ class NN(Configurable):
 
       # print("Tarjan has cycle: ", has_cycle)
       # print("parse_probs", parse_probs)
-      laplacian = np.zeros((length, length))
+      laplacian = np.zeros((length-1, length-1))
       # print(parse_preds)
-      for i,p in enumerate(parse_preds[:length]):
+      for i,p in enumerate(parse_preds[1:length]):
         if p != 0:
         # print(i, p)
-          laplacian[i,p] = -1.
+          laplacian[i,p-1] = -1.
       degrees = -np.sum(laplacian, axis=0)
       # print("degress", degrees)
       for i, d in enumerate(degrees):
@@ -919,7 +919,7 @@ class NN(Configurable):
         print("QR has cycle: ", has_cycle)
         print(range(length))
         print(parse_preds)
-        print("parse_probs", parse_probs)
+        # print("parse_probs", parse_probs)
         print("degress", degrees)
         print("laplacian", laplacian)
         print("R", R)
