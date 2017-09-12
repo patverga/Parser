@@ -927,7 +927,7 @@ class NN(Configurable):
             adj[i, p - 1] = 1
         for row in adj:
           for c in row:
-            print(str(c) + " ", end='')
+            print(str(c) + ", ", end='')
           print()
 
         # print("parse_probs", parse_probs)
