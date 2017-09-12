@@ -919,6 +919,18 @@ class NN(Configurable):
         print("QR has cycle: ", has_cycle)
         print(range(length))
         print(parse_preds)
+        adj = np.zeros((length-1, length-1))
+        print("adjacency")
+        for i, p in enumerate(parse_preds[1:length]):
+          if p != 0:
+            # print(i, p)
+            adj[i, p - 1] = 1
+        for row in adj:
+          for c in row:
+            print(str(c) + " ", end='')
+          print()
+        for i in range(length-1):
+
         # print("parse_probs", parse_probs)
         print("degress", degrees)
         print("laplacian", laplacian)
