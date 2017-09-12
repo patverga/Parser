@@ -30,7 +30,6 @@ from vocab import Vocab
 
 import scipy.linalg
 
-
 def layer_norm(inputs, reuse, epsilon=1e-6):
   """Applies layer normalization.
 
@@ -819,7 +818,7 @@ class NN(Configurable):
   #=============================================================
   def parse_argmax(self, parse_probs, tokens_to_keep):
     """"""
-    
+
     if self.ensure_tree:
       tokens_to_keep[0] = True
       length = np.sum(tokens_to_keep)
@@ -829,6 +828,31 @@ class NN(Configurable):
       parse_preds = np.argmax(parse_probs, axis=1)
       tokens = np.arange(1, length)
       roots = np.where(parse_preds[tokens] == 0)[0]+1
+
+      # print("Tarjan has cycle: ", has_cycle)
+      # print("parse_probs", parse_probs)
+      laplacian = np.zeros((length-1, length-1))
+      # print(parse_preds)
+      for i,p in enumerate(parse_preds[1:length]):
+        if p != 0:
+        # print(i, p)
+          laplacian[i,p-1] = -1.
+      degrees = -np.sum(laplacian, axis=0)
+      # print("degress", degrees)
+      for i, d in enumerate(degrees):
+        laplacian[i,i] = d
+      # print("laplacian", laplacian)
+      Q, R, P = scipy.linalg.qr(laplacian, pivoting=True)
+      # print("P", P)
+      # print("Q", Q)
+      # print("R", R)
+
+      e = np.diagonal(R)
+      # print("eig", e)
+      rank = e.shape[0]-np.count_nonzero(e)
+
+      has_cycle = 0.5*np.trace(laplacian) >= rank + 1
+
       # ensure at least one root
       if len(roots) < 1:
         # The current root probabilities
@@ -889,30 +913,6 @@ class NN(Configurable):
           parse_preds[changed_cycle] = new_head
           tarjan.edges[new_head].add(changed_cycle)
           tarjan.edges[old_head].remove(changed_cycle)
-
-      # print("Tarjan has cycle: ", has_cycle)
-      # print("parse_probs", parse_probs)
-      laplacian = np.zeros((length-1, length-1))
-      # print(parse_preds)
-      for i,p in enumerate(parse_preds[1:length]):
-        if p != 0:
-        # print(i, p)
-          laplacian[i,p-1] = -1.
-      degrees = -np.sum(laplacian, axis=0)
-      # print("degress", degrees)
-      for i, d in enumerate(degrees):
-        laplacian[i,i] = d
-      # print("laplacian", laplacian)
-      Q, R, P = scipy.linalg.qr(laplacian, pivoting=True)
-      # print("P", P)
-      # print("Q", Q)
-      # print("R", R)
-
-      e = np.diagonal(R)
-      # print("eig", e)
-      rank = e.shape[0]-np.count_nonzero(e)
-
-      has_cycle = 0.5*np.trace(laplacian) >= rank + 1
 
       if has_cycle != tarjan_has_cycle:
         print("Tarjan has cycle: ", tarjan_has_cycle)
