@@ -929,7 +929,6 @@ class NN(Configurable):
           for c in row:
             print(str(c) + " ", end='')
           print()
-        for i in range(length-1):
 
         # print("parse_probs", parse_probs)
         print("degress", degrees)
