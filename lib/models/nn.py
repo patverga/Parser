@@ -825,7 +825,7 @@ class NN(Configurable):
       I = np.eye(len(tokens_to_keep))
       # block loops and pad heads
       parse_probs = parse_probs * tokens_to_keep * (1-I)
-      parse_preds = np.argmax(parse_probs, axis=1)[:length-1]
+      parse_preds = np.argmax(parse_probs, axis=1)[:length]
       tokens = np.arange(1, length)
       roots = np.where(parse_preds[tokens] == 0)[0]+1
 
