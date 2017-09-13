@@ -960,7 +960,7 @@ class NN(Configurable):
       tokens_to_keep[0] = True
       rel_probs[:,Vocab.PAD] = 0
       root = Vocab.ROOT
-      length = np.sum(tokens_to_keep)
+      length = np.sum(tokens_to_keep)-1
       tokens = np.arange(1, length)
       rel_preds = np.argmax(rel_probs, axis=1)
       roots = np.where(rel_preds[tokens] == root)[0]+1
