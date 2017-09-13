@@ -826,7 +826,7 @@ class NN(Configurable):
       # block loops and pad heads
       parse_probs = parse_probs * tokens_to_keep * (1-I)
       parse_preds = np.argmax(parse_probs, axis=1)
-      tokens = np.arange(1, length)
+      tokens = np.arange(1, length-1)
       roots = np.where(parse_preds[tokens] == 0)[0]+1
 
       # print("Tarjan has cycle: ", has_cycle)
