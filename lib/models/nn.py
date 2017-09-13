@@ -821,7 +821,7 @@ class NN(Configurable):
 
     if self.ensure_tree:
       tokens_to_keep[0] = True
-      length = np.sum(tokens_to_keep)
+      length = np.sum(tokens_to_keep)-1
       I = np.eye(len(tokens_to_keep))
       # block loops and pad heads
       parse_probs = parse_probs * tokens_to_keep * (1-I)
