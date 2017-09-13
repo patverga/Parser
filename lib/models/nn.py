@@ -924,7 +924,7 @@ class NN(Configurable):
         print(parse_preds[1:length])
         adj = np.zeros((length-1, length-1))
         print("adjacency")
-        for i, p in enumerate(parse_preds[1:length]):
+        for i, p in enumerate(parse_preds): #[1:length]):
           if p != 0:
             # print(i, p)
             adj[i, p - 1] = 1
