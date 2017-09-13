@@ -939,6 +939,9 @@ class NN(Configurable):
         print("laplacian", laplacian)
         print("R", R)
         print("eig", e)
+        print("roots_lt", roots_lt)
+        print("roots_gt", roots_gt)
+
         print("================")
 
       return parse_preds
