@@ -831,12 +831,11 @@ class NN(Configurable):
 
       # print("Tarjan has cycle: ", has_cycle)
       # print("parse_probs", parse_probs)
-      laplacian = np.zeros((length-1, length-1))
+      laplacian = np.zeros((length - 1, length - 1))
       # print(parse_preds)
-      for i,p in enumerate(parse_preds[1:length]):
+      for i, p in enumerate(parse_preds[1:length]):
         if p != 0:
-        # print(i, p)
-          laplacian[i, p-1] = -1.
+          laplacian[i, p - 1] = -1.
       degrees = -np.sum(laplacian, axis=0)
       # print("degress", degrees)
       for i, d in enumerate(degrees):
@@ -851,7 +850,7 @@ class NN(Configurable):
       # print("eig", e)
       rank = np.count_nonzero(e)
 
-      has_cycle = 0.5*np.trace(laplacian) >= rank + 1
+      has_cycle = 0.5 * np.trace(laplacian) >= rank + 1
 
       # ensure at least one root
       roots_lt = False
@@ -921,8 +920,8 @@ class NN(Configurable):
       if has_cycle != tarjan_has_cycle:
         print("Tarjan has cycle: ", tarjan_has_cycle)
         print("QR has cycle: ", has_cycle)
-        print(range(length))
-        print(parse_preds)
+        print(range(length-1))
+        print(parse_preds[1:length])
         adj = np.zeros((length-1, length-1))
         print("adjacency")
         for i, p in enumerate(parse_preds[1:length]):
