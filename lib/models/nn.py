@@ -927,7 +927,7 @@ class NN(Configurable):
         for i, p in enumerate(parse_preds): #[1:length]):
           if p != 0:
             # print(i, p)
-            adj[i, p - 1] = 1
+            adj[i, p] = 1
         for row in adj:
           for c in row:
             print(str(c) + ", ", end='')
