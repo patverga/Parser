@@ -821,11 +821,11 @@ class NN(Configurable):
 
     if self.ensure_tree:
       tokens_to_keep[0] = True
-      length = np.sum(tokens_to_keep)-1
+      length = np.sum(tokens_to_keep)
       I = np.eye(len(tokens_to_keep))
       # block loops and pad heads
       parse_probs = parse_probs * tokens_to_keep * (1-I)
-      parse_preds = np.argmax(parse_probs, axis=1)[:length]
+      parse_preds = np.argmax(parse_probs, axis=1)
       tokens = np.arange(1, length)
       roots = np.where(parse_preds[tokens] == 0)[0]+1
 
@@ -960,7 +960,7 @@ class NN(Configurable):
       tokens_to_keep[0] = True
       rel_probs[:,Vocab.PAD] = 0
       root = Vocab.ROOT
-      length = np.sum(tokens_to_keep)-1
+      length = np.sum(tokens_to_keep)
       tokens = np.arange(1, length)
       rel_preds = np.argmax(rel_probs, axis=1)
       roots = np.where(rel_preds[tokens] == root)[0]+1
