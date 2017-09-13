@@ -857,31 +857,31 @@ class NN(Configurable):
       roots_gt = False
       if len(roots) < 1:
         roots_lt = True
-        # The current root probabilities
-        root_probs = parse_probs[tokens,0]
-        # The current head probabilities
-        old_head_probs = parse_probs[tokens, parse_preds[tokens]]
-        # Get new potential root probabilities
-        new_root_probs = root_probs / old_head_probs
-        # Select the most probable root
-        new_root = tokens[np.argmax(new_root_probs)]
-        # Make the change
-        parse_preds[new_root] = 0
+        # # The current root probabilities
+        # root_probs = parse_probs[tokens,0]
+        # # The current head probabilities
+        # old_head_probs = parse_probs[tokens, parse_preds[tokens]]
+        # # Get new potential root probabilities
+        # new_root_probs = root_probs / old_head_probs
+        # # Select the most probable root
+        # new_root = tokens[np.argmax(new_root_probs)]
+        # # Make the change
+        # parse_preds[new_root] = 0
       # ensure at most one root
       elif len(roots) > 1:
         roots_gt = True
-        # The probabilities of the current heads
-        root_probs = parse_probs[roots,0]
-        # Set the probability of depending on the root zero
-        parse_probs[roots,0] = 0
-        # Get new potential heads and their probabilities
-        new_heads = np.argmax(parse_probs[roots][:,tokens], axis=1)+1
-        new_head_probs = parse_probs[roots, new_heads] / root_probs
-        # Select the most probable root
-        new_root = roots[np.argmin(new_head_probs)]
-        # Make the change
-        parse_preds[roots] = new_heads
-        parse_preds[new_root] = 0
+        # # The probabilities of the current heads
+        # root_probs = parse_probs[roots,0]
+        # # Set the probability of depending on the root zero
+        # parse_probs[roots,0] = 0
+        # # Get new potential heads and their probabilities
+        # new_heads = np.argmax(parse_probs[roots][:,tokens], axis=1)+1
+        # new_head_probs = parse_probs[roots, new_heads] / root_probs
+        # # Select the most probable root
+        # new_root = roots[np.argmin(new_head_probs)]
+        # # Make the change
+        # parse_preds[roots] = new_heads
+        # parse_preds[new_root] = 0
       # remove cycles
       tarjan = Tarjan(parse_preds, tokens)
       cycles = tarjan.SCCs
