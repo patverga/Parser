@@ -922,6 +922,7 @@ class NN(Configurable):
         print("QR has cycle: ", has_cycle)
         print(range(length-1))
         print(parse_preds[1:length])
+        print(parse_preds)
         adj = np.zeros((len(parse_preds), len(parse_preds)))
         print("adjacency")
         for i, p in enumerate(parse_preds): #[1:length]):
