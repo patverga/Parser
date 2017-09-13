@@ -885,10 +885,10 @@ class NN(Configurable):
       # remove cycles
       tarjan = Tarjan(parse_preds, tokens)
       cycles = tarjan.SCCs
-      tarjan_has_cycle = False
+      tarjan_has_cycle = 0
       for SCC in tarjan.SCCs:
         if len(SCC) > 1:
-          tarjan_has_cycle = True
+          tarjan_has_cycle += 1
           dependents = set()
           to_visit = set(SCC)
           while len(to_visit) > 0:
@@ -917,7 +917,7 @@ class NN(Configurable):
           tarjan.edges[new_head].add(changed_cycle)
           tarjan.edges[old_head].remove(changed_cycle)
 
-      if has_cycle != tarjan_has_cycle:
+      if has_cycle != (tarjan_has_cycle > 0):
         print("Tarjan has cycle: ", tarjan_has_cycle)
         print("QR has cycle: ", has_cycle)
         print(range(length-1))
