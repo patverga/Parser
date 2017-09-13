@@ -842,14 +842,14 @@ class NN(Configurable):
       for i, d in enumerate(degrees):
         laplacian[i,i] = d
       # print("laplacian", laplacian)
-      Q, R, P = scipy.linalg.qr(laplacian, pivoting=True)
+      Q, R, P = scipy.linalg.qr(np.transpose(laplacian), pivoting=True)
       # print("P", P)
       # print("Q", Q)
       # print("R", R)
 
       e = np.diagonal(R)
       # print("eig", e)
-      rank = e.shape[0]-np.count_nonzero(e)
+      rank = np.count_nonzero(e)
 
       has_cycle = 0.5*np.trace(laplacian) >= rank + 1
 
