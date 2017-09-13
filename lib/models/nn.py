@@ -836,11 +836,11 @@ class NN(Configurable):
       for i,p in enumerate(parse_preds[1:length]):
         if p != 0:
         # print(i, p)
-          laplacian[i,p-1] = -1.
+          laplacian[i, p-1] = -1.
       degrees = -np.sum(laplacian, axis=0)
       # print("degress", degrees)
       for i, d in enumerate(degrees):
-        laplacian[i,i] = d
+        laplacian[i, i] = d
       # print("laplacian", laplacian)
       Q, R, P = scipy.linalg.qr(np.transpose(laplacian), pivoting=True)
       # print("P", P)
@@ -854,7 +854,10 @@ class NN(Configurable):
       has_cycle = 0.5*np.trace(laplacian) >= rank + 1
 
       # ensure at least one root
+      roots_lt = False
+      roots_gt = False
       if len(roots) < 1:
+        roots_lt = True
         # The current root probabilities
         root_probs = parse_probs[tokens,0]
         # The current head probabilities
@@ -867,6 +870,7 @@ class NN(Configurable):
         parse_preds[new_root] = 0
       # ensure at most one root
       elif len(roots) > 1:
+        roots_gt = True
         # The probabilities of the current heads
         root_probs = parse_probs[roots,0]
         # Set the probability of depending on the root zero
