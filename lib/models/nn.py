@@ -913,7 +913,7 @@ class NN(Configurable):
       # print("R", R)
       # e = np.diagonal(R)
 
-      e = scipy.linalg.svd(np.transpose(laplacian), compute_uv=False)
+      e = scipy.linalg.svd(laplacian, compute_uv=False)
 
       # print("eig", e)
       # rank = np.count_nonzero(e)
