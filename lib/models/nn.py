@@ -944,7 +944,7 @@ class NN(Configurable):
           # print("parse_probs", parse_probs)
           print("degress", degrees)
           print("laplacian", laplacian)
-          print("R", R)
+          # print("R", R)
           print("eig", e)
           print("roots_lt", roots_lt)
           print("roots_gt", roots_gt)
