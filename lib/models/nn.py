@@ -919,40 +919,48 @@ class NN(Configurable):
       # rank = np.count_nonzero(e)
       rank = np.sum(np.greater(e, 1e-15))
 
-      has_cycle = 0.5 * np.trace(laplacian) >= rank + 1
+      adj = np.zeros((len(parse_preds), len(parse_preds)))
+      for i, p in enumerate(parse_preds):  # [1:length]):
+        if p != 0:
+          # print(i, p)
+          adj[i, p] = 1
+
+      len_2_cycles = np.sum(adj & np.transpose(adj)) > 0
+
+      has_cycle = (0.5 * np.trace(laplacian) >= rank + 1) or len_2_cycles
 
       if has_cycle != (tarjan_has_cycle > 0):
 
         # OR: just AND the adjacency matrix with its transpose
-        sorted_pairs = sorted(map(str, map(sorted, [(i, h) for i, h in enumerate(parse_preds)])))
+        # sorted_pairs = sorted(map(str, map(sorted, [(i, h) for i, h in enumerate(parse_preds)])))
 
-        if len(set(sorted_pairs)) == len(sorted_pairs):
+        # if len(set(sorted_pairs)) == len(sorted_pairs):
 
-          print("Tarjan has cycle: ", tarjan_has_cycle)
-          print("QR has cycle: ", has_cycle)
-          print(range(length-1))
-          print(parse_preds[1:length])
-          print(parse_preds)
-          adj = np.zeros((len(parse_preds), len(parse_preds)))
-          print("adjacency")
-          for i, p in enumerate(parse_preds): #[1:length]):
-            if p != 0:
-              # print(i, p)
-              adj[i, p] = 1
-          for row in adj:
-            for c in row:
-              print(str(c) + ", ", end='')
-            print()
+        print("Tarjan has cycle: ", tarjan_has_cycle)
+        print("QR has cycle: ", has_cycle)
+        print(range(length-1))
+        print(parse_preds[1:length])
+        print(parse_preds)
+        adj = np.zeros((len(parse_preds), len(parse_preds)))
+        print("adjacency")
+        # for i, p in enumerate(parse_preds): #[1:length]):
+        #   if p != 0:
+        #     # print(i, p)
+        #     adj[i, p] = 1
+        for row in adj:
+          for c in row:
+            print(str(c) + ", ", end='')
+          print()
 
-          # print("parse_probs", parse_probs)
-          print("degress", degrees)
-          print("laplacian", laplacian)
-          # print("R", R)
-          print("eig", e)
-          print("roots_lt", roots_lt)
-          print("roots_gt", roots_gt)
+        # print("parse_probs", parse_probs)
+        print("degress", degrees)
+        print("laplacian", laplacian)
+        # print("R", R)
+        print("eig", e)
+        print("roots_lt", roots_lt)
+        print("roots_gt", roots_gt)
 
-          print("================")
+        print("================")
 
       return parse_preds
     else:
