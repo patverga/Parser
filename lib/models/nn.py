@@ -901,6 +901,7 @@ class NN(Configurable):
       for i, p in enumerate(parse_preds[1:length]):
         if p != 0:
           laplacian[i, p - 1] = -1.
+          laplacian[p - 1, i] = -1.
       degrees = -np.sum(laplacian, axis=0)
       # print("degress", degrees)
       for i, d in enumerate(degrees):
@@ -915,7 +916,8 @@ class NN(Configurable):
       e = scipy.linalg.svd(np.transpose(laplacian), compute_uv=False)
 
       # print("eig", e)
-      rank = np.count_nonzero(e)
+      # rank = np.count_nonzero(e)
+      rank = np.sum(np.greater(e, 1e-15))
 
       has_cycle = 0.5 * np.trace(laplacian) >= rank + 1
 
