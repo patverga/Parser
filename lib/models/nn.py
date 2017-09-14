@@ -898,7 +898,7 @@ class NN(Configurable):
       # print("parse_probs", parse_probs)
       laplacian = np.zeros((length - 1, length - 1))
       # print(parse_preds)
-      for i, p in enumerate(parse_preds[:length-1]):
+      for i, p in enumerate(parse_preds[1:length]):
         if p != 0:
           laplacian[i, p - 1] = -1.
       degrees = -np.sum(laplacian, axis=0)
