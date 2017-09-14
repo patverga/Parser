@@ -918,31 +918,36 @@ class NN(Configurable):
           # tarjan.edges[old_head].remove(changed_cycle)
 
       if has_cycle != (tarjan_has_cycle > 0):
-        print("Tarjan has cycle: ", tarjan_has_cycle)
-        print("QR has cycle: ", has_cycle)
-        print(range(length-1))
-        print(parse_preds[1:length])
-        print(parse_preds)
-        adj = np.zeros((len(parse_preds), len(parse_preds)))
-        print("adjacency")
-        for i, p in enumerate(parse_preds): #[1:length]):
-          if p != 0:
-            # print(i, p)
-            adj[i, p] = 1
-        for row in adj:
-          for c in row:
-            print(str(c) + ", ", end='')
-          print()
 
-        # print("parse_probs", parse_probs)
-        print("degress", degrees)
-        print("laplacian", laplacian)
-        print("R", R)
-        print("eig", e)
-        print("roots_lt", roots_lt)
-        print("roots_gt", roots_gt)
+        sorted_pairs = sorted(map(sorted, [[i, h] for i, h in enumerate(p)]))
 
-        print("================")
+        if len(set(sorted_pairs)) != len(sorted_pairs):
+
+          print("Tarjan has cycle: ", tarjan_has_cycle)
+          print("QR has cycle: ", has_cycle)
+          print(range(length-1))
+          print(parse_preds[1:length])
+          print(parse_preds)
+          adj = np.zeros((len(parse_preds), len(parse_preds)))
+          print("adjacency")
+          for i, p in enumerate(parse_preds): #[1:length]):
+            if p != 0:
+              # print(i, p)
+              adj[i, p] = 1
+          for row in adj:
+            for c in row:
+              print(str(c) + ", ", end='')
+            print()
+
+          # print("parse_probs", parse_probs)
+          print("degress", degrees)
+          print("laplacian", laplacian)
+          print("R", R)
+          print("eig", e)
+          print("roots_lt", roots_lt)
+          print("roots_gt", roots_gt)
+
+          print("================")
 
       return parse_preds
     else:
