@@ -921,7 +921,7 @@ class NN(Configurable):
 
         sorted_pairs = sorted(map(sorted, [[i, h] for i, h in enumerate(p)]))
 
-        if len(set(sorted_pairs)) != len(sorted_pairs):
+        if len(set(sorted_pairs)) == len(sorted_pairs):
 
           print("Tarjan has cycle: ", tarjan_has_cycle)
           print("QR has cycle: ", has_cycle)
