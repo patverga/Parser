@@ -925,7 +925,7 @@ class NN(Configurable):
           # print(i, p)
           adj[i, p] = 1
 
-      len_2_cycles = np.sum(adj & np.transpose(adj)) > 0
+      len_2_cycles = np.sum(np.multiply(adj, np.transpose(adj))) > 0
 
       has_cycle = (0.5 * np.trace(laplacian) >= rank + 1) or len_2_cycles
 
