@@ -919,7 +919,7 @@ class NN(Configurable):
 
       if has_cycle != (tarjan_has_cycle > 0):
 
-        sorted_pairs = sorted(map(sorted, [[i, h] for i, h in enumerate(p)]))
+        sorted_pairs = sorted(map(sorted, [[i, h] for i, h in enumerate(parse_preds)]))
 
         if len(set(sorted_pairs)) == len(sorted_pairs):
 
