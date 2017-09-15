@@ -906,6 +906,8 @@ class NN(Configurable):
       # remove cycles
       tarjan = Tarjan(parse_preds, tokens)
       cycles = tarjan.SCCs
+      len_2_cycles = 0.
+      n_cycles = 0.
       for SCC in tarjan.SCCs:
         if len(SCC) > 1:
           if len(SCC) == 2:
