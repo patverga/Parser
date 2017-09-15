@@ -239,17 +239,34 @@ class Network(Configurable):
     all_predictions = [[]]
     all_sents = [[]]
     bkt_idx = 0
+    total_time = 0.
+    roots_lt_total = 0.
+    roots_gt_total = 0.
+    cycles_2_total = 0.
+    cycles_n_total = 0.
+    not_tree_total = 0.
     for (feed_dict, sents) in minibatches():
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
       mb_probs = sess.run(op, feed_dict=feed_dict)
-      all_predictions[-1].extend(self.model.validate(mb_inputs, mb_targets, mb_probs))
+      preds, time, roots_lt, roots_gt, cycles_2, cycles_n = self.model.validate(mb_inputs, mb_targets, mb_probs)
+      total_time += time
+      roots_lt_total += roots_lt
+      roots_gt_total += roots_gt
+      cycles_2_total += cycles_2
+      cycles_n_total += cycles_n
+      if roots_lt or roots_gt or cycles_2 or cycles_n:
+        not_tree_total += 1
+      all_predictions[-1].extend(preds)
       all_sents[-1].extend(sents)
       if len(all_predictions[-1]) == len(dataset[bkt_idx]):
         bkt_idx += 1
         if bkt_idx < len(dataset._metabucket):
           all_predictions.append([])
           all_sents.append([])
+    print("Total time in prob_argmax: %f" % total_time)
+    print("Not tree: %d" % not_tree_total)
+    print("Roots < 1: %d; Roots > 1: %d; 2-cycles: %d; n-cycles: %d" % (roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total))
     with open(os.path.join(self.save_dir, os.path.basename(filename)), 'w') as f:
       for bkt_idx, idx in dataset._metabucket.data:
         data = dataset._metabucket[bkt_idx].data[idx][1:]

@@ -390,4 +390,10 @@ class Configurable(object):
   def relu_hidden_size(self):
     return self._config.getint('Training', 'relu_hidden_size')
   argparser.add_argument('--relu_hidden_size')
+
+
+  @property
+  def svd_tree(self):
+    return self._config.getboolean('Training', 'svd_tree')
+  argparser.add_argument('--svd_tree')
   
