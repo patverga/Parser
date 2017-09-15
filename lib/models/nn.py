@@ -815,7 +815,7 @@ class NN(Configurable):
     maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
     maxes_tiled = tf.tile(maxes, [1, bucket_size])
     adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
-    adj_flat = tf.multiply(adj_flat, tokens_to_keep1D)
+    adj_flat = adj_flat * tokens_to_keep1D
     adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
     adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
 
