@@ -863,7 +863,7 @@ class NN(Configurable):
       parse_preds = np.argmax(parse_probs, axis=1)
       tokens = np.arange(1, length)
       roots = np.where(parse_preds[tokens] == 0)[0] + 1
-      has_cycle = self.check_cycles_svd(parse_preds, length)
+      # has_cycle = self.check_cycles_svd(parse_preds, length)
 
       # ensure at least one root
       if len(roots) < 1:
@@ -892,7 +892,7 @@ class NN(Configurable):
         parse_preds[roots] = new_heads
         parse_preds[new_root] = 0
       # remove cycles
-      if has_cycle:
+      if True:
         tarjan = Tarjan(parse_preds, tokens)
         cycles = tarjan.SCCs
         for SCC in tarjan.SCCs:
