@@ -795,6 +795,77 @@ class NN(Configurable):
     }
     
     return output
+
+  # =============================================================
+  def output_svd(self, logits3D, targets3D):
+    """"""
+
+    original_shape = tf.shape(logits3D)
+    batch_size = original_shape[0]
+    bucket_size = original_shape[1]
+    flat_shape = tf.stack([batch_size, bucket_size])
+
+    # flatten to [B*N, N]
+    logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
+
+    targets1D = tf.reshape(targets3D, [-1])
+    tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
+
+    # svd loss
+    maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
+    maxes_tiled = tf.tile(maxes, [1, bucket_size])
+    adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
+    adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
+    adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
+
+    degrees = tf.reduce_sum(adj, axis=1)
+    laplacian = tf.matrix_set_diag(-adj, degrees)
+
+    s, _, _ = tf.svd(laplacian)
+    l_trace = tf.reduce_sum(degrees, axis=1)
+    l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
+
+    svd_loss = tf.reduce_sum(tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0)))
+    svd_loss_masked = tokens_to_keep1D * svd_loss
+    svd_loss_avg = tf.reduce_sum(svd_loss_masked) / self.n_tokens
+
+    # 2-cycles loss
+    cycle2_loss = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.stack([i1, i2, targets3D], axis=-1)
+    targets_mask = tf.scatter_nd(idx, tf.ones([bucket_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+    # mask padding and also the correct edges, so this loss doesn't apply to correct predictions
+    cycle2_loss_masked = cycle2_loss * tokens_to_keep1D * targets_mask
+    cycle2_loss_avg = tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
+
+    # normal log loss
+    predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
+    probabilities2D = tf.nn.softmax(logits2D)
+    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
+
+    correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
+    n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
+    accuracy = n_correct / self.n_tokens
+    log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
+
+    loss = log_loss + cycle2_loss_avg + svd_loss_avg
+
+    output = {
+      'probabilities': tf.reshape(probabilities2D, original_shape),
+      'predictions': tf.reshape(predictions1D, flat_shape),
+      'tokens': tokens_to_keep1D,
+      'correct': correct1D * tokens_to_keep1D,
+      'n_correct': n_correct,
+      'n_tokens': self.n_tokens,
+      'accuracy': accuracy,
+      'loss': loss,
+      'log_loss': log_loss,
+      'svd_loss': svd_loss_avg,
+      # 'roots_loss': roots_loss,
+      '2cycle_loss': cycle2_loss_avg
+    }
+
+    return output
   
   #=============================================================
   def conditional_probabilities(self, logits4D, transpose=True):

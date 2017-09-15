@@ -99,7 +99,8 @@ class Parser(BaseParser):
     
     with tf.variable_scope('Arcs', reuse=reuse):
       arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
-      arc_output = self.output(arc_logits, targets[:,:,1])
+      # arc_output = self.output(arc_logits, targets[:,:,1])
+      arc_output = self.output_svd(arc_logits, targets[:,:,1])
       if moving_params is None:
         predictions = targets[:,:,1]
       else:
@@ -131,6 +132,10 @@ class Parser(BaseParser):
     output['head_rel'] = head_rel_mlp
     output['arc_logits'] = arc_logits
     output['rel_logits'] = rel_logits
+
+    output['log_loss'] = arc_output['log_loss']
+    output['2cycle_loss'] = arc_output['2cycle_loss']
+    output['svd_loss'] = arc_output['svd_loss']
     return output
   
   #=============================================================
