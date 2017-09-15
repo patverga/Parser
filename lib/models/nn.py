@@ -838,9 +838,9 @@ class NN(Configurable):
     cycle2_loss = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.stack([i1, i2, targets3D], axis=-1)
-    # targets_mask = tf.scatter_nd(idx, tf.ones([bucket_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+    targets_mask = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
     # mask padding and also the correct edges, so this loss doesn't apply to correct predictions
-    cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D # * targets_mask
+    cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * targets_mask
     cycle2_loss_avg = tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
 
     # normal log loss
