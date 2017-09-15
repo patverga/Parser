@@ -859,10 +859,10 @@ class NN(Configurable):
       'n_tokens': self.n_tokens,
       'accuracy': accuracy,
       'loss': loss,
-      'log_loss': 0, #log_loss,
-      'svd_loss': 0, #svd_loss_avg,
+      'log_loss': tf.constant(0), #log_loss,
+      'svd_loss': tf.constant(0), #svd_loss_avg,
       # 'roots_loss': roots_loss,
-      '2cycle_loss': 0, #cycle2_loss_avg
+      '2cycle_loss': tf.constant(0), #cycle2_loss_avg
     }
 
     return output
