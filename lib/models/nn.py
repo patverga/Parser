@@ -822,7 +822,7 @@ class NN(Configurable):
     laplacian = tf.matrix_set_diag(-adj, degrees)
 
     dtype = laplacian.dtype
-    s = tf.py_func(np.linalg.svd, [laplacian, False, False], [dtype, dtype, dtype])
+    _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, False], [dtype, dtype, dtype])
     # s, _, _ = tf.svd(laplacian)
 
 
