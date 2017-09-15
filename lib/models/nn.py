@@ -825,8 +825,8 @@ class NN(Configurable):
     l_trace = tf.reduce_sum(degrees, axis=1)
     l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
 
-    svd_loss = tf.reduce_sum(tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0)))
-    svd_loss_masked = tokens_to_keep1D * svd_loss
+    svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
+    svd_loss_masked = self.tokens_to_keep3D * svd_loss
     svd_loss_avg = tf.reduce_sum(svd_loss_masked) / self.n_tokens
 
     # 2-cycles loss
@@ -835,7 +835,7 @@ class NN(Configurable):
     idx = tf.stack([i1, i2, targets3D], axis=-1)
     targets_mask = tf.scatter_nd(idx, tf.ones([bucket_size, bucket_size]), [batch_size, bucket_size, bucket_size])
     # mask padding and also the correct edges, so this loss doesn't apply to correct predictions
-    cycle2_loss_masked = cycle2_loss * tokens_to_keep1D * targets_mask
+    cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * targets_mask
     cycle2_loss_avg = tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
 
     # normal log loss
