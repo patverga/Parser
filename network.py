@@ -341,6 +341,13 @@ class Network(Configurable):
                        train_output['loss'],
                        train_output['n_correct'],
                        train_output['n_tokens']]
+    ops['train_op_svd'] = [train_op,
+                           train_output['loss'],
+                           train_output['n_correct'],
+                           train_output['n_tokens'],
+                           train_output['svd_loss'],
+                           train_output['2cycle_loss'],
+                           train_output['log_loss']]
     ops['valid_op'] = [valid_output['loss'],
                        valid_output['n_correct'],
                        valid_output['n_tokens'],
