@@ -148,7 +148,7 @@ class Network(Configurable):
           train_loss += loss
           train_log_loss += log_loss
           train_svd_loss += svd_loss
-          train_2cycle_loss += cycle2_loss
+          train_cycle2_loss += cycle2_loss
           n_train_sents += len(train_targets)
           n_train_correct += n_correct
           n_train_tokens += n_tokens
