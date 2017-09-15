@@ -821,7 +821,12 @@ class NN(Configurable):
     degrees = tf.reduce_sum(adj, axis=1)
     laplacian = tf.matrix_set_diag(-adj, degrees)
 
-    s, _, _ = tf.svd(laplacian)
+    dtype = laplacian.dtype
+    s = tf.py_func(np.linalg.svd, [laplacian, False, False], [dtype, dtype, dtype])
+    # s, _, _ = tf.svd(laplacian)
+
+
+
     l_trace = tf.reduce_sum(degrees, axis=1)
     l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
 
@@ -848,7 +853,7 @@ class NN(Configurable):
     accuracy = n_correct / self.n_tokens
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
-    loss = log_loss + cycle2_loss_avg #+ svd_loss_avg
+    loss = log_loss + cycle2_loss_avg + svd_loss_avg
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
@@ -860,7 +865,7 @@ class NN(Configurable):
       'accuracy': accuracy,
       'loss': loss,
       'log_loss': log_loss,
-      'svd_loss': tf.constant(0), #svd_loss_avg,
+      'svd_loss': svd_loss_avg, #tf.constant(0),
       # 'roots_loss': roots_loss,
       '2cycle_loss': cycle2_loss_avg
     }
