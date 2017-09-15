@@ -71,6 +71,7 @@ class BaseParser(NN):
     roots_gt_total = 0.
     cycles_2_total = 0.
     cycles_n_total = 0.
+    non_trees_total = 0.
     for inputs, targets, parse_probs, rel_probs in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
@@ -80,6 +81,8 @@ class BaseParser(NN):
       roots_gt_total += roots_gt
       cycles_2_total += cycles_2
       cycles_n_total += cycles_n
+      if roots_lt or roots_gt or cycles_2 or cycles_n:
+        non_trees_total += 1.
       sent = -np.ones( (length, 9), dtype=int)
       tokens = np.arange(1, length+1)
       sent[:,0] = tokens
@@ -89,7 +92,7 @@ class BaseParser(NN):
       sent[:,6] = rel_preds[tokens]
       sent[:,7:] = targets[tokens, 1:]
       sents.append(sent)
-    return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total
+    return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total
   
   #=============================================================
   @staticmethod

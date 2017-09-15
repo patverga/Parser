@@ -249,14 +249,13 @@ class Network(Configurable):
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
       mb_probs = sess.run(op, feed_dict=feed_dict)
-      preds, time, roots_lt, roots_gt, cycles_2, cycles_n = self.model.validate(mb_inputs, mb_targets, mb_probs)
+      preds, time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees = self.model.validate(mb_inputs, mb_targets, mb_probs)
       total_time += time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
       cycles_2_total += cycles_2
       cycles_n_total += cycles_n
-      if roots_lt or roots_gt or cycles_2 or cycles_n:
-        not_tree_total += 1
+      not_tree_total += non_trees
       all_predictions[-1].extend(preds)
       all_sents[-1].extend(sents)
       if len(all_predictions[-1]) == len(dataset[bkt_idx]):
