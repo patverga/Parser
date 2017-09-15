@@ -859,10 +859,10 @@ class NN(Configurable):
       'n_tokens': self.n_tokens,
       'accuracy': accuracy,
       'loss': loss,
-      'log_loss': log_loss,
-      'svd_loss': svd_loss_avg,
+      # 'log_loss': log_loss,
+      # 'svd_loss': svd_loss_avg,
       # 'roots_loss': roots_loss,
-      '2cycle_loss': cycle2_loss_avg
+      # '2cycle_loss': cycle2_loss_avg
     }
 
     return output
