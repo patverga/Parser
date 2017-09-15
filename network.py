@@ -127,9 +127,9 @@ class Network(Configurable):
     try:
       train_time = 0
       train_loss = 0
-      log_loss = 0
-      svd_loss = 0
-      cycle2_loss = 0
+      train_log_loss = 0
+      train_svd_loss = 0
+      train_cycle2_loss = 0
       n_train_sents = 0
       n_train_correct = 0
       n_train_tokens = 0
@@ -143,9 +143,12 @@ class Network(Configurable):
           train_inputs = feed_dict[self._trainset.inputs]
           train_targets = feed_dict[self._trainset.targets]
           start_time = time.time()
-          _, loss, n_correct, n_tokens = sess.run(self.ops['train_op'], feed_dict=feed_dict)
+          _, loss, n_correct, n_tokens, svd_loss, cycle2_loss, log_loss  = sess.run(self.ops['train_op_svd'], feed_dict=feed_dict)
           train_time += time.time() - start_time
           train_loss += loss
+          train_log_loss += log_loss
+          train_svd_loss += svd_loss
+          train_2cycle_loss += cycle2_loss
           n_train_sents += len(train_targets)
           n_train_correct += n_correct
           n_train_tokens += n_tokens
@@ -181,13 +184,16 @@ class Network(Configurable):
             train_accuracy = 100 * n_train_correct / n_train_tokens
             train_time = n_train_sents / train_time
             print('%6d) Train loss: %.4f    Train acc: %5.2f%%    Train rate: %6.1f sents/sec\n\tValid loss: %.4f    Valid acc: %5.2f%%    Valid rate: %6.1f sents/sec' % (total_train_iters, train_loss, train_accuracy, train_time, valid_loss, valid_accuracy, valid_time))
-            print('\tlog loss: %f\tsvd loss: %f\t2cycle loss: %f\t' % ())
+            print('\tlog loss: %f\tsvd loss: %f\t2cycle loss: %f\t' % (train_log_loss, train_svd_loss, train_cycle2_loss))
             train_time = 0
             train_loss = 0
             n_train_sents = 0
             n_train_correct = 0
             n_train_tokens = 0
             n_train_iters = 0
+            train_log_loss = 0
+            train_svd_loss = 0
+            train_cycle2_loss = 0
           if save_every and (total_train_iters % save_every == 0):
             with open(os.path.join(self.save_dir, 'history.pkl'), 'w') as f:
               pkl.dump(self.history, f)
