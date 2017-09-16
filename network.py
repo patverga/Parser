@@ -346,10 +346,10 @@ class Network(Configurable):
     test_output = self._model(self._testset, moving_params=optimizer)
     
     ops = {}
-    ops['train_op'] = [train_op,
-                       train_output['loss'],
-                       train_output['n_correct'],
-                       train_output['n_tokens']]
+    # ops['train_op'] = [train_op,
+    #                    train_output['loss'],
+    #                    train_output['n_correct'],
+    #                    train_output['n_tokens']]
     ops['train_op_svd'] = [train_op,
                            train_output['loss'],
                            train_output['n_correct'],
