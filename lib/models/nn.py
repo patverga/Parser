@@ -812,7 +812,7 @@ class NN(Configurable):
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
 
     # svd loss
-    svd_coeff = 10 #000.0
+    svd_coeff = 100000.0
     maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
     maxes_tiled = tf.tile(maxes, [1, bucket_size])
     adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
@@ -839,7 +839,7 @@ class NN(Configurable):
       svd_loss_avg = 0
 
     # 2-cycles loss
-    cycle2_coeff = 50.
+    cycle2_coeff = 500.
     cycle2_loss = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.stack([i1, i2, targets3D], axis=-1)
@@ -858,7 +858,7 @@ class NN(Configurable):
     accuracy = n_correct / self.n_tokens
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
-    loss = svd_loss_avg + cycle2_loss_avg # + log_loss
+    loss = svd_loss_avg + cycle2_loss_avg + log_loss
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
