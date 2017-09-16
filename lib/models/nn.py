@@ -857,9 +857,6 @@ class NN(Configurable):
 
     # normal log loss
     cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
-
-    n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
-    accuracy = n_correct / self.n_tokens
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
     # mask
@@ -873,6 +870,8 @@ class NN(Configurable):
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     probabilities2D = tf.nn.softmax(logits2D)
     correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
+    n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
+    accuracy = n_correct / self.n_tokens
 
     # loss = svd_loss_avg + cycle2_loss_avg + log_loss
     loss = log_loss
