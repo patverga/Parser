@@ -805,7 +805,15 @@ class NN(Configurable):
     bucket_size = original_shape[1]
     flat_shape = tf.stack([batch_size, bucket_size])
 
+    # 2-cycles adjustment
+    logits_expanded = tf.expand_dims(logits3D, -1)
+    concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
+    maxes = tf.reduce_max(concat, axis=-1)
+    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * -1e9
+    logits3D += mask
 
+    # flatten to [B*N, N]
+    logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
     targets1D = tf.reshape(targets3D, [-1])
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
@@ -846,17 +854,6 @@ class NN(Configurable):
     # mask padding and also the correct edges, so this loss doesn't apply to correct predictions
     cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * targets_mask
     cycle2_loss_avg = cycle2_coeff * tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
-
-
-    # 2-cycles adjustment
-    logits_expanded = tf.expand_dims(logits3D, -1)
-    concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
-    maxes = tf.reduce_max(concat, axis=-1)
-    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * -1e9
-    logits3D += mask
-
-    # flatten to [B*N, N]
-    logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
     # normal log loss
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
