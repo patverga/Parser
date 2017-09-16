@@ -806,11 +806,11 @@ class NN(Configurable):
     flat_shape = tf.stack([batch_size, bucket_size])
 
     # 2-cycles adjustment
-    # logits_expanded = tf.expand_dims(logits3D, -1)
-    # concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
-    # maxes = tf.reduce_max(concat, axis=-1)
-    # mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * -1e9
-    # logits3D += mask
+    logits_expanded = tf.expand_dims(logits3D, -1)
+    concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
+    maxes = tf.reduce_max(concat, axis=-1)
+    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * tf.reduce_min(logits3D)
+    logits3D += mask
 
     # flatten to [B*N, N]
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
@@ -859,13 +859,13 @@ class NN(Configurable):
     cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
-    # mask
-    logits_expanded = tf.expand_dims(logits3D, -1)
-    concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
-    maxes = tf.reduce_max(concat, axis=-1)
-    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * -1e9
-    logits3D += mask
-    logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
+    # NON-LOSS MASK
+    # logits_expanded = tf.expand_dims(logits3D, -1)
+    # concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
+    # maxes = tf.reduce_max(concat, axis=-1)
+    # mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * -1e9
+    # logits3D += mask
+    # logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     probabilities2D = tf.nn.softmax(logits2D)
