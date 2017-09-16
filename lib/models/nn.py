@@ -809,11 +809,10 @@ class NN(Configurable):
     logits_expanded = tf.expand_dims(logits3D, -1)
     concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
     maxes = tf.reduce_max(concat, axis=-1)
-    max_vals = tf.reshape(tf.reduce_max(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
-    signs = tf.sign(max_vals)
-    neg_max_vals = max_vals * -signs
-    mask = tf.cast(tf.not_equal(maxes, logits3D), tf.float32) * neg_max_vals
-    logits3D += mask
+    min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
+    mask1 = tf.cast(tf.equal(maxes, logits3D), tf.float32)
+    mask2 = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
+    logits3D = logits3D * mask1 + mask2 * min_vals
 
     # flatten to [B*N, N]
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
