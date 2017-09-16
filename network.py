@@ -144,7 +144,7 @@ class Network(Configurable):
           train_inputs = feed_dict[self._trainset.inputs]
           train_targets = feed_dict[self._trainset.targets]
           start_time = time.time()
-          _, loss, n_correct, n_tokens, svd_loss, cycle2_loss, log_loss rel_loss = sess.run(self.ops['train_op_svd'], feed_dict=feed_dict)
+          _, loss, n_correct, n_tokens, svd_loss, cycle2_loss, log_loss, rel_loss = sess.run(self.ops['train_op_svd'], feed_dict=feed_dict)
           train_time += time.time() - start_time
           train_loss += loss
           train_log_loss += log_loss
