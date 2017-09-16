@@ -107,7 +107,7 @@ class Parser(BaseParser):
         predictions = arc_output['predictions']
     with tf.variable_scope('Rels', reuse=reuse):
       rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
-      rel_output = self.output_arcs(rel_logits, targets[:,:,2])
+      rel_output = self.output(rel_logits, targets[:,:,2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
     
     output = {}
@@ -133,6 +133,7 @@ class Parser(BaseParser):
     output['arc_logits'] = arc_logits
     output['rel_logits'] = rel_logits
 
+    output['rel_loss'] = rel_output['loss']
     output['log_loss'] = arc_output['log_loss']
     output['2cycle_loss'] = arc_output['2cycle_loss']
     output['svd_loss'] = arc_output['svd_loss']

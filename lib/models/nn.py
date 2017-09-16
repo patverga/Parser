@@ -762,7 +762,7 @@ class NN(Configurable):
     return weighted_bilin, bilin
   
   #=============================================================
-  def output_arcs(self, logits3D, targets3D):
+  def output(self, logits3D, targets3D):
     """"""
 
     original_shape = tf.shape(logits3D)
