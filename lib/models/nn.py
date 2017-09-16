@@ -824,16 +824,19 @@ class NN(Configurable):
     degrees = tf.reduce_sum(undirected_adj, axis=1)
     laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
 
-    dtype = laplacian.dtype
-    _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, True], [dtype, dtype, dtype])
-    # s, _, _ = tf.svd(laplacian)
+    try:
+      dtype = laplacian.dtype
+      _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, True], [dtype, dtype, dtype])
+      # s, _, _ = tf.svd(laplacian)
+      l_trace = tf.reduce_sum(degrees, axis=1)
+      l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
 
-    l_trace = tf.reduce_sum(degrees, axis=1)
-    l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
-
-    svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
-    # svd_loss_masked = self.tokens_to_keep3D * svd_loss
-    svd_loss_avg = svd_coeff * tf.reduce_sum(svd_loss) / self.n_tokens
+      svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
+      # svd_loss_masked = self.tokens_to_keep3D * svd_loss
+      svd_loss_avg = svd_coeff * tf.reduce_sum(svd_loss) / self.n_tokens
+    except np.linalg.linalg.LinAlgError:
+      print("SVD did not converge")
+      svd_loss_avg = 0
 
     # 2-cycles loss
     cycle2_coeff = 50.
