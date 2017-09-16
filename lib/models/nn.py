@@ -832,8 +832,8 @@ class NN(Configurable):
     l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
 
     svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
-    svd_loss_masked = self.tokens_to_keep3D * svd_loss
-    svd_loss_avg = svd_coeff * tf.reduce_sum(svd_loss_masked) / self.n_tokens
+    # svd_loss_masked = self.tokens_to_keep3D * svd_loss
+    svd_loss_avg = svd_coeff * tf.reduce_sum(svd_loss) / self.n_tokens
 
     # 2-cycles loss
     cycle2_coeff = 50.
@@ -855,7 +855,7 @@ class NN(Configurable):
     accuracy = n_correct / self.n_tokens
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
-    loss = svd_loss_avg + cycle2_loss_avg + 0.0001*log_loss
+    loss = svd_loss_avg + cycle2_loss_avg + log_loss
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
