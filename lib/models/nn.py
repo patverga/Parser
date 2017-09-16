@@ -806,11 +806,11 @@ class NN(Configurable):
     flat_shape = tf.stack([batch_size, bucket_size])
 
     # 2-cycles adjustment
-    logits_expanded = tf.expand_dims(logits3D, -1)
-    concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
-    maxes = tf.reduce_max(concat, axis=-1)
-    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * -1e9
-    logits3D += mask
+    # logits_expanded = tf.expand_dims(logits3D, -1)
+    # concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
+    # maxes = tf.reduce_max(concat, axis=-1)
+    # mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * -1e9
+    # logits3D += mask
 
     # flatten to [B*N, N]
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
@@ -856,14 +856,23 @@ class NN(Configurable):
     cycle2_loss_avg = cycle2_coeff * tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
 
     # normal log loss
-    predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
-    probabilities2D = tf.nn.softmax(logits2D)
     cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
 
-    correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
     n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     accuracy = n_correct / self.n_tokens
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
+
+    # mask
+    logits_expanded = tf.expand_dims(logits3D, -1)
+    concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
+    maxes = tf.reduce_max(concat, axis=-1)
+    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * -1e9
+    logits3D += mask
+    logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
+
+    predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
+    probabilities2D = tf.nn.softmax(logits2D)
+    correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
 
     # loss = svd_loss_avg + cycle2_loss_avg + log_loss
     loss = log_loss
