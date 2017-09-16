@@ -809,7 +809,7 @@ class NN(Configurable):
     logits_expanded = tf.expand_dims(logits3D, -1)
     concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
     maxes = tf.reduce_max(concat, axis=-1)
-    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * tf.reduce_min(logits3D)
+    mask = tf.cast(tf.not_equal(maxes, logits3D), tf.float32) * tf.reduce_min(logits3D)
     logits3D += mask
 
     # flatten to [B*N, N]
