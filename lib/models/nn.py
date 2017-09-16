@@ -812,6 +812,7 @@ class NN(Configurable):
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
 
     # svd loss
+    svd_coeff = 10.0
     maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
     maxes_tiled = tf.tile(maxes, [1, bucket_size])
     adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
@@ -832,16 +833,17 @@ class NN(Configurable):
 
     svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
     svd_loss_masked = self.tokens_to_keep3D * svd_loss
-    svd_loss_avg = tf.reduce_sum(svd_loss_masked) / self.n_tokens
+    svd_loss_avg = svd_coeff * tf.reduce_sum(svd_loss_masked) / self.n_tokens
 
     # 2-cycles loss
+    cycle2_coeff = 50.
     cycle2_loss = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.stack([i1, i2, targets3D], axis=-1)
     targets_mask = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
     # mask padding and also the correct edges, so this loss doesn't apply to correct predictions
     cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * targets_mask
-    cycle2_loss_avg = tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
+    cycle2_loss_avg = cycle2_coeff * tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
 
     # normal log loss
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
@@ -853,7 +855,7 @@ class NN(Configurable):
     accuracy = n_correct / self.n_tokens
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
-    loss = log_loss + 10*svd_loss_avg + 50*cycle2_loss_avg
+    loss = log_loss + svd_loss_avg + cycle2_loss_avg
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
