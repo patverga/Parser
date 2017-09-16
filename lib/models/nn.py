@@ -812,7 +812,7 @@ class NN(Configurable):
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
 
     # svd loss
-    svd_coeff = 10000.0
+    svd_coeff = 10 #000.0
     maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
     maxes_tiled = tf.tile(maxes, [1, bucket_size])
     adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
