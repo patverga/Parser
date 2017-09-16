@@ -805,8 +805,7 @@ class NN(Configurable):
     bucket_size = original_shape[1]
     flat_shape = tf.stack([batch_size, bucket_size])
 
-    # flatten to [B*N, N]
-    logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
+
 
     targets1D = tf.reshape(targets3D, [-1])
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
@@ -848,6 +847,17 @@ class NN(Configurable):
     cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * targets_mask
     cycle2_loss_avg = cycle2_coeff * tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
 
+
+    # 2-cycles adjustment
+    logits_expanded = tf.expand_dims(logits3D, -1)
+    concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
+    maxes = tf.reduce_max(concat, axis=-1)
+    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32) * -1e9
+    logits3D += mask
+
+    # flatten to [B*N, N]
+    logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
+
     # normal log loss
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     probabilities2D = tf.nn.softmax(logits2D)
@@ -858,7 +868,8 @@ class NN(Configurable):
     accuracy = n_correct / self.n_tokens
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
-    loss = svd_loss_avg + cycle2_loss_avg + log_loss
+    # loss = svd_loss_avg + cycle2_loss_avg + log_loss
+    loss = log_loss
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
@@ -870,9 +881,9 @@ class NN(Configurable):
       'accuracy': accuracy,
       'loss': loss,
       'log_loss': log_loss,
-      'svd_loss': svd_loss_avg, #tf.constant(0),
+      'svd_loss': tf.constant(0), #svd_loss_avg, #
       # 'roots_loss': roots_loss,
-      '2cycle_loss': cycle2_loss_avg
+      '2cycle_loss': tf.constant(0), #cycle2_loss_avg
     }
 
     return output
