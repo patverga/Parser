@@ -818,7 +818,7 @@ class NN(Configurable):
     adj_flat = adj_flat * tf.expand_dims(tokens_to_keep1D, -1)
     adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
     adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
-    undirected_adj = tf.cast(tf.logical_or(adj, tf.transpose(adj, [0, 2, 1])), tf.float32)
+    undirected_adj = tf.cast(tf.logical_or(tf.cast(adj, tf.bool), tf.transpose(tf.cast(adj, tf.bool), [0, 2, 1])), tf.float32)
 
     degrees = tf.reduce_sum(undirected_adj, axis=1)
     laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
