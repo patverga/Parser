@@ -858,7 +858,7 @@ class NN(Configurable):
     accuracy = n_correct / self.n_tokens
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
-    loss = svd_loss_avg + cycle2_loss_avg + log_loss
+    loss = svd_loss_avg + cycle2_loss_avg # + log_loss
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
