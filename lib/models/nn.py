@@ -995,6 +995,7 @@ class NN(Configurable):
       len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
       print("got here")
       if len_2_cycles or n_cycles:
+        print("got here")
         tarjan = Tarjan(parse_preds, tokens)
         cycles = tarjan.SCCs
         print("got here")
