@@ -992,9 +992,11 @@ class NN(Configurable):
         parse_preds[roots] = new_heads
         parse_preds[new_root] = 0
       # remove cycles
+      len_2_cycles = 1
+      n_cycles = 0
       # len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
       print("got here")
-      if True: #len_2_cycles or n_cycles:
+      if len_2_cycles or n_cycles:
         print("got here")
         tarjan = Tarjan(parse_preds, tokens)
         cycles = tarjan.SCCs
