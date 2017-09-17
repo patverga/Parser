@@ -1033,7 +1033,7 @@ class NN(Configurable):
             parse_preds[changed_cycle] = new_head
             tarjan.edges[new_head].add(changed_cycle)
             tarjan.edges[old_head].remove(changed_cycle)
-        return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
+      return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
     elif self.svd_tree:
       tokens_to_keep[0] = True
       length = np.sum(tokens_to_keep)
