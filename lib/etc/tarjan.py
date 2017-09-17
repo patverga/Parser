@@ -50,7 +50,9 @@ class Tarjan:
     self._lowlinks = {}
     self._onstack = defaultdict(lambda: False)
     self._SCCs = []
-    
+
+    print("gothere")
+
     index = 0
     stack = []
     for v in self.vertices:
