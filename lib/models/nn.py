@@ -995,8 +995,8 @@ class NN(Configurable):
       # remove cycles
 
       len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
-      print(len_2_cycles)
-      print(n_cycles)
+      # print(len_2_cycles)
+      # print(n_cycles)
       if len_2_cycles or n_cycles:
         tarjan = Tarjan(parse_preds, tokens)
         cycles = tarjan.SCCs
