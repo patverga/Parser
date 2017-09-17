@@ -954,6 +954,7 @@ class NN(Configurable):
   def parse_argmax(self, parse_probs, tokens_to_keep):
     """"""
     if self.ensure_tree and self.svd_tree:
+      print("got here")
       tokens_to_keep[0] = True
       length = np.sum(tokens_to_keep)
       I = np.eye(len(tokens_to_keep))
@@ -992,9 +993,11 @@ class NN(Configurable):
         parse_preds[new_root] = 0
       # remove cycles
       len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
+      print("got here")
       if len_2_cycles or n_cycles:
         tarjan = Tarjan(parse_preds, tokens)
         cycles = tarjan.SCCs
+        print("got here")
         for SCC in tarjan.SCCs:
           if len(SCC) > 1:
             if len(SCC) == 2:
