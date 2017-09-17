@@ -43,6 +43,9 @@ class Tarjan:
     
     self._edges = defaultdict(set)
     self._vertices = set((0,))
+
+    print("gothere")
+
     for dep, head in enumerate(prediction[tokens]):
       self._vertices.add(dep+1)
       self._edges[head].add(dep+1)
