@@ -964,7 +964,6 @@ class NN(Configurable):
       roots = np.where(parse_preds[tokens] == 0)[0] + 1
       roots_lt = 1. if len(roots) < 1 else 0.
       roots_gt = 1. if len(roots) > 1 else 0.
-      len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
       # ensure at least one root
       if roots_lt:
         # The current root probabilities
@@ -992,6 +991,7 @@ class NN(Configurable):
         parse_preds[roots] = new_heads
         parse_preds[new_root] = 0
       # remove cycles
+      len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
       if len_2_cycles or n_cycles:
         tarjan = Tarjan(parse_preds, tokens)
         cycles = tarjan.SCCs
