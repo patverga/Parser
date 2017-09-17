@@ -929,14 +929,12 @@ class NN(Configurable):
     # roots = np.where(parse_preds[tokens] == 0)[0] + 1
     #
 
-    print("got here")
     laplacian = np.zeros((length - 1, length - 1))
     for i, p in enumerate(parse_preds[1:length]):
       if p != 0:
         laplacian[i, p - 1] = -1.
         laplacian[p - 1, i] = -1.
 
-    print("got here")
     degrees = -np.sum(laplacian, axis=0)
     for i, d in enumerate(degrees):
       laplacian[i, i] = d
@@ -969,7 +967,6 @@ class NN(Configurable):
       roots_lt = 1. if len(roots) < 1 else 0.
       roots_gt = 1. if len(roots) > 1 else 0.
 
-      print("got ehre")
       len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
 
       # ensure at least one root
@@ -999,9 +996,8 @@ class NN(Configurable):
         parse_preds[roots] = new_heads
         parse_preds[new_root] = 0
       # remove cycles
-      len_2_cycles = 1
-      n_cycles = 0
-      if len_2_cycles or n_cycles:
+      len_2_cycles_root, n_cycles_root = self.check_cycles_svd(parse_preds, length)
+      if len_2_cycles_root or n_cycles_root:
         tarjan = Tarjan(parse_preds, tokens)
         cycles = tarjan.SCCs
         for SCC in tarjan.SCCs:
