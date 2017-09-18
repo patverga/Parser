@@ -842,7 +842,7 @@ class NN(Configurable):
     logits_expanded = tf.expand_dims(logits3D, -1)
     concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
     pairs_logits2D = tf.reshape(concat, [batch_size * bucket_size * bucket_size, -1])
-    pairs_targets = tf.reshape(1 - adj, [-1])
+    pairs_targets = tf.cast(tf.reshape(1 - adj, [-1]), tf.int32)
     pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=pairs_targets)
     pairs_log_loss = tf.reduce_sum(pairs_xent * tokens_to_keep1D * targets_mask1D) / self.n_tokens
 
