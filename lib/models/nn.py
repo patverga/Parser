@@ -839,9 +839,8 @@ class NN(Configurable):
     degrees = tf.reduce_sum(undirected_adj, axis=1)
     laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
 
-
+    # this has 1s in all the locations of the adjacency matrix that we care about: i,j and j,i where i,j is correct
     pairs_mask = tf.multiply(targets_mask, tf.transpose(targets_mask, [0, 2, 1]))
-    # pairs_mask1D = tf.reshape(pairs_mask, [-1])
 
     # pairs softmax thing
     logits_expanded = tf.expand_dims(logits3D, -1)
@@ -850,7 +849,7 @@ class NN(Configurable):
     # pairs_targets = tf.cast(tf.reshape(1 - targets_mask, [-1]), tf.int32)
     pairs_targets = tf.cast(1 - targets_mask1D, tf.int32)
     pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=pairs_targets)
-    # pairs_xent = tf.Print(pairs_xent, [tf.shape(pairs_xent), tf.shape(tf.expand_dims(tokens_to_keep1D, -1)), tf.shape(pairs_mask1D)])
+    pairs_xent = tf.Print(pairs_xent, [pairs_xent], summarize=500)
     pairs_log_loss = tf.reduce_sum(tf.reshape(pairs_xent, [batch_size, bucket_size, bucket_size]) * self.tokens_to_keep3D * pairs_mask) / self.n_tokens
 
     try:
