@@ -850,6 +850,7 @@ class NN(Configurable):
     # pairs_targets = tf.cast(tf.reshape(1 - targets_mask, [-1]), tf.int32)
     pairs_targets = tf.cast(1 - targets_mask1D, tf.int32)
     pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=pairs_targets)
+    pairs_xent = tf.Print(pairs_xent, [tf.shape(pairs_xent), tf.shape(tf.expand_dims(tokens_to_keep1D, -1)), tf.shape(pairs_mask1D)])
     pairs_log_loss = tf.reduce_sum(pairs_xent * tf.expand_dims(tokens_to_keep1D, -1) * pairs_mask1D) / self.n_tokens
 
     try:
