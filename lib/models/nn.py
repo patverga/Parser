@@ -840,7 +840,7 @@ class NN(Configurable):
     laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
 
 
-    pairs_mask = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
+    pairs_mask = tf.multiply(targets_mask, tf.transpose(targets_mask, [0, 2, 1]))
     pairs_mask1D = tf.reshape(pairs_mask, [-1])
 
     # pairs softmax thing
@@ -870,7 +870,7 @@ class NN(Configurable):
     cycle2_coeff = 500.
     cycle2_loss = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
     # mask padding and also the correct edges, so this loss doesn't apply to correct predictions
-    cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * targets_mask
+    cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * (1 - targets_mask)
     cycle2_loss_avg = cycle2_coeff * tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
 
     # normal log loss
