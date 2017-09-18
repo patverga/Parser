@@ -825,6 +825,7 @@ class NN(Configurable):
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
     targets_mask1D = tf.reshape(targets_mask, [-1])
 
+
     # svd loss
     svd_coeff = 100000.0
     maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
@@ -838,16 +839,18 @@ class NN(Configurable):
     degrees = tf.reduce_sum(undirected_adj, axis=1)
     laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
 
+
+    pairs_mask = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
+    pairs_mask1D = tf.reshape(pairs_mask, [-1])
+
     # pairs softmax thing
     logits_expanded = tf.expand_dims(logits3D, -1)
     concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
     pairs_logits2D = tf.reshape(concat, [batch_size * bucket_size * bucket_size, 2])
-    pairs_targets = tf.cast(tf.reshape(1 - adj, [-1]), tf.int32)
+    # pairs_targets = tf.cast(tf.reshape(1 - targets_mask, [-1]), tf.int32)
+    pairs_targets = tf.cast(1 - targets_mask1D, tf.int32)
     pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=pairs_targets)
-    pairs_log_loss = tf.reduce_sum(pairs_xent * tokens_to_keep1D * targets_mask1D) / self.n_tokens
-
-
-
+    pairs_log_loss = tf.reduce_sum(pairs_xent * tokens_to_keep1D * pairs_mask1D) / self.n_tokens
 
     try:
       dtype = laplacian.dtype
