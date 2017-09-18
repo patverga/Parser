@@ -805,20 +805,25 @@ class NN(Configurable):
     bucket_size = original_shape[1]
     flat_shape = tf.stack([batch_size, bucket_size])
 
-    # 2-cycles adjustment
-    logits_expanded = tf.expand_dims(logits3D, -1)
-    concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
-    maxes = tf.reduce_max(concat, axis=-1)
-    min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
-    mask1 = tf.cast(tf.equal(maxes, logits3D), tf.float32)
-    mask2 = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
-    logits3D = logits3D * mask1 + mask2 * min_vals
+    # 2-cycles loss adjustment
+    # logits_expanded = tf.expand_dims(logits3D, -1)
+    # concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
+    # maxes = tf.reduce_max(concat, axis=-1)
+    # min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
+    # mask1 = tf.cast(tf.equal(maxes, logits3D), tf.float32)
+    # mask2 = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
+    # logits3D = logits3D * mask1 + mask2 * min_vals
+
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.stack([i1, i2, targets3D], axis=-1)
+    targets_mask = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
 
     # flatten to [B*N, N]
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
     targets1D = tf.reshape(targets3D, [-1])
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
+    targets_mask1D = tf.reshape(targets_mask, [-1])
 
     # svd loss
     svd_coeff = 100000.0
@@ -832,6 +837,17 @@ class NN(Configurable):
 
     degrees = tf.reduce_sum(undirected_adj, axis=1)
     laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
+
+    # pairs softmax thing
+    logits_expanded = tf.expand_dims(logits3D, -1)
+    concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
+    pairs_logits2D = tf.reshape(concat, [batch_size * bucket_size * bucket_size, -1])
+    pairs_targets = tf.reshape(1 - adj, [-1])
+    pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=pairs_targets)
+    pairs_log_loss = tf.reduce_sum(pairs_xent * tokens_to_keep1D * targets_mask1D) / self.n_tokens
+
+
+
 
     try:
       dtype = laplacian.dtype
@@ -850,9 +866,6 @@ class NN(Configurable):
     # 2-cycles loss
     cycle2_coeff = 500.
     cycle2_loss = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
-    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
-    idx = tf.stack([i1, i2, targets3D], axis=-1)
-    targets_mask = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
     # mask padding and also the correct edges, so this loss doesn't apply to correct predictions
     cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * targets_mask
     cycle2_loss_avg = cycle2_coeff * tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
@@ -878,7 +891,7 @@ class NN(Configurable):
     accuracy = n_correct / self.n_tokens
 
     # loss = svd_loss_avg + cycle2_loss_avg + log_loss
-    loss = log_loss
+    loss = log_loss + pairs_log_loss
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
@@ -892,7 +905,7 @@ class NN(Configurable):
       'log_loss': log_loss,
       'svd_loss': tf.constant(0), #svd_loss_avg, #
       # 'roots_loss': roots_loss,
-      '2cycle_loss': tf.constant(0), #cycle2_loss_avg
+      '2cycle_loss': pairs_log_loss# tf.constant(0), #cycle2_loss_avg
     }
 
     return output
@@ -1131,138 +1144,7 @@ class NN(Configurable):
       parse_probs = parse_probs * tokens_to_keep
       parse_preds = np.argmax(parse_probs, axis=1)
       return parse_preds, 0., 0., 0., 0.
-    # if self.ensure_tree:
-    #   tokens_to_keep[0] = True
-    #   length = np.sum(tokens_to_keep)
-    #   I = np.eye(len(tokens_to_keep))
-    #   # block loops and pad heads
-    #   parse_probs = parse_probs * tokens_to_keep * (1-I)
-    #   parse_preds = np.argmax(parse_probs, axis=1)
-    #   tokens = np.arange(1, length)
-    #   roots = np.where(parse_preds[tokens] == 0)[0]+1
-    #
-    #   # ensure at least one root
-    #   roots_lt = False
-    #   roots_gt = False
-    #   if len(roots) < 1:
-    #     roots_lt = True
-    #     # The current root probabilities
-    #     root_probs = parse_probs[tokens,0]
-    #     # The current head probabilities
-    #     old_head_probs = parse_probs[tokens, parse_preds[tokens]]
-    #     # Get new potential root probabilities
-    #     new_root_probs = root_probs / old_head_probs
-    #     # Select the most probable root
-    #     new_root = tokens[np.argmax(new_root_probs)]
-    #     # Make the change
-    #     parse_preds[new_root] = 0
-    #   # ensure at most one root
-    #   elif len(roots) > 1:
-    #     roots_gt = True
-    #     # # The probabilities of the current heads
-    #     # root_probs = parse_probs[roots,0]
-    #     # # Set the probability of depending on the root zero
-    #     # parse_probs[roots,0] = 0
-    #     # # Get new potential heads and their probabilities
-    #     # new_heads = np.argmax(parse_probs[roots][:,tokens], axis=1)+1
-    #     # new_head_probs = parse_probs[roots, new_heads] / root_probs
-    #     # # Select the most probable root
-    #     # new_root = roots[np.argmin(new_head_probs)]
-    #     # # Make the change
-    #     # parse_preds[roots] = new_heads
-    #     # parse_preds[new_root] = 0
-    #   # remove cycles
-    #   tarjan = Tarjan(parse_preds, tokens)
-    #   cycles = tarjan.SCCs
-    #   tarjan_has_cycle = 0
-    #   for SCC in tarjan.SCCs:
-    #     if len(SCC) > 1:
-    #       tarjan_has_cycle += 1
-    #       # dependents = set()
-    #       # to_visit = set(SCC)
-    #       # while len(to_visit) > 0:
-    #       #   node = to_visit.pop()
-    #       #   if not node in dependents:
-    #       #     dependents.add(node)
-    #       #     to_visit.update(tarjan.edges[node])
-    #       # # The indices of the nodes that participate in the cycle
-    #       # cycle = np.array(list(SCC))
-    #       # # The probabilities of the current heads
-    #       # old_heads = parse_preds[cycle]
-    #       # old_head_probs = parse_probs[cycle, old_heads]
-    #       # # Set the probability of depending on a non-head to zero
-    #       # non_heads = np.array(list(dependents))
-    #       # parse_probs[np.repeat(cycle, len(non_heads)), np.repeat([non_heads], len(cycle), axis=0).flatten()] = 0
-    #       # # Get new potential heads and their probabilities
-    #       # new_heads = np.argmax(parse_probs[cycle][:,tokens], axis=1)+1
-    #       # new_head_probs = parse_probs[cycle, new_heads] / old_head_probs
-    #       # # Select the most probable change
-    #       # change = np.argmax(new_head_probs)
-    #       # changed_cycle = cycle[change]
-    #       # old_head = old_heads[change]
-    #       # new_head = new_heads[change]
-    #       # # Make the change
-    #       # parse_preds[changed_cycle] = new_head
-    #       # tarjan.edges[new_head].add(changed_cycle)
-    #       # tarjan.edges[old_head].remove(changed_cycle)
-    #
-    #   laplacian = np.zeros((length - 1, length - 1))
-    #   for i, p in enumerate(parse_preds[1:length]):
-    #     if p != 0:
-    #       laplacian[i, p - 1] = -1.
-    #       laplacian[p - 1, i] = -1.
-    #   degrees = -np.sum(laplacian, axis=0)
-    #   for i, d in enumerate(degrees):
-    #     laplacian[i, i] = d
-    #
-    #   e = scipy.linalg.svd(laplacian, compute_uv=False)
-    #   rank = np.sum(np.greater(e, 1e-15))
-    #
-    #   adj = np.zeros((len(parse_preds), len(parse_preds)))
-    #   for i, p in enumerate(parse_preds):  # [1:length]):
-    #     if p != 0:
-    #       adj[i, p] = 1
-    #
-    #   len_2_cycles = np.sum(np.multiply(adj, np.transpose(adj))) > 0
-    #
-    #   has_cycle = (0.5 * np.trace(laplacian) >= rank + 1) or len_2_cycles
-    #
-    #   if has_cycle != (tarjan_has_cycle > 0):
-    #
-    #     print("Tarjan has cycle: ", tarjan_has_cycle)
-    #     print("QR has cycle: ", has_cycle)
-    #     print(range(length-1))
-    #     print(parse_preds[1:length])
-    #     print(parse_preds)
-    #     adj = np.zeros((len(parse_preds), len(parse_preds)))
-    #     print("adjacency")
-    #     # for i, p in enumerate(parse_preds): #[1:length]):
-    #     #   if p != 0:
-    #     #     # print(i, p)
-    #     #     adj[i, p] = 1
-    #     for row in adj:
-    #       for c in row:
-    #         print(str(c) + ", ", end='')
-    #       print()
-    #
-    #     # print("parse_probs", parse_probs)
-    #     print("degress", degrees)
-    #     print("laplacian", laplacian)
-    #     # print("R", R)
-    #     print("eig", e)
-    #     print("roots_lt", roots_lt)
-    #     print("roots_gt", roots_gt)
-    #
-    #     print("================")
-    #
-    #   return parse_preds
-    # else:
-    #   tokens_to_keep[0] = True
-    #   length = np.sum(tokens_to_keep)
-    #   # block and pad heads
-    #   parse_probs = parse_probs * tokens_to_keep
-    #   parse_preds = np.argmax(parse_probs, axis=1)
-    #   return parse_preds
+
   
   #=============================================================
   def rel_argmax(self, rel_probs, tokens_to_keep):
