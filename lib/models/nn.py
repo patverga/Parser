@@ -840,7 +840,7 @@ class NN(Configurable):
     laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
 
     # this has 1s in all the locations of the adjacency matrix that we care about: i,j and j,i where i,j is correct
-    pairs_mask = tf.multiply(targets_mask, tf.transpose(targets_mask, [0, 2, 1]))
+    pairs_mask = tf.add(targets_mask, tf.transpose(targets_mask, [0, 2, 1]))
 
     # pairs softmax thing
     logits_expanded = tf.expand_dims(logits3D, -1)
@@ -853,7 +853,7 @@ class NN(Configurable):
     pairs_xent3D = tf.reshape(pairs_xent, [batch_size, bucket_size, bucket_size])
     pairs_log_loss = tf.reduce_sum(pairs_xent3D * self.tokens_to_keep3D * pairs_mask) / self.n_tokens
 
-    pairs_log_loss = tf.Print(pairs_log_loss, [pairs_log_loss, tf.reduce_sum(pairs_mask * pairs_xent3D), tf.reduce_sum(self.tokens_to_keep3D * pairs_xent3D), self.tokens_to_keep3D * pairs_xent3D], summarize=500)
+    # pairs_log_loss = tf.Print(pairs_log_loss, [pairs_log_loss, tf.reduce_sum(pairs_mask * pairs_xent3D), tf.reduce_sum(self.tokens_to_keep3D * pairs_xent3D), self.tokens_to_keep3D * pairs_xent3D], summarize=500)
 
 
     try:
