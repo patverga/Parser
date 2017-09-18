@@ -849,8 +849,11 @@ class NN(Configurable):
     # pairs_targets = tf.cast(tf.reshape(1 - targets_mask, [-1]), tf.int32)
     pairs_targets = tf.cast(1 - targets_mask1D, tf.int32)
     pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=pairs_targets)
-    pairs_xent = tf.Print(pairs_xent, [pairs_xent], summarize=500)
+    # pairs_xent = tf.Print(pairs_xent, [pairs_xent], summarize=500)
     pairs_log_loss = tf.reduce_sum(tf.reshape(pairs_xent, [batch_size, bucket_size, bucket_size]) * self.tokens_to_keep3D * pairs_mask) / self.n_tokens
+
+    pairs_log_loss = tf.Print(pairs_log_loss, [pairs_log_loss])
+
 
     try:
       dtype = laplacian.dtype
