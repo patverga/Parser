@@ -892,7 +892,7 @@ class NN(Configurable):
     maxes = tf.reduce_max(concat, axis=-1)
     mask1 = tf.cast(tf.equal(maxes, logits3D), tf.float32)
     mask2 = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
-    logits3D = logits3D * mask1 + mask2 * 1e-8
+    logits3D = logits3D * mask1 + mask2 * -1e9
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
