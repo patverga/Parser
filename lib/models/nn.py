@@ -932,8 +932,9 @@ class NN(Configurable):
     # for roots
     # mask =
 
-    logits3D = logits3D * mask + (1 - mask) * -1e9
-    logits3D = logits3D * roots_mask + (1 - roots_mask) * -1e9
+    combined_mask = mask * roots_mask
+    # logits3D = logits3D * mask + (1 - mask) * -1e9
+    logits3D = logits3D * combined_mask + (1 - combined_mask) * -1e9
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
