@@ -886,7 +886,7 @@ class NN(Configurable):
     # logits3D = logits3D * mask1 + mask2 * min_vals
     # logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
-    roots_to_keep = self.tokens_to_keep3D[:,:,0]
+    roots_to_keep = tf.cast(tf.reshape(self.tokens_to_keep3D[:,:,0], [batch_size*bucket_size, -1]), tf.float32)
     roots_logits = logits3D[:,:,0]
 
     roots_logits2D = tf.reshape(roots_logits, [batch_size * bucket_size, -1])
@@ -895,7 +895,7 @@ class NN(Configurable):
 
     roots_targets1D = tf.cast(tf.reshape(tf.argmin(targets3D, axis=1), [batch_size * bucket_size]), tf.int32)
     roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits2D, labels=roots_targets1D)
-    roots_loss = tf.reduce_sum(roots_cross_entropy1D * tf.cast(roots_to_keep, tf.float32)) / batch_size
+    roots_loss = tf.reduce_sum(roots_cross_entropy1D * roots_to_keep) / batch_size
 
     # condition on pairwise selection
     # logits_expanded = tf.expand_dims(logits3D, -1)
