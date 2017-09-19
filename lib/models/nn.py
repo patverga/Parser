@@ -917,7 +917,7 @@ class NN(Configurable):
     idx2 = tf.tile(tf.range(bucket_size), [batch_size])
     maxes_repeat = tf.reshape(tf.tile(tf.expand_dims(idx_t, -1), [1, bucket_size]), [-1])
     # idx_rows = tf.stack([idx1, idx2, maxes_repeat], axis=-1)
-    idx_rows = tf.stack([idx1, idx2, tf.reshape(tf.zeros(bucket_size * batch_size), [-1])], axis=-1)
+    idx_rows = tf.stack([idx1, idx2, tf.zeros([bucket_size * batch_size])], axis=-1)
     mask_rows = 1 - tf.scatter_nd(idx_rows, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
     idx_cols = tf.stack([idx1, maxes_repeat, idx2], axis=-1)
     mask_cols = 1 - tf.scatter_nd(idx_cols, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
