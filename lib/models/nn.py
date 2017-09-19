@@ -916,11 +916,13 @@ class NN(Configurable):
     idx2 = tf.tile(tf.range(bucket_size), [batch_size])
     maxes_repeat = tf.reshape(tf.tile(tf.expand_dims(idx_t, -1), [1, bucket_size]), [-1])
     # idx_rows = tf.stack([idx1, idx2, maxes_repeat], axis=-1)
-    idx_rows = tf.stack([idx1, idx2, tf.zeros([bucket_size * batch_size], dtype=tf.int32)], axis=-1)
-    mask_rows = 1 - tf.scatter_nd(idx_rows, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
+    idx_rows = tf.stack([idx1, idx2, maxes_repeat], axis=-1)
+    mask_rows = 1 - tf.scatter_nd(idx_rows, tf.ones([batch_size * bucket_size]),
+                                  [batch_size, bucket_size, bucket_size])
 
-    idx_cols = tf.stack([idx1, maxes_repeat, idx2], axis=-1)
-    mask_cols = 1 - tf.scatter_nd(idx_cols, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
+    idx_cols = tf.stack([idx1, tf.zeros([bucket_size * batch_size], dtype=tf.int32), idx2], axis=-1)
+    mask_cols = 1 - tf.scatter_nd(idx_cols, tf.ones([batch_size * bucket_size]),
+                                  [batch_size, bucket_size, bucket_size])
     roots_mask = 1 - tf.cast(tf.logical_xor(tf.cast(mask_cols, tf.bool), tf.cast(mask_rows, tf.bool)), tf.float32)
 
     # condition on pairwise selection
