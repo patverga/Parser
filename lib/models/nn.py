@@ -906,7 +906,7 @@ class NN(Configurable):
     # roots_logits = tf.reshape(roots_logits, [batch_size, bucket_size])
     roots_targets1D = tf.argmin(targets3D, axis=1)
     # roots_logits_masked = roots_logits * roots_to_keep + (1 - roots_to_keep) * -1e9
-    roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits
+    roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
                                                                            labels=roots_targets1D)
     roots_loss = tf.reduce_mean(roots_cross_entropy1D)
     # roots_mask = tf.ones([batch_size, ])
