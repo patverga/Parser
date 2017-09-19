@@ -895,7 +895,7 @@ class NN(Configurable):
 
     roots_targets1D = tf.cast(tf.reshape(tf.argmin(targets3D, axis=1), [batch_size * bucket_size]), tf.int32)
     roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits2D, labels=roots_targets1D)
-    roots_loss = tf.reduce_sum(roots_cross_entropy1D * roots_to_keep) / batch_size
+    roots_loss = tf.reduce_sum(roots_cross_entropy1D * roots_to_keep) #/ batch_size
 
     # condition on pairwise selection
     # logits_expanded = tf.expand_dims(logits3D, -1)
