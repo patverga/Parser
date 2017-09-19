@@ -821,8 +821,9 @@ class NN(Configurable):
     # flatten to [B*N, N]
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
-    roots_to_keep = self.tokens_to_keep3D[:, :, 0]
-    # self.tokens_to_keep3D[:, :, 0] = 0
+    roots_to_keep = self.tokens_to_keep3D[:, 0, :]
+    self.tokens_to_keep3D[:, 0, :] = 0
+
 
     targets1D = tf.reshape(targets3D, [-1])
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
@@ -901,15 +902,15 @@ class NN(Configurable):
     # roots_loss = tf.reduce_sum(roots_cross_entropy1D * roots_to_keep) / tf.cast(batch_size, tf.float32)
 
 
-    roots_logits = logits3D[:, :, 0]
-    roots_targets1D = tf.argmin(targets3D, axis=1)
-    # roots_logits_masked = roots_logits * roots_to_keep + (1 - roots_to_keep) * -1e9
+    roots_logits = logits3D[:, 0, :]
+    roots_targets1D = tf.argmin(targets3D, axis=2)
+    roots_logits_masked = roots_logits * roots_to_keep + (1 - roots_to_keep) * -1e9
     roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
                                                                            labels=roots_targets1D)
     roots_loss = tf.reduce_mean(roots_cross_entropy1D)
     # roots_mask = tf.ones([batch_size, ])
 
-    roots_loss = tf.Print(roots_loss, [self.tokens_to_keep3D], summarize=50000)
+    # roots_loss = tf.Print(roots_loss, [self.tokens_to_keep3D], summarize=50000)
 
     # condition on pairwise selection
     # logits_expanded = tf.expand_dims(logits3D, -1)
