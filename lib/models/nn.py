@@ -889,7 +889,7 @@ class NN(Configurable):
     roots_to_keep = self.tokens_to_keep3D[:,:,0]
     roots_logits = logits3D[:,:,0]
     roots_logits2D = tf.reshape(roots_logits, [batch_size * bucket_size, -1])
-    roots_targets1D = tf.reshape(targets3D[:,:,0], [-1])
+    roots_targets1D = tf.reshape(targets3D[:,:,0], [batch_size * bucket_size])
     roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits2D, labels=roots_targets1D)
     roots_loss = tf.reduce_sum(roots_cross_entropy1D * roots_to_keep) / batch_size
 
