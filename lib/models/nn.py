@@ -909,7 +909,7 @@ class NN(Configurable):
     roots_loss = tf.reduce_mean(roots_cross_entropy1D)
     # roots_mask = tf.ones([batch_size, ])
 
-    roots_loss = tf.Print(roots_loss, [self.tokens_to_keep3D])
+    roots_loss = tf.Print(roots_loss, [self.tokens_to_keep3D], summarize=50000)
 
     # condition on pairwise selection
     # logits_expanded = tf.expand_dims(logits3D, -1)
