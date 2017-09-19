@@ -886,6 +886,13 @@ class NN(Configurable):
     # logits3D = logits3D * mask1 + mask2 * min_vals
     # logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
+    roots_to_keep = self.tokens_to_keep3D[:,:,0]
+    roots_logits = logits3D[:,:,0]
+    roots_logits2D = tf.reshape(roots_logits, [batch_size * bucket_size, -1])
+    roots_targets1D = tf.reshape(targets3D[:,:,0], [-1])
+    roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits2D, labels=roots_targets1D)
+    roots_loss = tf.reduce_sum(roots_cross_entropy1D * roots_to_keep) / batch_size
+
     # condition on pairwise selection
     # logits_expanded = tf.expand_dims(logits3D, -1)
     # concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
@@ -901,8 +908,9 @@ class NN(Configurable):
     n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     accuracy = n_correct / self.n_tokens
 
+
     # loss = svd_loss_avg + cycle2_loss_avg + log_loss
-    loss = log_loss + pairs_log_loss
+    loss = log_loss + pairs_log_loss + roots_loss
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
@@ -914,7 +922,7 @@ class NN(Configurable):
       'accuracy': accuracy,
       'loss': loss,
       'log_loss': log_loss,
-      'svd_loss': tf.constant(0), #svd_loss_avg, #
+      'svd_loss': roots_loss, #tf.constant(0), #svd_loss_avg, #
       # 'roots_loss': roots_loss,
       '2cycle_loss': pairs_log_loss# tf.constant(0), #cycle2_loss_avg
     }
