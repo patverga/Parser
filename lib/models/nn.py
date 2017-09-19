@@ -834,7 +834,15 @@ class NN(Configurable):
     pairs_mask = tf.add(targets_mask, tf.transpose(targets_mask, [0, 2, 1]))
 
     # pairs softmax thing
-    logits_expanded = tf.expand_dims(logits3D, -1)
+
+    idx1 = tf.reshape(tf.tile(tf.expand_dims(tf.range(batch_size), -1), [1, bucket_size]), [-1])
+    idx2 = tf.tile(tf.range(bucket_size), [batch_size])
+    # idx_rows = tf.stack([idx1, idx2, maxes_repeat], axis=-1)
+    pairs_idx_cols = tf.stack([idx1, tf.zeros([bucket_size * batch_size], dtype=tf.int32), idx2], axis=-1)
+    pairs_mask_cols = 1 - tf.scatter_nd(pairs_idx_cols, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
+
+    masked_logits = logits3D * pairs_mask_cols + (1-pairs_mask_cols) * -1e9
+    logits_expanded = tf.expand_dims(masked_logits, -1)
     concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
     pairs_logits2D = tf.reshape(concat, [batch_size * bucket_size * bucket_size, 2])
     pairs_targets = tf.cast(1 - targets_mask1D, tf.int32)
@@ -903,7 +911,6 @@ class NN(Configurable):
 
 
     roots_logits = logits3D[:, 0, :]
-    # roots_logits = tf.reshape(roots_logits, [batch_size, bucket_size])
     roots_targets1D = tf.argmin(targets3D, axis=1)
     # roots_logits_masked = roots_logits * roots_to_keep + (1 - roots_to_keep) * -1e9
     roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
@@ -919,6 +926,7 @@ class NN(Configurable):
     # idx_rows = tf.stack([idx1, idx2, maxes_repeat], axis=-1)
     idx_rows = tf.stack([idx1, idx2, tf.zeros([bucket_size * batch_size], dtype=tf.int32)], axis=-1)
     mask_rows = 1 - tf.scatter_nd(idx_rows, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
+
     idx_cols = tf.stack([idx1, maxes_repeat, idx2], axis=-1)
     mask_cols = 1 - tf.scatter_nd(idx_cols, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
     roots_mask = 1 - tf.cast(tf.logical_xor(tf.cast(mask_cols, tf.bool), tf.cast(mask_rows, tf.bool)), tf.float32)
