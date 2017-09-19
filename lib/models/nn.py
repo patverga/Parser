@@ -833,16 +833,8 @@ class NN(Configurable):
     # add is ok because we know that no two will ever be set
     pairs_mask = tf.add(targets_mask, tf.transpose(targets_mask, [0, 2, 1]))
 
-    # pairs softmax thing
-
-    idx1 = tf.reshape(tf.tile(tf.expand_dims(tf.range(batch_size), -1), [1, bucket_size]), [-1])
-    idx2 = tf.tile(tf.range(bucket_size), [batch_size])
-    # idx_rows = tf.stack([idx1, idx2, maxes_repeat], axis=-1)
-    pairs_idx_cols = tf.stack([idx1, tf.zeros([bucket_size * batch_size], dtype=tf.int32), idx2], axis=-1)
-    pairs_mask_cols = 1 - tf.scatter_nd(pairs_idx_cols, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
-
-    masked_logits = logits3D * pairs_mask_cols + (1-pairs_mask_cols) * -1e9
-    logits_expanded = tf.expand_dims(masked_logits, -1)
+    ######## pairs softmax thing #########
+    logits_expanded = tf.expand_dims(logits3D, -1)
     concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
     pairs_logits2D = tf.reshape(concat, [batch_size * bucket_size * bucket_size, 2])
     pairs_targets = tf.cast(1 - targets_mask1D, tf.int32)
@@ -918,7 +910,7 @@ class NN(Configurable):
     roots_loss = tf.reduce_mean(roots_cross_entropy1D)
 
 
-    # ===== roots mask ====
+    ########## roots mask #########
     idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
     idx1 = tf.reshape(tf.tile(tf.expand_dims(tf.range(batch_size), -1), [1, bucket_size]), [-1])
     idx2 = tf.tile(tf.range(bucket_size), [batch_size])
@@ -934,11 +926,14 @@ class NN(Configurable):
     # condition on pairwise selection
     # logits_expanded = tf.expand_dims(logits3D, -1)
     # concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
-    maxes = tf.reduce_max(concat, axis=-1)
-    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32)
 
-    # for roots
-    # mask =
+    # try masking zeroth row, so as not to conflict w/ roots
+    pairs_idx_cols = tf.stack([idx1, tf.zeros([bucket_size * batch_size], dtype=tf.int32), idx2], axis=-1)
+    pairs_mask_cols = 1 - tf.scatter_nd(pairs_idx_cols, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
+    masked_logits_expanded = tf.expand_dims(logits3D * pairs_mask_cols + (1-pairs_mask_cols) * -1e9, -1)
+    concat_masked = tf.concat([masked_logits_expanded, tf.transpose(masked_logits_expanded, [0, 2, 1, 3])], axis=-1)
+    maxes = tf.reduce_max(concat_masked, axis=-1)
+    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32)
 
     combined_mask = mask * roots_mask
     # logits3D = logits3D * mask + (1 - mask) * -1e9
