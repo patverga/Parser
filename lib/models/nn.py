@@ -952,7 +952,9 @@ class NN(Configurable):
 
     logits2D = tf.Print(logits2D, [tf.shape(roots_mask), roots_mask], summarize=5000)
 
-    logits2D = tf.Print(logits2D, [tf.reshape(roots_mask, [batch_size*bucket_size, -1])], summarize=5000)
+    roots_mask = tf.reshape(roots_mask, [batch_size*bucket_size, -1])
+
+    logits2D = tf.Print(logits2D, [tf.shape(roots_mask), roots_mask], summarize=5000)
 
 
     logits2D = tf.Print(logits2D, [logits2D], summarize=5000)
