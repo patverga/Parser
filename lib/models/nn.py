@@ -964,7 +964,7 @@ class NN(Configurable):
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
 
 
-    targets1D = tf.Print(targets1D, [tf.reshape(predictions1D, flat_shape)], summarize=5000)
+    # targets1D = tf.Print(targets1D, [tf.reshape(predictions1D, flat_shape)], summarize=5000)
 
     probabilities2D = tf.nn.softmax(logits2D)
     correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
