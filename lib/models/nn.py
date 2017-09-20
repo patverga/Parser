@@ -903,7 +903,7 @@ class NN(Configurable):
 
 
     roots_logits = logits3D[:, 0, :]
-    roots_targets1D = tf.argmin(targets3D[:,:,1:], axis=1)
+    roots_targets1D = tf.argmin(targets3D[:,1:], axis=1)
     roots_targets1D = tf.Print(roots_targets1D, [roots_targets1D], summarize=20)
     roots_logits_masked = roots_logits * roots_to_keep + (1 - roots_to_keep) * -1e9
     roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
