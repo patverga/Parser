@@ -921,7 +921,7 @@ class NN(Configurable):
     mask_cols = 1 - tf.scatter_nd(idx_cols, tf.ones([batch_size * bucket_size]),
                                   [batch_size, bucket_size, bucket_size])
     roots_mask = 1 - tf.cast(tf.logical_xor(tf.cast(mask_cols, tf.bool), tf.cast(mask_rows, tf.bool)), tf.float32)
-    # roots_mask = tf.transpose(roots_mask, [0, 2, 1])
+    roots_mask = tf.transpose(roots_mask, [0, 2, 1])
     roots_mask_for_loss = 1 - roots_mask[:, 0]
 
     ######## condition on pairwise selection, root selection #########
