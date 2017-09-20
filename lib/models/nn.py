@@ -939,6 +939,9 @@ class NN(Configurable):
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D * tf.reshape(roots_mask_for_loss, [-1])) / self.n_tokens
 
 
+    logits3D = tf.Print(logits3D, [logits2D], summarize=5000)
+
+
     # combined_mask = mask * roots_mask
     logits3D = logits3D * roots_mask + ((1 - roots_mask) * -1e9) * self.tokens_to_keep3D
     # logits3D = logits3D * mask + (1 - mask) * -1e9
