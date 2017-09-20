@@ -939,7 +939,7 @@ class NN(Configurable):
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D * tf.reshape(roots_mask_for_loss, [-1])) / self.n_tokens
 
 
-    logits3D = tf.Print(logits3D, [logits2D], summarize=5000)
+    # logits3D = tf.Print(logits3D, [logits2D], summarize=5000)
 
 
     # combined_mask = mask * roots_mask
@@ -950,7 +950,7 @@ class NN(Configurable):
 
 
 
-    logits2D = tf.Print(logits2D, [logits2D], summarize=5000)
+    # logits2D = tf.Print(logits2D, [logits2D], summarize=5000)
 
 
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
