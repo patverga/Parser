@@ -945,6 +945,8 @@ class NN(Configurable):
     # logits3D = logits3D * combined_mask + (1 - combined_mask) * -1e9
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
+    logits2D = tf.Print(logits2D, [logits2D], summarize=5000)
+
 
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     probabilities2D = tf.nn.softmax(logits2D)
