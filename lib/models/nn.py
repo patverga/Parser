@@ -876,9 +876,6 @@ class NN(Configurable):
     cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * (1 - targets_mask)
     cycle2_loss_avg = cycle2_coeff * tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
 
-    # normal log loss
-    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
-    log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
     # NON-LOSS MASK
     # logits_expanded = tf.expand_dims(logits3D, -1)
@@ -940,6 +937,10 @@ class NN(Configurable):
     # logits3D = logits3D * mask + (1 - mask) * -1e9
     # logits3D = logits3D * combined_mask + (1 - combined_mask) * -1e9
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
+
+    # normal log loss
+    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
+    log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     probabilities2D = tf.nn.softmax(logits2D)
