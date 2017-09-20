@@ -949,7 +949,7 @@ class NN(Configurable):
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1])) #* tokens_to_keep1D
 
 
-    logits2D = tf.Print(logits2D, [tf.reshape(roots_mask, [batch_size*bucket_size])], summarize=5000)
+    logits2D = tf.Print(logits2D, [tf.reshape(roots_mask, [batch_size*bucket_size, -1])], summarize=5000)
 
 
     logits2D = tf.Print(logits2D, [logits2D], summarize=5000)
