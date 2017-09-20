@@ -950,10 +950,15 @@ class NN(Configurable):
 
 
 
-    # logits2D = tf.Print(logits2D, [logits2D], summarize=5000)
+    logits2D = tf.Print(logits2D, [logits2D], summarize=5000)
+
 
 
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
+
+
+    targets1D = tf.Print(targets1D, [predictions1D], summarize=5000)
+
     probabilities2D = tf.nn.softmax(logits2D)
     correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
     n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
