@@ -965,7 +965,7 @@ class NN(Configurable):
 
 
     # loss = svd_loss_avg + cycle2_loss_avg + log_loss
-    loss = log_loss #+ roots_loss # + pairs_log_loss
+    loss = log_loss + roots_loss # + pairs_log_loss
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
