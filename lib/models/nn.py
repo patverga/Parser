@@ -1063,6 +1063,7 @@ class NN(Configurable):
       roots_lt = 1. if len(roots) < 1 else 0.
       roots_gt = 1. if len(roots) > 1 else 0.
 
+      parse_preds = np.argmax(parse_probs, axis=1)
       if roots_lt or roots_gt:
         print("parse_probs", parse_probs)
 
