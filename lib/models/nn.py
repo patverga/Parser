@@ -98,7 +98,7 @@ def attention_bias_ignore_padding(lengths):
   Returns:
     a `Tensor` with shape [batch, 1, 1, memory_length].
   """
-  mask = tf.sequence_mask(lengths, tf.reduce_max(lengths)+1)
+  mask = tf.sequence_mask(lengths, tf.reduce_max(lengths))
   memory_padding = tf.cast(tf.logical_not(mask), tf.float32)
   ret = memory_padding * -1e9
   return tf.expand_dims(tf.expand_dims(ret, axis=1), axis=1)
