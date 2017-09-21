@@ -1136,6 +1136,7 @@ class NN(Configurable):
       length = np.sum(tokens_to_keep)
       I = np.eye(len(tokens_to_keep))
       # block loops and pad heads
+      parse_preds_with_diag = np.argmax(parse_probs * tokens_to_keep, axis=1)
       parse_probs = parse_probs * tokens_to_keep * (1 - I)
       parse_preds = np.argmax(parse_probs, axis=1)
       tokens = np.arange(1, length)
@@ -1147,6 +1148,10 @@ class NN(Configurable):
         print(parse_probs)
         print("parse preds")
         print(parse_preds)
+        print("parse_preds_with_diag")
+        print(parse_preds_with_diag)
+        print("tokens to keep")
+        print(tokens_to_keep)
       len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
       return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
     elif self.ensure_tree:
