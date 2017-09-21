@@ -941,8 +941,9 @@ class NN(Configurable):
     mask = tf.cast(tf.equal(maxes, logits3D), tf.float32)
 
 
-    logits2D = tf.Print(logits2D, [logits3D], summarize=500)
-    logits2D = tf.Print(logits2D, [targets3D], summarize=500)
+    # logits2D = tf.Print(logits2D, [logits3D], summarize=500)
+    # logits2D = tf.Print(logits2D, [targets3D], summarize=500)
+    logits2D = tf.Print(logits2D, [self.tokens_to_keep3D], summarize=500)
 
     # normal log loss
     cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
@@ -1134,6 +1135,7 @@ class NN(Configurable):
       I = np.eye(len(tokens_to_keep))
       # block loops and pad heads
       # parse_preds_with_diag = np.argmax(parse_probs * tokens_to_keep, axis=1)
+      print(tokens_to_keep)
       parse_probs = parse_probs * tokens_to_keep # * (1 - I)
       parse_preds = np.argmax(parse_probs, axis=1)
       num_roots = sum([1 if i == p else 0 for i, p in enumerate(parse_preds[:length])])
