@@ -1015,8 +1015,8 @@ class NN(Configurable):
     # roots = np.where(parse_preds[tokens] == 0)[0] + 1
     #
 
-    laplacian = np.zeros((length - 1, length - 1))
-    for i, p in enumerate(parse_preds[1:length]):
+    laplacian = np.zeros((length, length))
+    for i, p in enumerate(parse_preds[:length]):
       if p != 0:
         laplacian[i, p - 1] = -1.
         laplacian[p - 1, i] = -1.
