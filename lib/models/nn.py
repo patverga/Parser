@@ -1134,10 +1134,10 @@ class NN(Configurable):
       # parse_preds_with_diag = np.argmax(parse_probs * tokens_to_keep, axis=1)
       parse_probs = parse_probs * tokens_to_keep # * (1 - I)
       parse_preds = np.argmax(parse_probs, axis=1)
-      roots = [i if i == p else 0 for i, p in enumerate(parse_preds)]
-      for r in roots:
-        parse_preds[r] = 0
-      roots = np.where(parse_preds == 0)[0]
+      roots = [i if i == p else 0 for i, p in enumerate(parse_preds[:length])]
+      # for r in roots:
+      #   parse_preds[r] = 0
+      roots = len(roots)
       roots_lt = 1. if len(roots) < 1 else 0.
       roots_gt = 1. if len(roots) > 1 else 0.
       # if roots_lt or roots_gt:
