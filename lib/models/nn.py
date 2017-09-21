@@ -1136,8 +1136,8 @@ class NN(Configurable):
 
       parse_probs = parse_probs * tokens_to_keep # * (1 - I)
       parse_preds = np.argmax(parse_probs, axis=1)
-      print(tokens_to_keep)
-      print(parse_preds)
+      # print(tokens_to_keep)
+      # print(parse_preds)
       num_roots = sum([1 if i == p else 0 for i, p in enumerate(parse_preds[:length])])
       # for r in roots:
       #   parse_preds[r] = 0
