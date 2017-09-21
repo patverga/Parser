@@ -943,7 +943,7 @@ class NN(Configurable):
 
     # logits2D = tf.Print(logits2D, [logits3D], summarize=500)
     # logits2D = tf.Print(logits2D, [targets3D], summarize=500)
-    logits2D = tf.Print(logits2D, [self.tokens_to_keep3D], summarize=500)
+    # logits2D = tf.Print(logits2D, [self.tokens_to_keep3D], summarize=500)
 
     # normal log loss
     cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
