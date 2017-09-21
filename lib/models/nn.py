@@ -1015,15 +1015,16 @@ class NN(Configurable):
     # roots = np.where(parse_preds[tokens] == 0)[0] + 1
     #
 
-    print("parse preds")
-    print(parse_preds)
+    # print("parse preds")
+    # print(parse_preds)
 
     laplacian = np.zeros((length, length))
     for i, p in enumerate(parse_preds[:length]):
-      print(p)
-      if p != 0:
-        laplacian[i, p - 1] = -1.
-        laplacian[p - 1, i] = -1.
+      # print(p)
+      # if p != 0:
+      if i != p:
+        laplacian[i, p] = -1.
+        laplacian[p, i] = -1.
 
     degrees = -np.sum(laplacian, axis=0)
     for i, d in enumerate(degrees):
@@ -1142,13 +1143,13 @@ class NN(Configurable):
       # if roots_lt or roots_gt:
       #   print("parse_probs")
       #   print(parse_probs)
-      print("parse preds")
-      print(parse_preds)
+      # print("parse preds")
+      # print(parse_preds)
       #   print("parse_preds_with_diag")
       #   print(parse_preds_with_diag)
       #   print("tokens to keep")
       #   print(tokens_to_keep)
-      len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds * (1 - I), length)
+      len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
       return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
     elif self.ensure_tree:
       tokens_to_keep[0] = True
