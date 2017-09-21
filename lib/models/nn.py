@@ -1062,6 +1062,10 @@ class NN(Configurable):
       roots = np.where(parse_preds[tokens] == 0)[0] + 1
       roots_lt = 1. if len(roots) < 1 else 0.
       roots_gt = 1. if len(roots) > 1 else 0.
+
+      if roots_lt or roots_gt:
+        print("parse_probs", parse_probs)
+
       # ensure at least one root
       if roots_lt:
         # The current root probabilities
