@@ -1139,13 +1139,13 @@ class NN(Configurable):
       # if roots_lt or roots_gt:
       #   print("parse_probs")
       #   print(parse_probs)
-      #   print("parse preds")
-      #   print(parse_preds)
+      print("parse preds")
+      print(parse_preds)
       #   print("parse_preds_with_diag")
       #   print(parse_preds_with_diag)
       #   print("tokens to keep")
       #   print(tokens_to_keep)
-      len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds * (1 - np.eye(len(tokens_to_keep))), length)
+      len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds * (1 - I), length)
       return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
     elif self.ensure_tree:
       tokens_to_keep[0] = True
