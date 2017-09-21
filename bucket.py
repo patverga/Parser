@@ -62,7 +62,9 @@ class Bucket(Configurable):
     if len(sent) > self.size and self.size != -1:
       raise ValueError('Bucket of size %d received sequence of len %d' % (self.size, len(sent)))
     
-    words = [word[0] for word in sent][1:] # remove root
+    # words = [word[0] for word in sent][1:] # remove root
+    # idxs = [word[1:] for word in sent]
+    words = [word[0] for word in sent]
     idxs = [word[1:] for word in sent]
     self._sents.append(words)
     self._data.append(idxs)

@@ -1140,18 +1140,19 @@ class NN(Configurable):
       parse_probs = parse_probs * tokens_to_keep * (1 - I)
       parse_preds = np.argmax(parse_probs, axis=1)
       tokens = np.arange(1, length)
-      roots = np.where(parse_preds[tokens] == 0)[0] + 1
-      roots_lt = 1. if len(roots) < 1 else 0.
-      roots_gt = 1. if len(roots) > 1 else 0.
-      if roots_lt or roots_gt:
-        print("parse_probs")
-        print(parse_probs)
-        print("parse preds")
-        print(parse_preds)
-        print("parse_preds_with_diag")
-        print(parse_preds_with_diag)
-        print("tokens to keep")
-        print(tokens_to_keep)
+      root = np.argmax()
+      # roots = np.where(parse_preds[tokens] == 0)[0] + 1
+      # roots_lt = 1. if len(roots) < 1 else 0.
+      # roots_gt = 1. if len(roots) > 1 else 0.
+      # if roots_lt or roots_gt:
+      #   print("parse_probs")
+      #   print(parse_probs)
+      #   print("parse preds")
+      #   print(parse_preds)
+      #   print("parse_preds_with_diag")
+      #   print(parse_preds_with_diag)
+      #   print("tokens to keep")
+      #   print(tokens_to_keep)
       len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
       return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
     elif self.ensure_tree:
