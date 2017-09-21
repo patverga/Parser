@@ -898,14 +898,21 @@ class NN(Configurable):
     # roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits2D, labels=roots_targets1D)
     # roots_loss = tf.reduce_sum(roots_cross_entropy1D * roots_to_keep) / tf.cast(batch_size, tf.float32)
 
-    roots_logits = logits3D[:, 0, :]
-    roots_targets1D = tf.argmin(targets3D[:,1:], axis=1) + 1
-    # roots_targets1D = tf.Print(roots_targets1D, [roots_targets1D], summarize=20)
-    # roots_logits_masked = roots_logits * roots_to_keep + (1 - roots_to_keep) * -1e9
+    ######### roots loss (non-diag) ##########
+    # roots_logits = logits3D[:, 0, :]
+    # roots_targets1D = tf.argmin(targets3D[:,1:], axis=1) + 1
+    # # roots_targets1D = tf.Print(roots_targets1D, [roots_targets1D], summarize=20)
+    # # roots_logits_masked = roots_logits * roots_to_keep + (1 - roots_to_keep) * -1e9
+    # roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
+    #                                                                        labels=roots_targets1D)
+    # roots_loss = tf.reduce_mean(roots_cross_entropy1D)
+
+    ######### roots loss (diag) ##########
+    roots_logits = tf.matrix_diag_part(logits3D)
+    roots_targets1D = tf.argmax(tf.matrix_diag_part(targets_mask), axis=1)
     roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
                                                                            labels=roots_targets1D)
     roots_loss = tf.reduce_mean(roots_cross_entropy1D)
-
 
     ########## roots mask #########
     idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
@@ -939,33 +946,16 @@ class NN(Configurable):
     cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
-
-    # logits3D = tf.Print(logits3D, [logits2D], summarize=5000)
-
-
     # combined_mask = mask * roots_mask
     combined_mask = roots_mask * self.tokens_to_keep3D
     # logits3D = (logits3D * roots_mask + ((1 - roots_mask) * -1e9) ) #* self.tokens_to_keep3D
     # logits3D = logits3D * mask + (1 - mask) * -1e9
     logits3D = logits3D * combined_mask + (1 - combined_mask) * -1e9
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1])) #* tokens_to_keep1D
-
-
-    # logits2D = tf.Print(logits2D, [tf.shape(roots_mask), roots_mask], summarize=5000)
-
-    roots_mask = tf.reshape(roots_mask, [batch_size*bucket_size, -1])
-
-    # logits2D = tf.Print(logits2D, [tf.shape(roots_mask), roots_mask], summarize=5000)
-    #
-    #
-    # logits2D = tf.Print(logits2D, [logits2D], summarize=5000)
-
-
+    # roots_mask = tf.reshape(roots_mask, [batch_size*bucket_size, -1])
 
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
 
-
-    # targets1D = tf.Print(targets1D, [tf.reshape(predictions1D, flat_shape)], summarize=5000)
 
     probabilities2D = tf.nn.softmax(logits2D)
     correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
@@ -974,7 +964,7 @@ class NN(Configurable):
 
 
     # loss = svd_loss_avg + cycle2_loss_avg + log_loss
-    loss = log_loss + roots_loss # + pairs_log_loss
+    loss = log_loss #+ roots_loss # + pairs_log_loss
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
