@@ -1143,7 +1143,10 @@ class NN(Configurable):
       roots_lt = 1. if len(roots) < 1 else 0.
       roots_gt = 1. if len(roots) > 1 else 0.
       if roots_lt or roots_gt:
-        print("parse_probs", parse_probs)
+        print("parse_probs")
+        print(parse_probs)
+        print("parse preds")
+        print(parse_preds)
       len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
       return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
     elif self.ensure_tree:
