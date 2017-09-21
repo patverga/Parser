@@ -1137,7 +1137,6 @@ class NN(Configurable):
       roots = [i if i == p else 0 for i, p in enumerate(parse_preds[:length])]
       # for r in roots:
       #   parse_preds[r] = 0
-      roots = len(roots)
       roots_lt = 1. if len(roots) < 1 else 0.
       roots_gt = 1. if len(roots) > 1 else 0.
       # if roots_lt or roots_gt:
