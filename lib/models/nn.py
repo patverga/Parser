@@ -908,7 +908,7 @@ class NN(Configurable):
 
     ######### roots loss (diag) ##########
     roots_logits = tf.matrix_diag_part(logits3D)
-    roots_targets1D = tf.argmax(tf.matrix_diag_part(targets_mask), axis=1)
+    roots_targets1D = tf.argmax(tf.matrix_diag_part(targets_mask), axis=0)
     roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
                                                                            labels=roots_targets1D)
     roots_loss = tf.reduce_mean(roots_cross_entropy1D)
