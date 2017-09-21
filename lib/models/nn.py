@@ -941,6 +941,9 @@ class NN(Configurable):
     mask = tf.cast(tf.equal(maxes, logits3D), tf.float32)
 
 
+    logits2D = tf.Print(logits2D, [logits2D], summarize=500)
+    logits2D = tf.Print(logits2D, [targets1D], summarize=500)
+
     # normal log loss
     cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
