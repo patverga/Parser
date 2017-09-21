@@ -1017,6 +1017,7 @@ class NN(Configurable):
 
     laplacian = np.zeros((length, length))
     for i, p in enumerate(parse_preds[:length]):
+      print(p)
       if p != 0:
         laplacian[i, p - 1] = -1.
         laplacian[p - 1, i] = -1.
