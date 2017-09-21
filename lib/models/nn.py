@@ -1063,10 +1063,6 @@ class NN(Configurable):
       roots_lt = 1. if len(roots) < 1 else 0.
       roots_gt = 1. if len(roots) > 1 else 0.
 
-      parse_preds = np.argmax(parse_probs, axis=1)
-      if roots_lt or roots_gt:
-        print("parse_probs", parse_probs)
-
       # ensure at least one root
       if roots_lt:
         # The current root probabilities
@@ -1146,6 +1142,8 @@ class NN(Configurable):
       roots = np.where(parse_preds[tokens] == 0)[0] + 1
       roots_lt = 1. if len(roots) < 1 else 0.
       roots_gt = 1. if len(roots) > 1 else 0.
+      if roots_lt or roots_gt:
+        print("parse_probs", parse_probs)
       len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
       return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
     elif self.ensure_tree:
