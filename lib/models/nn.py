@@ -822,7 +822,6 @@ class NN(Configurable):
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
 
     roots_to_keep = self.tokens_to_keep3D[:, 0, :]
-    # self.tokens_to_keep3D[:, 0, :] = 0
 
 
     targets1D = tf.reshape(targets3D, [-1])
@@ -1035,7 +1034,7 @@ class NN(Configurable):
 
     adj = np.zeros((len(parse_preds), len(parse_preds)))
     for i, p in enumerate(parse_preds):  # [1:length]):
-      if p != 0:
+      if i != p:
         adj[i, p] = 1
 
     len_2_cycles = np.sum(np.multiply(adj, np.transpose(adj))) > 0
