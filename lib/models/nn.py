@@ -1249,7 +1249,7 @@ class NN(Configurable):
       rel_probs[:,Vocab.PAD] = 0
       root = Vocab.ROOT
       length = np.sum(tokens_to_keep)
-      tokens = np.arange(1, length)
+      tokens = np.arange(length)
       rel_preds = np.argmax(rel_probs, axis=1)
       roots = np.where(rel_preds[tokens] == root)[0]+1
       if len(roots) < 1:
