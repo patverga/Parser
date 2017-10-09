@@ -117,6 +117,10 @@ class Configurable(object):
   def save_dir(self):
     return self._config.get('OS', 'save_dir')
   argparser.add_argument('--save_dir')
+  @property
+  def save(self):
+    return self._config.getboolean('OS', 'save')
+  argparser.add_argument('--save')
   
   #=============================================================
   # [Dataset]

@@ -74,6 +74,7 @@ for lr in ${lrs[@]}; do
                                                         --roots_penalty $roots_penalty \
                                                         --svd_tree True \
                                                         --ensure_tree False \
+                                                        --save False \
                                                         &> $OUT_LOG/train-$fname_append.log")
                                                     done
                                                 done

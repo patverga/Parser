@@ -209,7 +209,7 @@ class Network(Configurable):
             uas = np.mean(correct["UAS"]) * 100
             print('UAS: %.2f    LAS: %.2f' % (uas, las))
             current_score = np.mean(correct[self.eval_criterion]) * 100
-            if current_score > current_best:
+            if self.save and current_score > current_best:
               current_best = current_score
               print("Writing model to %s" % (os.path.join(self.save_dir, self.name.lower() + '-trained')))
               saver.save(sess, os.path.join(self.save_dir, self.name.lower() + '-trained'),
