@@ -839,7 +839,7 @@ class NN(Configurable):
     pairs_targets = tf.cast(1 - targets_mask1D, tf.int32)
     pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=pairs_targets)
     pairs_xent3D = tf.reshape(pairs_xent, [batch_size, bucket_size, bucket_size])
-    pairs_log_loss = tf.reduce_sum(pairs_xent3D * self.tokens_to_keep3D * pairs_mask) / self.n_tokens
+    pairs_log_loss = self.pairs_penalty * tf.reduce_sum(pairs_xent3D * self.tokens_to_keep3D * pairs_mask) / self.n_tokens
 
     # svd loss
     svd_coeff = 100000.0
@@ -965,7 +965,7 @@ class NN(Configurable):
 
 
     # loss = svd_loss_avg + cycle2_loss_avg + log_loss
-    loss = log_loss + roots_loss  # + pairs_log_loss  + svd_loss
+    loss = log_loss + roots_loss + pairs_log_loss  # + svd_loss
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
