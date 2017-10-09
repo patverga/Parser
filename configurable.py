@@ -369,7 +369,7 @@ class Configurable(object):
   argparser.add_argument('--eval_criterion')
 
   def roots_penalty(self):
-    return self._config.get('Training', 'roots_penalty')
+    return self._config.getfloat('Training', 'roots_penalty')
   argparser.add_argument('--roots_penalty')
 
   #=============================================================
