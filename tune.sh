@@ -72,6 +72,8 @@ for lr in ${lrs[@]}; do
                                                         --epsilon $epsilon \
                                                         --pairs_penalty $pairs_penalty \
                                                         --roots_penalty $roots_penalty \
+                                                        --svd_tree True \
+                                                        --ensure_tree False \
                                                         &> $OUT_LOG/train-$fname_append.log")
                                                     done
                                                 done
