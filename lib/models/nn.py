@@ -911,7 +911,7 @@ class NN(Configurable):
     roots_targets1D = tf.argmax(tf.matrix_diag_part(targets_mask), axis=1)
     roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
                                                                            labels=roots_targets1D)
-    roots_loss = self.roots_penalty * tf.reduce_mean(roots_cross_entropy1D)
+    roots_loss = tf.constant(self.roots_penalty) * tf.reduce_mean(roots_cross_entropy1D)
 
     ########## roots mask #########
     idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
