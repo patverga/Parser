@@ -368,6 +368,7 @@ class Configurable(object):
     return self._config.get('Training', 'eval_criterion')
   argparser.add_argument('--eval_criterion')
 
+  @property
   def roots_penalty(self):
     return self._config.getfloat('Training', 'roots_penalty')
   argparser.add_argument('--roots_penalty')
