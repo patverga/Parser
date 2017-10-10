@@ -898,6 +898,10 @@ class NN(Configurable):
     logits3D = roots_masked_logits
 
     ########## pairs mask #########
+    # TODO check this... can't be right... also messing up roots
+    # doing this again w/ roots mask applied
+    logits_expanded = tf.expand_dims(logits3D, -1)
+    pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
     maxes = tf.reduce_max(pairs_concat, axis=-1)
     min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
     mask_eq = tf.cast(tf.equal(maxes, logits3D), tf.float32)
