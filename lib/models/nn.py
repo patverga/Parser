@@ -882,6 +882,18 @@ class NN(Configurable):
       print("SVD did not converge")
       svd_loss_avg = 0.
 
+    ########## pairs mask #########
+    # TODO check this... can't be right... also messing up roots
+    # doing this again w/ roots mask applied
+    # logits_expanded = tf.expand_dims(logits3D, -1)
+    # pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
+    maxes = tf.reduce_max(pairs_concat, axis=-1)
+    # min across each sequence in the batch
+    min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
+    mask_eq = tf.cast(tf.equal(maxes, logits3D), tf.float32)
+    mask_neq = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
+    logits3D = logits3D * mask_eq + mask_neq * min_vals
+
     ########## roots mask (diag) #########
     # select roots using softmax over diag. do this by choosing the root, then setting everything else
     # on diag to -1e9
@@ -896,17 +908,6 @@ class NN(Configurable):
     roots_mask = tf.matrix_diag(diagonal_masked)
     roots_masked_logits = roots_mask + diag_mask * logits3D
     logits3D = roots_masked_logits
-
-    ########## pairs mask #########
-    # TODO check this... can't be right... also messing up roots
-    # doing this again w/ roots mask applied
-    logits_expanded = tf.expand_dims(logits3D, -1)
-    pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
-    maxes = tf.reduce_max(pairs_concat, axis=-1)
-    min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
-    mask_eq = tf.cast(tf.equal(maxes, logits3D), tf.float32)
-    mask_neq = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
-    logits3D = logits3D * mask_eq + mask_neq * min_vals
 
     ######## condition on pairwise selection, root selection #########
     # # try masking zeroth row before computing pairs mask, so as not to conflict w/ roots
