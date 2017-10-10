@@ -819,7 +819,7 @@ class NN(Configurable):
     idx = tf.stack([i1, i2, targets3D], axis=-1)
     targets_mask = tf.cast(tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size]), tf.int32)
     # assert that there is exactly one root
-    with tf.control_dependencies([tf.assert_equal(tf.reduce_sum(tf.matrix_diag_part(targets_mask), axis=1), tf.ones([batch_size]))]):
+    with tf.control_dependencies([tf.assert_equal(tf.reduce_sum(tf.matrix_diag_part(targets_mask), axis=1), tf.ones([batch_size], dtype=tf.int32))]):
       targets_mask *= self.tokens_to_keep3D
 
     # flatten to [B*N, N]
