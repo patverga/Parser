@@ -842,7 +842,15 @@ class NN(Configurable):
     pairs_logits2D = tf.reshape(concat, [batch_size * bucket_size * bucket_size, 2])
     pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=tf.cast(targets_mask1D, tf.int32))
     pairs_xent3D = tf.reshape(pairs_xent, [batch_size, bucket_size, bucket_size])
-    pairs_log_loss = self.pairs_penalty * tf.reduce_sum(pairs_xent3D * pairs_mask) #/ self.n_tokens
+    pairs_log_loss = self.pairs_penalty * tf.reduce_sum(pairs_xent3D * pairs_mask) / self.n_tokens
+
+
+    ######### roots loss (diag) ##########
+    roots_logits = tf.matrix_diag_part(logits3D)
+    roots_targets1D = tf.argmax(tf.matrix_diag_part(targets_mask), axis=1)
+    roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
+                                                                           labels=roots_targets1D)
+    roots_loss = roots_penalty * tf.reduce_mean(roots_cross_entropy1D)
 
     # svd loss
     svd_coeff = 100000.0
@@ -908,12 +916,7 @@ class NN(Configurable):
     #                                                                        labels=roots_targets1D)
     # roots_loss = tf.reduce_mean(roots_cross_entropy1D)
 
-    ######### roots loss (diag) ##########
-    roots_logits = tf.matrix_diag_part(logits3D)
-    roots_targets1D = tf.argmax(tf.matrix_diag_part(targets_mask), axis=1)
-    roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
-                                                                           labels=roots_targets1D)
-    roots_loss = roots_penalty * tf.reduce_mean(roots_cross_entropy1D)
+
 
     ########## roots mask #########
     idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
