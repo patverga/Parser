@@ -358,7 +358,7 @@ class Network(Configurable):
                            train_output['loss'],
                            train_output['n_correct'],
                            train_output['n_tokens'],
-                           train_output['svd_loss'],
+                           train_output['roots_loss'],
                            train_output['2cycle_loss'],
                            train_output['log_loss'],
                            train_output['rel_loss']]
