@@ -27,8 +27,8 @@ num_heads="4 6 8"
 head_sizes="64 128"
 relu_hidden_sizes="256"
 
-pairs_penalties="0.0 0.1 0.0001 10.0"
-roots_penalties="0.0 0.1 0.0001 10.0"
+pairs_penalties="0.0 1.0 0.001 10.0"
+roots_penalties="0.0 1.0 0.001 10.0"
 
 reps="3"
 
