@@ -821,7 +821,6 @@ class NN(Configurable):
     # assert that there is exactly one root
     with tf.control_dependencies([tf.assert_equal(tf.reduce_sum(tf.matrix_diag_part(targets_mask), axis=1), tf.ones([batch_size]))]):
       targets_mask *= self.tokens_to_keep3D
-      targets_mask = tf.cast(targets_mask, tf.int32)
 
     # flatten to [B*N, N]
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
@@ -829,7 +828,7 @@ class NN(Configurable):
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
     targets_mask1D = tf.reshape(targets_mask, [-1])
 
-    diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size], dtype=tf.int32)
+    diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
 
     # this has 1s in all the locations of the adjacency matrix that we care about: i,j and j,i where i,j is correct
     # add is ok because we know that no two will ever be set (except diag which we zero out anyway)
@@ -841,7 +840,7 @@ class NN(Configurable):
     logits_expanded = tf.expand_dims(logits3D, -1)
     concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
     pairs_logits2D = tf.reshape(concat, [batch_size * bucket_size * bucket_size, 2])
-    pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=targets_mask1D)
+    pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=tf.cast(targets_mask1D, tf.int32))
     pairs_xent3D = tf.reshape(pairs_xent, [batch_size, bucket_size, bucket_size])
     pairs_log_loss = self.pairs_penalty * tf.reduce_sum(pairs_xent3D * pairs_mask) #/ self.n_tokens
 
