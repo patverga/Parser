@@ -818,7 +818,8 @@ class NN(Configurable):
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.stack([i1, i2, targets3D], axis=-1)
     targets_mask = tf.cast(tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size]), tf.int32)
-    with tf.control_dependencies([tf.assert_equal(tf.reduce_sum(tf.matrix_diag_part(targets_mask)), 1)]):
+    # assert that there is exactly one root
+    with tf.control_dependencies([tf.assert_equal(tf.reduce_sum(tf.matrix_diag_part(targets_mask), axis=1), tf.ones(batch_size))]):
       targets_mask *= self.tokens_to_keep3D
 
     # flatten to [B*N, N]
