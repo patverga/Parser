@@ -904,7 +904,7 @@ class NN(Configurable):
     diagonal = tf.scatter_nd(idx, tf.fill([batch_size], tf.reduce_max(logits3D) + 1), [batch_size, bucket_size])
     diag_inv_mask = 1 - tf.scatter_nd(idx, tf.ones([batch_size]), [batch_size, bucket_size])
     # diagonal_masked = diagonal + -1e9 * diag_inv_mask
-    diagonal_masked = diagonal + tf.reduce_min(logits3D) - 1 * diag_inv_mask
+    diagonal_masked = diagonal + (tf.reduce_min(logits3D) - 1) * diag_inv_mask
     roots_mask = tf.matrix_diag(diagonal_masked)
     roots_masked_logits = roots_mask + diag_mask * logits3D
     logits3D = roots_masked_logits
