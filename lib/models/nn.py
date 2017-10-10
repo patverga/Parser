@@ -888,9 +888,11 @@ class NN(Configurable):
     diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
     idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
     idx = tf.stack([tf.range(batch_size), idx_t], axis=-1)
-    diagonal = tf.scatter_nd(idx, tf.reduce_max(roots_logits, axis=1), [batch_size, bucket_size])
+    # diagonal = tf.scatter_nd(idx, tf.reduce_max(roots_logits, axis=1), [batch_size, bucket_size])
+    diagonal = tf.scatter_nd(idx, tf.fill([batch_size], tf.reduce_max(logits3D)), [batch_size, bucket_size])
     diag_inv_mask = 1 - tf.scatter_nd(idx, tf.ones([batch_size]), [batch_size, bucket_size])
-    diagonal_masked = diagonal + -1e9 * diag_inv_mask
+    # diagonal_masked = diagonal + -1e9 * diag_inv_mask
+    diagonal_masked = diagonal + tf.reduce_min(logits3D) * diag_inv_mask
     roots_mask = tf.matrix_diag(diagonal_masked)
     roots_masked_logits = roots_mask + diag_mask * logits3D
     logits3D = roots_masked_logits
