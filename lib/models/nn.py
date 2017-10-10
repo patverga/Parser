@@ -829,7 +829,7 @@ class NN(Configurable):
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
     targets_mask1D = tf.reshape(targets_mask, [-1])
 
-    diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
+    diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size], dtype=tf.int32)
 
     # this has 1s in all the locations of the adjacency matrix that we care about: i,j and j,i where i,j is correct
     # add is ok because we know that no two will ever be set (except diag which we zero out anyway)
