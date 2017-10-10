@@ -844,15 +844,18 @@ class NN(Configurable):
     pairs_xent3D = tf.reshape(pairs_xent, [batch_size, bucket_size, bucket_size])
     pairs_log_loss = self.pairs_penalty * tf.reduce_sum(pairs_xent3D * pairs_mask) / self.n_tokens
 
-
     ######### roots loss (diag) ##########
+    # softmax over diagonal
     roots_logits = tf.matrix_diag_part(logits3D)
     roots_targets1D = tf.argmax(tf.matrix_diag_part(targets_mask), axis=1)
-    roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits,
-                                                                           labels=roots_targets1D)
+    roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits, labels=roots_targets1D)
     roots_loss = roots_penalty * tf.reduce_mean(roots_cross_entropy1D)
 
-    # svd loss
+    ########## normal log loss ##########
+    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
+    log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
+
+    ########### svd loss ##########
     svd_coeff = 100000.0
     maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
     maxes_tiled = tf.tile(maxes, [1, bucket_size])
@@ -879,33 +882,46 @@ class NN(Configurable):
       print("SVD did not converge")
       svd_loss_avg = 0.
 
-    # 2-cycles loss: count of 2-cycles (where predicted adj and adj^T are both set)
-    cycle2_loss = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
-    # mask padding and also the correct edges, so this loss doesn't apply to correct predictions
-    cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * (1 - targets_mask)
-    cycle2_loss_avg = tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
 
 
-    # NON-LOSS MASK
-    # logits_expanded = tf.expand_dims(logits3D, -1)
-    # concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
-    # maxes = tf.reduce_max(concat, axis=-1)
-    # min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
-    # mask1 = tf.cast(tf.equal(maxes, logits3D), tf.float32)
-    # mask2 = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
-    # logits3D = logits3D * mask1 + mask2 * min_vals
-    # logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
+    ########## roots mask (diag) #########
+    diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
+    idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
+    idx = tf.stack([tf.range(batch_size), idx_t], axis=-1)
+    diagonal = tf.scatter_nd(idx, tf.reduce_max(roots_logits, axis=1), [batch_size, bucket_size])
+    diag_inv_mask = 1 - tf.scatter_nd(idx, tf.ones([batch_size]), [batch_size, bucket_size])
+    diagonal_masked = diagonal + -1e9 * diag_inv_mask
+    roots_mask = tf.matrix_diag(diagonal_masked)
+    roots_masked_logits = roots_mask + diag_mask * logits3D
+    logits3D = roots_masked_logits
 
-    # roots_to_keep = tf.cast(tf.reshape(self.tokens_to_keep3D[:,:,0], [batch_size*bucket_size, -1]), tf.float32)
-    # roots_logits = logits3D[:,:,0]
-    #
-    # roots_logits2D = tf.reshape(roots_logits, [batch_size * bucket_size, -1])
-    #
-    # roots_logits2D = tf.Print(roots_logits2D, [targets3D], summarize=500)
-    #
-    # roots_targets1D = tf.cast(tf.reshape(tf.argmin(targets3D, axis=1), [batch_size * bucket_size]), tf.int32)
-    # roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits2D, labels=roots_targets1D)
-    # roots_loss = tf.reduce_sum(roots_cross_entropy1D * roots_to_keep) / tf.cast(batch_size, tf.float32)
+    # # 2-cycles loss: count of 2-cycles (where predicted adj and adj^T are both set)
+    # cycle2_loss = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
+    # # mask padding and also the correct edges, so this loss doesn't apply to correct predictions
+    # cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * (1 - targets_mask)
+    # cycle2_loss_avg = tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
+
+    # # NON-LOSS MASK
+    # # logits_expanded = tf.expand_dims(logits3D, -1)
+    # # concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
+    # # maxes = tf.reduce_max(concat, axis=-1)
+    # # min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
+    # # mask1 = tf.cast(tf.equal(maxes, logits3D), tf.float32)
+    # # mask2 = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
+    # # logits3D = logits3D * mask1 + mask2 * min_vals
+    # # logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
+    # #
+    # # roots_to_keep = tf.cast(tf.reshape(self.tokens_to_keep3D[:,:,0], [batch_size*bucket_size, -1]), tf.float32)
+    # # roots_logits = logits3D[:,:,0]
+    # #
+    # # roots_logits2D = tf.reshape(roots_logits, [batch_size * bucket_size, -1])
+    # #
+    # # roots_logits2D = tf.Print(roots_logits2D, [targets3D], summarize=500)
+    # #
+    # # roots_targets1D = tf.cast(tf.reshape(tf.argmin(targets3D, axis=1), [batch_size * bucket_size]), tf.int32)
+    # # roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits2D, labels=roots_targets1D)
+    # # roots_loss = tf.reduce_sum(roots_cross_entropy1D * roots_to_keep) / tf.cast(batch_size, tf.float32)
+    # #
 
     ######### roots loss (non-diag) ##########
     # roots_logits = logits3D[:, 0, :]
@@ -916,60 +932,54 @@ class NN(Configurable):
     #                                                                        labels=roots_targets1D)
     # roots_loss = tf.reduce_mean(roots_cross_entropy1D)
 
-
-
-    ########## roots mask #########
-    idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
-    idx1 = tf.reshape(tf.tile(tf.expand_dims(tf.range(batch_size), -1), [1, bucket_size]), [-1])
-    idx2 = tf.tile(tf.range(bucket_size), [batch_size])
-    maxes_repeat = tf.reshape(tf.tile(tf.expand_dims(idx_t, -1), [1, bucket_size]), [-1])
+    # ########## roots mask #########
+    # idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
+    # idx1 = tf.reshape(tf.tile(tf.expand_dims(tf.range(batch_size), -1), [1, bucket_size]), [-1])
+    # idx2 = tf.tile(tf.range(bucket_size), [batch_size])
+    # maxes_repeat = tf.reshape(tf.tile(tf.expand_dims(idx_t, -1), [1, bucket_size]), [-1])
+    # # idx_rows = tf.stack([idx1, idx2, maxes_repeat], axis=-1)
     # idx_rows = tf.stack([idx1, idx2, maxes_repeat], axis=-1)
-    idx_rows = tf.stack([idx1, idx2, maxes_repeat], axis=-1)
-    mask_rows = 1 - tf.scatter_nd(idx_rows, tf.ones([batch_size * bucket_size]),
-                                  [batch_size, bucket_size, bucket_size])
+    # mask_rows = 1 - tf.scatter_nd(idx_rows, tf.ones([batch_size * bucket_size]),
+    #                               [batch_size, bucket_size, bucket_size])
+    #
+    # idx_cols = tf.stack([idx1, tf.zeros([bucket_size * batch_size], dtype=tf.int32), idx2], axis=-1)
+    # mask_cols = 1 - tf.scatter_nd(idx_cols, tf.ones([batch_size * bucket_size]),
+    #                               [batch_size, bucket_size, bucket_size])
+    # roots_mask = 1 - tf.cast(tf.logical_xor(tf.cast(mask_cols, tf.bool), tf.cast(mask_rows, tf.bool)), tf.float32)
+    # roots_mask = tf.transpose(roots_mask, [0, 2, 1])
+    # roots_mask_for_loss = 1 - roots_mask[:, 0]
+    #
+    # ######## condition on pairwise selection, root selection #########
+    #
+    # # try masking zeroth row before computing pairs mask, so as not to conflict w/ roots
+    # pairs_idx_cols = tf.stack([idx1, tf.zeros([bucket_size * batch_size], dtype=tf.int32), idx2], axis=-1)
+    # pairs_mask_cols = 1 - tf.scatter_nd(pairs_idx_cols, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
+    # masked_logits_expanded = tf.expand_dims(logits3D * pairs_mask_cols + (1-pairs_mask_cols) * -1e9, -1)
+    # concat_masked = tf.concat([masked_logits_expanded, tf.transpose(masked_logits_expanded, [0, 2, 1, 3])], axis=-1)
+    # maxes = tf.reduce_max(concat_masked, axis=-1)
+    # mask = tf.cast(tf.equal(maxes, logits3D), tf.float32)
+    #
+    #
+    # # logits2D = tf.Print(logits2D, [logits3D], summarize=500)
+    # # logits2D = tf.Print(logits2D, [targets3D], summarize=500)
+    # # logits2D = tf.Print(logits2D, [self.tokens_to_keep3D], summarize=500)
+    #
+    #
+    # # # combined_mask = mask * roots_mask
+    # # combined_mask = roots_mask * self.tokens_to_keep3D
+    # # # logits3D = (logits3D * roots_mask + ((1 - roots_mask) * -1e9) ) #* self.tokens_to_keep3D
+    # # # logits3D = logits3D * mask + (1 - mask) * -1e9
+    # # logits3D = logits3D * combined_mask + (1 - combined_mask) * -1e9
+    # # logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1])) #* tokens_to_keep1D
+    # # # roots_mask = tf.reshape(roots_mask, [batch_size*bucket_size, -1])
 
-    idx_cols = tf.stack([idx1, tf.zeros([bucket_size * batch_size], dtype=tf.int32), idx2], axis=-1)
-    mask_cols = 1 - tf.scatter_nd(idx_cols, tf.ones([batch_size * bucket_size]),
-                                  [batch_size, bucket_size, bucket_size])
-    roots_mask = 1 - tf.cast(tf.logical_xor(tf.cast(mask_cols, tf.bool), tf.cast(mask_rows, tf.bool)), tf.float32)
-    roots_mask = tf.transpose(roots_mask, [0, 2, 1])
-    roots_mask_for_loss = 1 - roots_mask[:, 0]
-
-    ######## condition on pairwise selection, root selection #########
-
-    # try masking zeroth row before computing pairs mask, so as not to conflict w/ roots
-    pairs_idx_cols = tf.stack([idx1, tf.zeros([bucket_size * batch_size], dtype=tf.int32), idx2], axis=-1)
-    pairs_mask_cols = 1 - tf.scatter_nd(pairs_idx_cols, tf.ones([batch_size * bucket_size]), [batch_size, bucket_size, bucket_size])
-    masked_logits_expanded = tf.expand_dims(logits3D * pairs_mask_cols + (1-pairs_mask_cols) * -1e9, -1)
-    concat_masked = tf.concat([masked_logits_expanded, tf.transpose(masked_logits_expanded, [0, 2, 1, 3])], axis=-1)
-    maxes = tf.reduce_max(concat_masked, axis=-1)
-    mask = tf.cast(tf.equal(maxes, logits3D), tf.float32)
-
-
-    # logits2D = tf.Print(logits2D, [logits3D], summarize=500)
-    # logits2D = tf.Print(logits2D, [targets3D], summarize=500)
-    # logits2D = tf.Print(logits2D, [self.tokens_to_keep3D], summarize=500)
-
-    # normal log loss
-    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
-    log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
-
-    # # combined_mask = mask * roots_mask
-    # combined_mask = roots_mask * self.tokens_to_keep3D
-    # # logits3D = (logits3D * roots_mask + ((1 - roots_mask) * -1e9) ) #* self.tokens_to_keep3D
-    # # logits3D = logits3D * mask + (1 - mask) * -1e9
-    # logits3D = logits3D * combined_mask + (1 - combined_mask) * -1e9
-    # logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1])) #* tokens_to_keep1D
-    # # roots_mask = tf.reshape(roots_mask, [batch_size*bucket_size, -1])
-
+    logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     probabilities2D = tf.nn.softmax(logits2D)
     correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
     n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     accuracy = n_correct / self.n_tokens
 
-
-    # loss = svd_loss_avg + cycle2_loss_avg + log_loss
     loss = log_loss + roots_loss + pairs_log_loss  # + svd_loss
 
     output = {
@@ -982,9 +992,9 @@ class NN(Configurable):
       'accuracy': accuracy,
       'loss': loss,
       'log_loss': log_loss,
-      'svd_loss': roots_loss, #tf.constant(0), #svd_loss_avg, #
-      # 'roots_loss': roots_loss,
-      '2cycle_loss': pairs_log_loss# tf.constant(0), #cycle2_loss_avg
+      # 'svd_loss': svd_loss,
+      'roots_loss': roots_loss,
+      '2cycle_loss': pairs_log_loss
     }
 
     return output
