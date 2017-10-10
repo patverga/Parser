@@ -817,10 +817,11 @@ class NN(Configurable):
     # targets_mask is the target adjacency matrix (with zero padding)
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.stack([i1, i2, targets3D], axis=-1)
-    targets_mask = tf.cast(tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size]), tf.int32)
+    targets_mask = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
     # assert that there is exactly one root
     with tf.control_dependencies([tf.assert_equal(tf.reduce_sum(tf.matrix_diag_part(targets_mask), axis=1), tf.ones([batch_size], dtype=tf.int32))]):
       targets_mask *= self.tokens_to_keep3D
+      targets_mask = tf.cast(targets_mask, tf.int32)
 
     # flatten to [B*N, N]
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
