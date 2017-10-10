@@ -882,9 +882,9 @@ class NN(Configurable):
       print("SVD did not converge")
       svd_loss_avg = 0.
 
-
-
     ########## roots mask (diag) #########
+    # select roots using softmax over diag. do this by choosing the root, then setting everything else
+    # on diag to -1e9
     diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
     idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
     idx = tf.stack([tf.range(batch_size), idx_t], axis=-1)
