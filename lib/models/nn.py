@@ -814,32 +814,34 @@ class NN(Configurable):
     # mask2 = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
     # logits3D = logits3D * mask1 + mask2 * min_vals
 
+    # targets_mask is the target adjacency matrix (with zero padding)
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.stack([i1, i2, targets3D], axis=-1)
-    targets_mask = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+    targets_mask = tf.cast(tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size]), tf.int32)
+    with tf.control_dependencies(tf.equal(tf.reduce_sum(tf.matrix_diag_part(targets_mask)), 1)):
+      targets_mask *= self.tokens_to_keep3D
 
     # flatten to [B*N, N]
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
-
-    roots_to_keep = self.tokens_to_keep3D[:, 0, :]
-
-
     targets1D = tf.reshape(targets3D, [-1])
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
     targets_mask1D = tf.reshape(targets_mask, [-1])
 
+    diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
+
     # this has 1s in all the locations of the adjacency matrix that we care about: i,j and j,i where i,j is correct
-    # add is ok because we know that no two will ever be set
-    pairs_mask = tf.add(targets_mask, tf.transpose(targets_mask, [0, 2, 1]))
+    # add is ok because we know that no two will ever be set (except diag which we zero out anyway)
+    pairs_mask = tf.add(targets_mask, tf.transpose(targets_mask, [0, 2, 1])) * diag_mask
 
     ######## pairs softmax thing #########
+    # concat preds and preds^T along last (new) dim. flatten. now do softmax loss, forcing only one of each
+    # pair to be predicted, enforcing no cycles between two nodes.
     logits_expanded = tf.expand_dims(logits3D, -1)
-    concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
+    concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
     pairs_logits2D = tf.reshape(concat, [batch_size * bucket_size * bucket_size, 2])
-    pairs_targets = tf.cast(1 - targets_mask1D, tf.int32)
-    pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=pairs_targets)
+    pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=targets_mask1D)
     pairs_xent3D = tf.reshape(pairs_xent, [batch_size, bucket_size, bucket_size])
-    pairs_log_loss = self.pairs_penalty * tf.reduce_sum(pairs_xent3D * self.tokens_to_keep3D * pairs_mask) / self.n_tokens
+    pairs_log_loss = self.pairs_penalty * tf.reduce_sum(pairs_xent3D * pairs_mask) #/ self.n_tokens
 
     # svd loss
     svd_coeff = 100000.0
@@ -866,14 +868,13 @@ class NN(Configurable):
       svd_loss_avg = svd_coeff * tf.reduce_sum(svd_loss) / self.n_tokens
     except np.linalg.linalg.LinAlgError:
       print("SVD did not converge")
-      svd_loss_avg = 0
+      svd_loss_avg = 0.
 
-    # 2-cycles loss
-    cycle2_coeff = 500.
+    # 2-cycles loss: count of 2-cycles (where predicted adj and adj^T are both set)
     cycle2_loss = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
     # mask padding and also the correct edges, so this loss doesn't apply to correct predictions
     cycle2_loss_masked = cycle2_loss * self.tokens_to_keep3D * (1 - targets_mask)
-    cycle2_loss_avg = cycle2_coeff * tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
+    cycle2_loss_avg = tf.reduce_sum(cycle2_loss_masked) / self.n_tokens
 
 
     # NON-LOSS MASK
