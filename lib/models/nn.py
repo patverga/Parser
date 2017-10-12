@@ -797,7 +797,7 @@ class NN(Configurable):
     return output
 
   # =============================================================
-  def output_svd(self, logits3D, targets3D, roots_penalty):
+  def output_svd(self, logits3D, targets3D):
     """"""
 
     original_shape = tf.shape(logits3D)
@@ -805,74 +805,40 @@ class NN(Configurable):
     bucket_size = original_shape[1]
     flat_shape = tf.stack([batch_size, bucket_size])
 
-    # targets_mask is the target adjacency matrix (with zero padding)
-    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
-    idx = tf.stack([i1, i2, targets3D], axis=-1)
-    targets_mask = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
-    # assert that there is exactly one root
-    with tf.control_dependencies([tf.assert_equal(tf.reduce_sum(tf.matrix_diag_part(targets_mask), axis=1), tf.ones([batch_size]))]):
-      targets_mask *= self.tokens_to_keep3D
-
     # flatten to [B*N, N]
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
     targets1D = tf.reshape(targets3D, [-1])
     tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
-    targets_mask1D = tf.reshape(targets_mask, [-1])
 
-    diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
-
-    # this has 1s in all the locations of the adjacency matrix that we care about: i,j and j,i where i,j is correct
-    # add is ok because we know that no two will ever be set (except diag which we zero out anyway)
-    pairs_mask = tf.add(targets_mask, tf.transpose(targets_mask, [0, 2, 1])) * diag_mask
+    # targets_mask = tf.cond(tf.logical_or(tf.not_equal(self.pairs_penalty, tf.constant(0.0)),
+    #                                      tf.not_equal(self.roots_penalty, tf.constant(0.0))),
+    #                      lambda: tf.constant(0.0),
+    #                      lambda: self.gen_targets_mask(logits3D, batch_size, bucket_size))
+    targets_mask = self.gen_targets_mask(logits3D, batch_size, bucket_size)
 
     ######## pairs softmax thing #########
-    # concat preds and preds^T along last (new) dim. flatten. now do softmax loss, forcing only one of each
-    # pair to be predicted, enforcing no cycles between two nodes.
-    logits_expanded = tf.expand_dims(logits3D, -1)
-    pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
-    pairs_logits2D = tf.reshape(pairs_concat, [batch_size * bucket_size * bucket_size, 2])
-    pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D, labels=tf.cast(targets_mask1D, tf.int32))
-    pairs_xent3D = tf.reshape(pairs_xent, [batch_size, bucket_size, bucket_size])
-    pairs_log_loss = self.pairs_penalty * tf.reduce_sum(pairs_xent3D * pairs_mask) / self.n_tokens
+    pairs_log_loss, pairs_concat = tf.cond(tf.equal(self.pairs_penalty, tf.constant(0.0)),
+                         lambda: (tf.constant(0.0), tf.concat([tf.transpose(tf.expand_dims(logits3D, -1), [0, 2, 1, 3]), tf.expand_dims(logits3D, -1)], axis=-1)),
+                         lambda: self.compute_pairs_loss(logits3D, targets_mask, batch_size, bucket_size))
 
     ######### roots loss (diag) ##########
-    # softmax over diagonal
-    roots_logits = tf.matrix_diag_part(logits3D)
-    roots_targets1D = tf.argmax(tf.matrix_diag_part(targets_mask), axis=1)
-    roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits, labels=roots_targets1D)
-    roots_loss = roots_penalty * tf.reduce_mean(roots_cross_entropy1D)
+    roots_loss = tf.cond(tf.equal(self.roots_penalty, tf.constant(0.0)),
+                       lambda: tf.constant(0.0),
+                       lambda: self.compute_roots_loss(logits3D, targets_mask))
 
     ########## normal log loss ##########
     cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
     ########## pairs mask #########
-    # TODO check this... can't be right... also messing up roots
-    # doing this again w/ roots mask applied
-    # logits_expanded = tf.expand_dims(logits3D, -1)
-    # pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
-    maxes = tf.reduce_max(pairs_concat, axis=-1)
-    # min across each sequence in the batch
-    min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
-    mask_eq = tf.cast(tf.equal(maxes, logits3D), tf.float32)
-    mask_neq = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
-    logits3D = logits3D * mask_eq + mask_neq * min_vals
+    logits3D = tf.cond(tf.constant(self.mask_pairs),
+                       lambda: self.logits_mask_pairs(logits3D, batch_size),
+                       lambda: logits3D)
 
     ########## roots mask (diag) #########
-    # select roots using softmax over diag. do this by choosing the root, then setting everything else
-    # on diag to -1e9
-    diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
-    roots_logits = tf.matrix_diag_part(logits3D)  # doing this again with pairs mask applied
-    idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
-    idx = tf.stack([tf.range(batch_size), idx_t], axis=-1)
-    # diagonal = tf.scatter_nd(idx, tf.reduce_max(roots_logits, axis=1), [batch_size, bucket_size])
-    diagonal = tf.scatter_nd(idx, tf.fill([batch_size], tf.reduce_max(logits3D) + 1), [batch_size, bucket_size])
-    diag_inv_mask = 1 - tf.scatter_nd(idx, tf.ones([batch_size]), [batch_size, bucket_size])
-    # diagonal_masked = diagonal + -1e9 * diag_inv_mask
-    diagonal_masked = diagonal + (tf.reduce_min(logits3D) - 1) * diag_inv_mask
-    roots_mask = tf.matrix_diag(diagonal_masked)
-    roots_masked_logits = roots_mask + diag_mask * logits3D
-    logits3D = roots_masked_logits
+    logits3D = tf.cond(tf.constant(self.mask_roots),
+                       lambda: self.logits_mask_roots(logits3D, batch_size, bucket_size),
+                       lambda: logits3D)
 
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
@@ -951,6 +917,46 @@ class NN(Configurable):
     return output
 
 
+  ########## roots mask (diag) #########
+  # select roots using softmax over diag. do this by choosing the root, then setting everything else
+  # on diag to -1e9
+  def logits_mask_roots(self, logits3D, batch_size, bucket_size):
+    diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
+    roots_logits = tf.matrix_diag_part(logits3D)  # doing this again with pairs mask applied
+    idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
+    idx = tf.stack([tf.range(batch_size), idx_t], axis=-1)
+    diagonal = tf.scatter_nd(idx, tf.fill([batch_size], tf.reduce_max(logits3D) + 1), [batch_size, bucket_size])
+    diag_inv_mask = 1 - tf.scatter_nd(idx, tf.ones([batch_size]), [batch_size, bucket_size])
+    diagonal_masked = diagonal + (tf.reduce_min(logits3D) - 1) * diag_inv_mask
+    roots_mask = tf.matrix_diag(diagonal_masked)
+    return roots_mask + diag_mask * logits3D
+
+
+  ########## pairs mask #########
+  def logits_mask_pairs(self, logits3D, batch_size):
+    logits_expanded = tf.expand_dims(logits3D, -1)
+    pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
+    maxes = tf.reduce_max(pairs_concat, axis=-1)
+    # min across each sequence in the batch
+    min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
+    mask_eq = tf.cast(tf.equal(maxes, logits3D), tf.float32)
+    mask_neq = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
+    return logits3D * mask_eq + mask_neq * min_vals
+
+
+  # targets_mask is the target adjacency matrix (with zero padding)
+  def gen_targets_mask(self, targets3D, batch_size, bucket_size):
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.stack([i1, i2, targets3D], axis=-1)
+    targets_mask = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+    targets_mask *= self.tokens_to_keep3D
+
+    # assert that there is exactly one root
+    with tf.control_dependencies(
+            [tf.assert_equal(tf.reduce_sum(tf.matrix_diag_part(targets_mask), axis=1), tf.ones([batch_size]))]):
+      return targets_mask
+
+
   ########### svd loss ##########
   def compute_svd_loss(self, logits2D, tokens_to_keep1D, batch_size, bucket_size):
     # construct predicted adjacency matrix
@@ -962,8 +968,7 @@ class NN(Configurable):
     # zero out diagonal
     adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
     # make it undirected
-    undirected_adj = tf.cast(tf.logical_or(tf.cast(adj, tf.bool), tf.transpose(tf.cast(adj, tf.bool), [0, 2, 1])),
-                             tf.float32)
+    undirected_adj = tf.cast(tf.logical_or(tf.cast(adj, tf.bool), tf.transpose(tf.cast(adj, tf.bool), [0, 2, 1])), tf.float32)
 
     # compute laplacian & its trace
     degrees = tf.reduce_sum(undirected_adj, axis=1)
@@ -985,7 +990,35 @@ class NN(Configurable):
       print("SVD did not converge")
     return svd_loss
 
-  
+
+  ######### roots loss (diag) ##########
+  def compute_roots_loss(self, logits3D, targets_mask):
+    # softmax over diagonal
+    roots_logits = tf.matrix_diag_part(logits3D)
+    roots_targets1D = tf.argmax(tf.matrix_diag_part(targets_mask), axis=1)
+    roots_cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=roots_logits, labels=roots_targets1D)
+    return self.roots_penalty * tf.reduce_mean(roots_cross_entropy1D)
+
+
+  ######## pairs softmax thing #########
+  # concat preds and preds^T along last (new) dim. flatten. now do softmax loss, forcing only one of each
+  # pair to be predicted, enforcing no cycles between two nodes.
+  def compute_pairs_loss(self, logits3D, targets_mask, batch_size, bucket_size):
+
+    # this has 1s in all the locations of the adjacency matrix that we care about: i,j and j,i where i,j is correct
+    # add is ok because we know that no two will ever be set (except diag which we zero out anyway)
+    diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
+    pairs_mask = tf.add(targets_mask, tf.transpose(targets_mask, [0, 2, 1])) * diag_mask
+
+    targets_mask1D = tf.reshape(targets_mask, [-1])
+    logits_expanded = tf.expand_dims(logits3D, -1)
+    pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
+    pairs_logits2D = tf.reshape(pairs_concat, [batch_size * bucket_size * bucket_size, 2])
+    pairs_xent = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=pairs_logits2D,
+                                                                labels=tf.cast(targets_mask1D, tf.int32))
+    pairs_xent3D = tf.reshape(pairs_xent, [batch_size, bucket_size, bucket_size])
+    return self.pairs_penalty * tf.reduce_sum(pairs_xent3D * pairs_mask) / self.n_tokens, pairs_concat
+
   #=============================================================
   def conditional_probabilities(self, logits4D, transpose=True):
     """"""

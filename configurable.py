@@ -384,6 +384,14 @@ class Configurable(object):
   def svd_penalty(self):
     return self._config.getfloat('Training', 'svd_penalty')
   argparser.add_argument('--svd_penalty')
+  @property
+  def mask_roots(self):
+    return self._config.getboolean('Training', 'mask_roots')
+  argparser.add_argument('--mask_roots')
+  @property
+  def mask_pairs(self):
+    return self._config.getboolean('Training', 'mask_pairs')
+  argparser.add_argument('--mask_pairs')
 
   #=============================================================
   # [Transformer]

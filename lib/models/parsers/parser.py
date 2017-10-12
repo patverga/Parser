@@ -100,7 +100,7 @@ class Parser(BaseParser):
     with tf.variable_scope('Arcs', reuse=reuse):
       arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
       # arc_output = self.output(arc_logits, targets[:,:,1])
-      arc_output = self.output_svd(arc_logits, targets[:,:,1], self.roots_penalty)
+      arc_output = self.output_svd(arc_logits, targets[:,:,1])
       if moving_params is None:
         predictions = targets[:,:,1]
       else:
