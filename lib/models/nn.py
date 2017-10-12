@@ -883,7 +883,7 @@ class NN(Configurable):
 
     ########### svd loss ##########
     svd_loss = tf.cond(tf.equal(self.svd_penalty, tf.constant(0.0)),
-                       tf.constant(0.0),
+                       lambda: tf.constant(0.0),
                        self.compute_svd_loss(logits2D, tokens_to_keep1D, batch_size, bucket_size))
 
     ######## condition on pairwise selection, root selection #########
