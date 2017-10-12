@@ -878,10 +878,10 @@ class NN(Configurable):
 
       svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
       # svd_loss_masked = self.tokens_to_keep3D * svd_loss
-      svd_loss_avg = self.svd_penalty * tf.reduce_sum(svd_loss) / self.n_tokens
+      svd_loss = self.svd_penalty * tf.reduce_sum(svd_loss) / self.n_tokens
     except np.linalg.linalg.LinAlgError:
       print("SVD did not converge")
-      svd_loss_avg = 0.
+      svd_loss = 0.
 
     ########## pairs mask #########
     # TODO check this... can't be right... also messing up roots
@@ -963,7 +963,7 @@ class NN(Configurable):
     n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     accuracy = n_correct / self.n_tokens
 
-    loss = log_loss + roots_loss + pairs_log_loss # + svd_loss
+    loss = log_loss + roots_loss + pairs_log_loss + svd_loss
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
@@ -975,9 +975,9 @@ class NN(Configurable):
       'accuracy': accuracy,
       'loss': loss,
       'log_loss': log_loss,
-      # 'svd_loss': svd_loss,
       'roots_loss': roots_loss,
-      '2cycle_loss': pairs_log_loss
+      '2cycle_loss': pairs_log_loss,
+      'svd_loss': svd_loss,
     }
 
     return output
