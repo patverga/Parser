@@ -814,7 +814,7 @@ class NN(Configurable):
     #                                      tf.not_equal(self.roots_penalty, tf.constant(0.0))),
     #                      lambda: tf.constant(0.0),
     #                      lambda: self.gen_targets_mask(logits3D, batch_size, bucket_size))
-    targets_mask = self.gen_targets_mask(logits3D, batch_size, bucket_size)
+    targets_mask = self.gen_targets_mask(targets3D, batch_size, bucket_size)
 
     ######## pairs softmax thing #########
     pairs_log_loss, pairs_concat = tf.cond(tf.equal(self.pairs_penalty, tf.constant(0.0)),
