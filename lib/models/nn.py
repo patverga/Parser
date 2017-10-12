@@ -805,15 +805,6 @@ class NN(Configurable):
     bucket_size = original_shape[1]
     flat_shape = tf.stack([batch_size, bucket_size])
 
-    # 2-cycles loss adjustment
-    # logits_expanded = tf.expand_dims(logits3D, -1)
-    # concat = tf.concat([logits_expanded, tf.transpose(logits_expanded, [0, 2, 1, 3])], axis=-1)
-    # maxes = tf.reduce_max(concat, axis=-1)
-    # min_vals = tf.reshape(tf.reduce_min(tf.reshape(logits3D, [batch_size, -1]), axis=-1), [batch_size, 1, 1])
-    # mask1 = tf.cast(tf.equal(maxes, logits3D), tf.float32)
-    # mask2 = tf.cast(tf.not_equal(maxes, logits3D), tf.float32)
-    # logits3D = logits3D * mask1 + mask2 * min_vals
-
     # targets_mask is the target adjacency matrix (with zero padding)
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.stack([i1, i2, targets3D], axis=-1)
@@ -878,7 +869,7 @@ class NN(Configurable):
 
       svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
       # svd_loss_masked = self.tokens_to_keep3D * svd_loss
-      svd_loss = self.svd_penalty * tf.reduce_sum(svd_loss) / self.n_tokens
+      svd_loss = self.svd_penalty * tf.reduce_sum(svd_loss) #/ self.n_tokens
     except np.linalg.linalg.LinAlgError:
       print("SVD did not converge")
       svd_loss = 0.
