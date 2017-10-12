@@ -380,6 +380,10 @@ class Configurable(object):
   def pairs_penalty(self):
     return self._config.getfloat('Training', 'pairs_penalty')
   argparser.add_argument('--pairs_penalty')
+  @property
+  def svd_penalty(self):
+    return self._config.getfloat('Training', 'svd_penalty')
+  argparser.add_argument('--svd_penalty')
 
   #=============================================================
   # [Transformer]

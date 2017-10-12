@@ -856,12 +856,13 @@ class NN(Configurable):
     log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
     ########### svd loss ##########
-    svd_coeff = 100000.0
+    # construct predicted adjacency matrix
     maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
     maxes_tiled = tf.tile(maxes, [1, bucket_size])
     adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
     adj_flat = adj_flat * tf.expand_dims(tokens_to_keep1D, -1)
     adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
+    # zero out diagonal
     adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
     undirected_adj = tf.cast(tf.logical_or(tf.cast(adj, tf.bool), tf.transpose(tf.cast(adj, tf.bool), [0, 2, 1])), tf.float32)
 
@@ -877,7 +878,7 @@ class NN(Configurable):
 
       svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
       # svd_loss_masked = self.tokens_to_keep3D * svd_loss
-      svd_loss_avg = svd_coeff * tf.reduce_sum(svd_loss) / self.n_tokens
+      svd_loss_avg = self.svd_penalty * tf.reduce_sum(svd_loss) / self.n_tokens
     except np.linalg.linalg.LinAlgError:
       print("SVD did not converge")
       svd_loss_avg = 0.
@@ -898,6 +899,7 @@ class NN(Configurable):
     # select roots using softmax over diag. do this by choosing the root, then setting everything else
     # on diag to -1e9
     diag_mask = 1 - tf.eye(bucket_size, batch_shape=[batch_size])
+    roots_logits = tf.matrix_diag_part(logits3D)  # doing this again with pairs mask applied
     idx_t = tf.cast(tf.argmax(roots_logits, axis=1), tf.int32)
     idx = tf.stack([tf.range(batch_size), idx_t], axis=-1)
     # diagonal = tf.scatter_nd(idx, tf.reduce_max(roots_logits, axis=1), [batch_size, bucket_size])
