@@ -882,32 +882,9 @@ class NN(Configurable):
     accuracy = n_correct / self.n_tokens
 
     ########### svd loss ##########
-    # construct predicted adjacency matrix
-    maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
-    maxes_tiled = tf.tile(maxes, [1, bucket_size])
-    adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
-    adj_flat = adj_flat * tf.expand_dims(tokens_to_keep1D, -1)
-    adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
-    # zero out diagonal
-    adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
-    undirected_adj = tf.cast(tf.logical_or(tf.cast(adj, tf.bool), tf.transpose(tf.cast(adj, tf.bool), [0, 2, 1])), tf.float32)
-
-    degrees = tf.reduce_sum(undirected_adj, axis=1)
-    laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
-
-    try:
-      dtype = laplacian.dtype
-      _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, True], [dtype, dtype, dtype])
-      # s, _, _ = tf.svd(laplacian)
-      l_trace = tf.reduce_sum(degrees, axis=1)
-      l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
-
-      svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
-      # svd_loss_masked = self.tokens_to_keep3D * svd_loss
-      svd_loss = self.svd_penalty * tf.reduce_sum(svd_loss) #/ self.n_tokens
-    except np.linalg.linalg.LinAlgError:
-      print("SVD did not converge")
-      svd_loss = 0.
+    svd_loss = tf.cond(tf.equal(self.svd_penalty, tf.constant(0.0)),
+                       tf.constant(0.0),
+                       self.compute_svd_loss(logits2D, tokens_to_keep1D, batch_size, bucket_size))
 
     ######## condition on pairwise selection, root selection #########
     # # try masking zeroth row before computing pairs mask, so as not to conflict w/ roots
@@ -972,6 +949,42 @@ class NN(Configurable):
     }
 
     return output
+
+
+  ########### svd loss ##########
+  def compute_svd_loss(self, logits2D, tokens_to_keep1D, batch_size, bucket_size):
+    # construct predicted adjacency matrix
+    maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
+    maxes_tiled = tf.tile(maxes, [1, bucket_size])
+    adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
+    adj_flat = adj_flat * tf.expand_dims(tokens_to_keep1D, -1)
+    adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
+    # zero out diagonal
+    adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
+    # make it undirected
+    undirected_adj = tf.cast(tf.logical_or(tf.cast(adj, tf.bool), tf.transpose(tf.cast(adj, tf.bool), [0, 2, 1])),
+                             tf.float32)
+
+    # compute laplacian & its trace
+    degrees = tf.reduce_sum(undirected_adj, axis=1)
+    l_trace = tf.reduce_sum(degrees, axis=1)
+    laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
+
+    svd_loss = 0.
+    try:
+      dtype = laplacian.dtype
+      _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, True], [dtype, dtype, dtype])
+      # s, _, _ = tf.svd(laplacian)
+      l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
+
+      # cycles iff: 0.5 * l_trace > l_rank + 1
+      svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
+      # svd_loss_masked = self.tokens_to_keep3D * svd_loss
+      svd_loss = self.svd_penalty * tf.reduce_sum(svd_loss)  # / self.n_tokens
+    except np.linalg.linalg.LinAlgError:
+      print("SVD did not converge")
+    return svd_loss
+
   
   #=============================================================
   def conditional_probabilities(self, logits4D, transpose=True):
