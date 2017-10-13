@@ -1165,28 +1165,11 @@ class NN(Configurable):
     elif self.svd_tree:
       tokens_to_keep[0] = True
       length = np.sum(tokens_to_keep)
-      I = np.eye(len(tokens_to_keep))
-      # block loops and pad heads
-      # parse_preds_with_diag = np.argmax(parse_probs * tokens_to_keep, axis=1)
-
-      parse_probs = parse_probs * tokens_to_keep # * (1 - I)
+      parse_probs = parse_probs * tokens_to_keep
       parse_preds = np.argmax(parse_probs, axis=1)
-      # print(tokens_to_keep)
-      # print(parse_preds)
       num_roots = sum([1 if i == p else 0 for i, p in enumerate(parse_preds[:length])])
-      # for r in roots:
-      #   parse_preds[r] = 0
       roots_lt = 1. if num_roots < 1 else 0.
       roots_gt = 1. if num_roots > 1 else 0.
-      # if roots_lt or roots_gt:
-      #   print("parse_probs")
-      #   print(parse_probs)
-      # print("parse preds")
-      # print(parse_preds)
-      #   print("parse_preds_with_diag")
-      #   print(parse_preds_with_diag)
-      #   print("tokens to keep")
-      #   print(tokens_to_keep)
       len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
       return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
     elif self.ensure_tree:
