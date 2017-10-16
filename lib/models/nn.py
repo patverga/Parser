@@ -830,11 +830,6 @@ class NN(Configurable):
     # cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
     # log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
-    ########## pairs mask #########
-    logits3D = tf.cond(tf.constant(self.mask_pairs),
-                       lambda: self.logits_mask_pairs(logits3D, batch_size),
-                       lambda: logits3D)
-
     #### pairs gather (condition) ####
     logits_expanded = tf.expand_dims(logits3D, -1)
     pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
@@ -857,6 +852,11 @@ class NN(Configurable):
     new_targets_nonneg = tf.nn.relu(new_targets)
     pairs_conditioned_log_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=new_targets_nonneg, logits=gather_pad_reshape)
     pairs_conditioned_log_loss_masked = tf.reduce_sum(pairs_conditioned_log_loss * tf.cast(neg_mask, tf.float32)) / self.n_tokens # * tf.cast(pad_mat, tf.float32)
+
+    ########## pairs mask #########
+    logits3D = tf.cond(tf.constant(self.mask_pairs),
+                       lambda: self.logits_mask_pairs(logits3D, batch_size),
+                       lambda: logits3D)
 
     ########## roots mask (diag) #########
     logits3D = tf.cond(tf.constant(self.mask_roots),
