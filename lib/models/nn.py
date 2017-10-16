@@ -840,10 +840,8 @@ class NN(Configurable):
     pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
     maxes = tf.reduce_max(pairs_concat, axis=-1)
     indices = tf.where(tf.equal(maxes, logits3D))
-    i_reshape = tf.reshape(indices[:, 1], [batch_size, -1])
-    counts = tf.map_fn(lambda e: tf.unsorted_segment_sum(tf.ones_like(e), e, bucket_size), i_reshape)
+    counts = tf.segment_sum(tf.ones_like(indices[:, 0]), indices[:, 0] * tf.cast(bucket_size, tf.int64) + indices[:, 1])
     max_rep = tf.reduce_max(counts)
-    pad_sizes = max_rep - counts
     cumsum = tf.cumsum(tf.cast(tf.not_equal(maxes, logits3D), tf.int32), axis=2)
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.stack([i1, i2, targets3D], axis=-1)
