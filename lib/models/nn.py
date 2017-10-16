@@ -845,7 +845,7 @@ class NN(Configurable):
     sparse_indices = tf.reshape(tf.where(tf.reshape(pad_mat, [-1])), [-1])
     logits_pairs_gather = tf.gather_nd(logits3D, indices)
     gather_pad = tf.sparse_to_dense(sparse_indices, [tf.cast(batch_size * bucket_size, tf.int64) * max_rep],
-                                    logits_pairs_gather)
+                                    logits_pairs_gather, default_value=-1e9)
     gather_pad_reshape = tf.reshape(gather_pad, [batch_size, bucket_size, tf.cast(max_rep, tf.int32)], name="gather_pad_reshape")
     new_targets = targets3D - targets_sub
     neg_mask = tf.greater_equal(new_targets, 0)
