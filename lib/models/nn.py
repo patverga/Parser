@@ -827,13 +827,38 @@ class NN(Configurable):
                        lambda: self.compute_roots_loss(logits3D, targets_mask))
 
     ########## normal log loss ##########
-    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
-    log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
+    # cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
+    # log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
     ########## pairs mask #########
     logits3D = tf.cond(tf.constant(self.mask_pairs),
                        lambda: self.logits_mask_pairs(logits3D, batch_size),
                        lambda: logits3D)
+
+    #### pairs gather (condition) ####
+    logits_expanded = tf.expand_dims(logits3D, -1)
+    pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
+    maxes = tf.reduce_max(pairs_concat, axis=-1)
+    indices = tf.where(tf.equal(maxes, logits3D))
+    i_reshape = tf.reshape(indices[:, 1], [batch_size, -1])
+    counts = tf.map_fn(lambda e: tf.unsorted_segment_sum(tf.ones_like(e), e, bucket_size), i_reshape)
+    max_rep = tf.reduce_max(counts)
+    pad_sizes = max_rep - counts
+    cumsum = tf.cumsum(tf.cast(tf.not_equal(maxes, logits3D), tf.int32), axis=2)
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.stack([i1, i2, targets3D], axis=-1)
+    targets_sub = tf.gather_nd(cumsum, idx)
+    pad_mat = tf.sequence_mask(tf.reshape(counts, [-1]))
+    sparse_indices = tf.reshape(tf.where(tf.reshape(pad_mat, [-1])), [-1])
+    logits_pairs_gather = tf.gather_nd(logits3D, indices)
+    gather_pad = tf.sparse_to_dense(sparse_indices, [tf.cast(batch_size * bucket_size, tf.int64) * max_rep],
+                                    logits_pairs_gather)
+    gather_pad_reshape = tf.reshape(gather_pad, [batch_size, bucket_size, tf.cast(max_rep, tf.int32)])
+    new_targets = targets3D - targets_sub
+    neg_mask = tf.greater_equal(new_targets, 0)
+    new_targets_nonneg = tf.nn.relu(new_targets)
+    pairs_conditioned_log_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=new_targets_nonneg, logits=gather_pad_reshape)
+    pairs_conditioned_log_loss_masked = pairs_conditioned_log_loss * neg_mask * pad_mat
 
     ########## roots mask (diag) #########
     logits3D = tf.cond(tf.constant(self.mask_roots),
@@ -897,7 +922,9 @@ class NN(Configurable):
     # # logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1])) #* tokens_to_keep1D
     # # # roots_mask = tf.reshape(roots_mask, [batch_size*bucket_size, -1])
 
-    loss = log_loss + roots_loss + pairs_log_loss + svd_loss
+    # loss = log_loss + roots_loss + pairs_log_loss + svd_loss
+    loss = pairs_conditioned_log_loss_masked + roots_loss + pairs_log_loss + svd_loss
+
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),
