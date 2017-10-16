@@ -858,7 +858,7 @@ class NN(Configurable):
     neg_mask = tf.greater_equal(new_targets, 0)
     new_targets_nonneg = tf.nn.relu(new_targets)
     pairs_conditioned_log_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=new_targets_nonneg, logits=gather_pad_reshape)
-    pairs_conditioned_log_loss_masked = pairs_conditioned_log_loss * tf.cast(neg_mask * pad_mat, tf.float32)
+    pairs_conditioned_log_loss_masked = pairs_conditioned_log_loss * tf.cast(neg_mask, tf.float32) * tf.cast(pad_mat, tf.float32)
 
     ########## roots mask (diag) #########
     logits3D = tf.cond(tf.constant(self.mask_roots),
