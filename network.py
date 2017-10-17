@@ -166,20 +166,22 @@ class Network(Configurable):
             n_valid_sents = 0
             n_valid_correct = 0
             n_valid_tokens = 0
+            attn_weights_named = {}
             with open(os.path.join(self.save_dir, 'sanitycheck.txt'), 'w') as f:
               for k, (feed_dict, _) in enumerate(self.valid_minibatches()):
                 inputs = feed_dict[self._validset.inputs]
                 targets = feed_dict[self._validset.targets]
                 start_time = time.time()
                 loss, n_correct, n_tokens, predictions, attn_weights = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
-                print(attn_weights)
-                print([x.shape for x in attn_weights])
+                attn_weights_named.update({"b%d:%s" % (k, dk): v for dk, v in attn_weights.items()})
                 valid_time += time.time() - start_time
                 valid_loss += loss
                 n_valid_sents += len(targets)
                 n_valid_correct += n_correct
                 n_valid_tokens += n_tokens
                 self.model.sanity_check(inputs, targets, predictions, self._vocabs, f, feed_dict=feed_dict)
+            # save attention weights
+            np.savez(os.path.join(self.save_dir, "attn_weights"), **attn_weights_named)
             valid_loss /= k+1
             valid_accuracy = 100 * n_valid_correct / n_valid_tokens
             valid_time = n_valid_sents / valid_time

@@ -179,8 +179,8 @@ def dot_product_attention(q, k, v,
       logits += bias
     weights = tf.nn.softmax(logits, name="attention_weights")
     # dropping out the attention links for each of the heads
-    weights = tf.nn.dropout(weights, dropout_rate)
-    return tf.matmul(weights, v), weights
+    weights_drop = tf.nn.dropout(weights, dropout_rate)
+    return tf.matmul(weights_drop, v), weights
 
 
 def compute_qkv(antecedent, total_key_depth, total_value_depth):
