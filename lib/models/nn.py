@@ -933,7 +933,7 @@ class NN(Configurable):
       'n_tokens': self.n_tokens,
       'accuracy': accuracy,
       'loss': loss,
-      'log_loss': pairs_conditioned_log_loss_masked, #log_loss,
+      'log_loss': log_loss,
       'roots_loss': roots_loss,
       '2cycle_loss': pairs_log_loss,
       'svd_loss': svd_loss,
