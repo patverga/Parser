@@ -88,7 +88,7 @@ class Parser(BaseParser):
         top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                      attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                      self.info_func, reuse)
-        attn_weights_by_layer += attn_weights
+        attn_weights_by_layer.append(attn_weights)
     # if normalization is done in layer_preprocess, then it shuold also be done
     # on the output, since the output can grow very large, being the sum of
     # a whole stack of unnormalized layer outputs.
