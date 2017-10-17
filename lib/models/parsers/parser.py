@@ -76,7 +76,7 @@ class Parser(BaseParser):
       top_recur = tf.squeeze(top_recur, 1)
 
     top_recur = nn.add_timing_signal_1d(top_recur)
-    attn_weights_by_layer = []
+    attn_weights_by_layer = {}
 
     for i in xrange(self.n_recur):
       # RNN:
