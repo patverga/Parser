@@ -76,6 +76,7 @@ class Parser(BaseParser):
       top_recur = tf.squeeze(top_recur, 1)
 
     top_recur = nn.add_timing_signal_1d(top_recur)
+    attn_weights_by_layer = []
 
     for i in xrange(self.n_recur):
       # RNN:
@@ -84,9 +85,10 @@ class Parser(BaseParser):
 
       # Transformer:
       with tf.variable_scope('Transformer%d' % i, reuse=reuse):
-        top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
+        top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                      attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                      self.info_func, reuse)
+        attn_weights_by_layer += attn_weights
     # if normalization is done in layer_preprocess, then it shuold also be done
     # on the output, since the output can grow very large, being the sum of
     # a whole stack of unnormalized layer outputs.
@@ -138,6 +140,8 @@ class Parser(BaseParser):
     output['2cycle_loss'] = arc_output['2cycle_loss']
     output['roots_loss'] = arc_output['roots_loss']
     output['svd_loss'] = arc_output['svd_loss']
+
+    output['attn_weights'] = attn_weights_by_layer
     return output
   
   #=============================================================

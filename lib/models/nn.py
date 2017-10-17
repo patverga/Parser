@@ -180,7 +180,7 @@ def dot_product_attention(q, k, v,
     weights = tf.nn.softmax(logits, name="attention_weights")
     # dropping out the attention links for each of the heads
     weights = tf.nn.dropout(weights, dropout_rate)
-    return tf.matmul(weights, v)
+    return tf.matmul(weights, v), weights
 
 
 def compute_qkv(antecedent, total_key_depth, total_value_depth):
@@ -235,13 +235,13 @@ def multihead_attention(antecedent,
     v = split_heads(v, num_heads)
     key_depth_per_head = total_key_depth // num_heads
     q *= key_depth_per_head**-0.5
-    x = dot_product_attention(q, k, v, bias, dropout_rate)
+    x, attn_weights = dot_product_attention(q, k, v, bias, dropout_rate)
     x = combine_heads(x)
     params = tf.get_variable("final_proj", [1, 1, total_key_depth, output_depth])
     x = tf.expand_dims(x, 1)
     x = tf.nn.conv2d(x, params, [1, 1, 1, 1], "SAME")
     x = tf.squeeze(x, 1)
-    return x
+    return x, attn_weights
 
 
 def conv_hidden_relu(inputs,
@@ -411,7 +411,7 @@ class NN(Configurable):
 
     with tf.variable_scope("self_attention"):
       x = layer_norm(inputs, reuse)
-      y = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout)
+      y, attn_weights = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout)
       x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
     with tf.variable_scope("ffnn"):
@@ -419,7 +419,7 @@ class NN(Configurable):
       y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout, nonlinearity)
       x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
-    return x
+    return x, attn_weights
   
   #=============================================================
   def soft_attn(self, top_recur):
@@ -827,31 +827,31 @@ class NN(Configurable):
                        lambda: self.compute_roots_loss(logits3D, targets_mask))
 
     ########## normal log loss ##########
-    # cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
-    # log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
+    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
+    log_loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
     #### pairs gather (condition) ####
-    logits_expanded = tf.expand_dims(logits3D, -1)
-    pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
-    maxes = tf.reduce_max(pairs_concat, axis=-1)
-    indices = tf.where(tf.equal(maxes, logits3D))
-    counts = tf.segment_sum(tf.ones_like(indices[:, 0]), indices[:, 0] * tf.cast(bucket_size, tf.int64) + indices[:, 1])
-    max_rep = tf.reduce_max(counts)
-    cumsum = tf.cumsum(tf.cast(tf.not_equal(maxes, logits3D), tf.int32), axis=2)
-    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
-    idx = tf.stack([i1, i2, targets3D], axis=-1)
-    targets_sub = tf.gather_nd(cumsum, idx)
-    pad_mat = tf.sequence_mask(tf.reshape(counts, [-1]))
-    sparse_indices = tf.reshape(tf.where(tf.reshape(pad_mat, [-1])), [-1])
-    logits_pairs_gather = tf.gather_nd(logits3D, indices)
-    gather_pad = tf.sparse_to_dense(sparse_indices, [tf.cast(batch_size * bucket_size, tf.int64) * max_rep],
-                                    logits_pairs_gather, default_value=-1e9)
-    gather_pad_reshape = tf.reshape(gather_pad, [batch_size, bucket_size, tf.cast(max_rep, tf.int32)], name="gather_pad_reshape")
-    new_targets = targets3D - targets_sub
-    neg_mask = tf.greater_equal(new_targets, 0)
-    new_targets_nonneg = tf.nn.relu(new_targets)
-    pairs_conditioned_log_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=new_targets_nonneg, logits=gather_pad_reshape)
-    pairs_conditioned_log_loss_masked = tf.reduce_sum(pairs_conditioned_log_loss * tf.cast(neg_mask, tf.float32)) / self.n_tokens # * tf.cast(pad_mat, tf.float32)
+    # logits_expanded = tf.expand_dims(logits3D, -1)
+    # pairs_concat = tf.concat([tf.transpose(logits_expanded, [0, 2, 1, 3]), logits_expanded], axis=-1)
+    # maxes = tf.reduce_max(pairs_concat, axis=-1)
+    # indices = tf.where(tf.equal(maxes, logits3D))
+    # counts = tf.segment_sum(tf.ones_like(indices[:, 0]), indices[:, 0] * tf.cast(bucket_size, tf.int64) + indices[:, 1])
+    # max_rep = tf.reduce_max(counts)
+    # cumsum = tf.cumsum(tf.cast(tf.not_equal(maxes, logits3D), tf.int32), axis=2)
+    # i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    # idx = tf.stack([i1, i2, targets3D], axis=-1)
+    # targets_sub = tf.gather_nd(cumsum, idx)
+    # pad_mat = tf.sequence_mask(tf.reshape(counts, [-1]))
+    # sparse_indices = tf.reshape(tf.where(tf.reshape(pad_mat, [-1])), [-1])
+    # logits_pairs_gather = tf.gather_nd(logits3D, indices)
+    # gather_pad = tf.sparse_to_dense(sparse_indices, [tf.cast(batch_size * bucket_size, tf.int64) * max_rep],
+    #                                 logits_pairs_gather, default_value=-1e9)
+    # gather_pad_reshape = tf.reshape(gather_pad, [batch_size, bucket_size, tf.cast(max_rep, tf.int32)], name="gather_pad_reshape")
+    # new_targets = targets3D - targets_sub
+    # neg_mask = tf.greater_equal(new_targets, 0)
+    # new_targets_nonneg = tf.nn.relu(new_targets)
+    # pairs_conditioned_log_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=new_targets_nonneg, logits=gather_pad_reshape)
+    # pairs_conditioned_log_loss_masked = tf.reduce_sum(pairs_conditioned_log_loss * tf.cast(neg_mask, tf.float32)) / self.n_tokens # * tf.cast(pad_mat, tf.float32)
 
     ########## pairs mask #########
     logits3D = tf.cond(tf.constant(self.mask_pairs),
@@ -920,8 +920,8 @@ class NN(Configurable):
     # # logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1])) #* tokens_to_keep1D
     # # # roots_mask = tf.reshape(roots_mask, [batch_size*bucket_size, -1])
 
-    # loss = log_loss + roots_loss + pairs_log_loss + svd_loss
-    loss = pairs_conditioned_log_loss_masked + roots_loss + pairs_log_loss + svd_loss
+    loss = log_loss + roots_loss + pairs_log_loss + svd_loss
+    # loss = pairs_conditioned_log_loss_masked + roots_loss + pairs_log_loss + svd_loss
 
 
     output = {

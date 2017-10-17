@@ -171,7 +171,9 @@ class Network(Configurable):
                 inputs = feed_dict[self._validset.inputs]
                 targets = feed_dict[self._validset.targets]
                 start_time = time.time()
-                loss, n_correct, n_tokens, predictions = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
+                loss, n_correct, n_tokens, predictions, attn_weights = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
+                print(attn_weights)
+                print([x.shape for x in attn_weights])
                 valid_time += time.time() - start_time
                 valid_loss += loss
                 n_valid_sents += len(targets)
@@ -369,7 +371,8 @@ class Network(Configurable):
     ops['valid_op'] = [valid_output['loss'],
                        valid_output['n_correct'],
                        valid_output['n_tokens'],
-                       valid_output['predictions']]
+                       valid_output['predictions'],
+                       valid_output['attn_weights']]
     ops['test_op'] = [valid_output['probabilities'],
                       test_output['probabilities']]
     ops['optimizer'] = optimizer
