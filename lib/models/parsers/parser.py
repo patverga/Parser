@@ -116,7 +116,7 @@ class Parser(BaseParser):
       batch_size = original_shape[0]
       bucket_size = original_shape[1]
       flat_shape = tf.stack([batch_size, bucket_size])
-      probabilities = tf.reshape(tf.multiply(arc_output['probabilities'], tf.nn.sigmoid(gate)))
+      probabilities = tf.multiply(arc_output['probabilities'], tf.nn.sigmoid(gate))
       # predictions = tf.argmax(tf.reshape(probabilities, flat_shape))
 
       probs2D = tf.reshape(probabilities, tf.stack([batch_size * bucket_size, -1]))
