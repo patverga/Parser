@@ -202,7 +202,7 @@ def additive_gate(q, k,
       logits += bias
     # weights = tf.nn.softmax(logits, name="gate_weights")
     # dropping out the attention links for each of the heads
-    weights_softmax = tf.nn.tanh(logits)
+    weights_softmax = tf.sinh(logits)
     return weights_softmax
 
 
