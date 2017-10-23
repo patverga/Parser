@@ -142,7 +142,7 @@ class Parser(BaseParser):
     output['rel_logits'] = rel_logits
 
     output['rel_loss'] = rel_output['loss']
-    output['log_loss'] = arc_output['log_loss']
+    output['log_loss'] = arc_output['loss'] #arc_output['log_loss']
 
     # output['2cycle_loss'] = arc_output['2cycle_loss']
     # output['roots_loss'] = arc_output['roots_loss']
