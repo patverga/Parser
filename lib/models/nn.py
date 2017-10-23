@@ -451,7 +451,7 @@ class NN(Configurable):
       # params = tf.get_variable("final_proj", [1, 1, total_key_depth, output_depth])
       # x = tf.expand_dims(x, 1)
       # x = tf.nn.conv2d(x, params, [1, 1, 1, 1], "SAME")
-      # x = tf.squeeze(x, 1)
+      gate = tf.squeeze(gate, 1)
       return gate
 
   # =============================================================
