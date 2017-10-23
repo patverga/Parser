@@ -1002,6 +1002,79 @@ class NN(Configurable):
     return output
 
 
+  def output_gate(self, logits3D, targets3D):
+    """"""
+
+    original_shape = tf.shape(logits3D)
+    batch_size = original_shape[0]
+    bucket_size = original_shape[1]
+    flat_shape = tf.stack([batch_size, bucket_size])
+
+    # flatten to [B*N, N]
+    logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
+    targets1D = tf.reshape(targets3D, [-1])
+    tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
+
+    # targets_mask = tf.cond(tf.logical_or(tf.not_equal(self.pairs_penalty, tf.constant(0.0)),
+    #                                      tf.not_equal(self.roots_penalty, tf.constant(0.0))),
+    #                      lambda: tf.constant(0.0),
+    #                      lambda: self.gen_targets_mask(logits3D, batch_size, bucket_size))
+    targets_mask = self.gen_targets_mask(targets3D, batch_size, bucket_size)
+
+    ######## pairs softmax thing #########
+    pairs_log_loss, pairs_concat = tf.cond(tf.equal(self.pairs_penalty, tf.constant(0.0)),
+                         lambda: (tf.constant(0.0), tf.concat([tf.transpose(tf.expand_dims(logits3D, -1), [0, 2, 1, 3]), tf.expand_dims(logits3D, -1)], axis=-1)),
+                         lambda: self.compute_pairs_loss(logits3D, targets_mask, batch_size, bucket_size))
+
+    ######### roots loss (diag) ##########
+    roots_loss = tf.cond(tf.equal(self.roots_penalty, tf.constant(0.0)),
+                       lambda: tf.constant(0.0),
+                       lambda: self.compute_roots_loss(logits3D, targets_mask))
+
+
+    ########## pairs mask #########
+    logits3D = tf.cond(tf.constant(self.mask_pairs),
+                       lambda: self.logits_mask_pairs(logits3D, batch_size),
+                       lambda: logits3D)
+
+    ########## roots mask (diag) #########
+    logits3D = tf.cond(tf.constant(self.mask_roots),
+                       lambda: self.logits_mask_roots(logits3D, batch_size, bucket_size),
+                       lambda: logits3D)
+
+    logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
+    predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
+    probabilities2D = tf.nn.softmax(logits2D)
+    correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
+    n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
+    accuracy = n_correct / self.n_tokens
+
+    ########### svd loss ##########
+    svd_loss = tf.cond(tf.equal(self.svd_penalty, tf.constant(0.0)),
+                       lambda: tf.constant(0.0),
+                       lambda: self.compute_svd_loss(logits2D, tokens_to_keep1D, batch_size, bucket_size))
+
+    loss = roots_loss + pairs_log_loss + svd_loss
+    # loss = pairs_conditioned_log_loss_masked + roots_loss + pairs_log_loss + svd_loss
+
+
+    output = {
+      'probabilities': tf.reshape(probabilities2D, original_shape),
+      'predictions': tf.reshape(predictions1D, flat_shape),
+      'tokens': tokens_to_keep1D,
+      'correct': correct1D * tokens_to_keep1D,
+      'n_correct': n_correct,
+      'n_tokens': self.n_tokens,
+      'accuracy': accuracy,
+      'loss': loss,
+      'roots_loss': roots_loss,
+      '2cycle_loss': pairs_log_loss,
+      'svd_loss': svd_loss,
+    }
+
+    return output
+
+
   ########## roots mask (diag) #########
   # select roots using softmax over diag. do this by choosing the root, then setting everything else
   # on diag to -1e9

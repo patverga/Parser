@@ -106,8 +106,9 @@ class Parser(BaseParser):
       arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
       arc_logits_gated = tf.add(arc_logits, gate)
       # arc_logits_gated = tf.Print(arc_logits_gated, [tf.shape(arc_logits), tf.shape(gate), tf.shape(arc_logits_gated)])
-      # arc_output = self.output(arc_logits, targets[:,:,1])
-      arc_output = self.output_svd(arc_logits_gated, targets[:,:,1])
+      arc_output = self.output(arc_logits_gated, targets[:,:,1])
+      # arc_output = self.output_svd(arc_logits_gated, targets[:,:,1])
+      gate_output = self.output_gate(gate, targets[:,:,1])
       if moving_params is None:
         predictions = targets[:,:,1]
       else:
@@ -142,9 +143,13 @@ class Parser(BaseParser):
 
     output['rel_loss'] = rel_output['loss']
     output['log_loss'] = arc_output['log_loss']
-    output['2cycle_loss'] = arc_output['2cycle_loss']
-    output['roots_loss'] = arc_output['roots_loss']
-    output['svd_loss'] = arc_output['svd_loss']
+
+    # output['2cycle_loss'] = arc_output['2cycle_loss']
+    # output['roots_loss'] = arc_output['roots_loss']
+    # output['svd_loss'] = arc_output['svd_loss']
+    output['2cycle_loss'] = gate_output['2cycle_loss']
+    output['roots_loss'] = gate_output['roots_loss']
+    output['svd_loss'] = gate_output['svd_loss']
 
     output['attn_weights'] = attn_weights_by_layer
     return output
