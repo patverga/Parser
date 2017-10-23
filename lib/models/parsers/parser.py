@@ -104,24 +104,38 @@ class Parser(BaseParser):
     with tf.variable_scope('Arcs', reuse=reuse):
       gate = self.gate(top_recur, hidden_size, hidden_size)
       arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
-      arc_logits_gated = tf.add(arc_logits, gate)
+      # arc_logits_gated = tf.add(arc_logits, gate)
       # arc_logits_gated = tf.Print(arc_logits_gated, [tf.shape(arc_logits), tf.shape(gate), tf.shape(arc_logits_gated)])
-      arc_output = self.output(arc_logits_gated, targets[:,:,1])
+      arc_output = self.output(arc_logits, targets[:,:,1])
       # arc_output = self.output_svd(arc_logits_gated, targets[:,:,1])
       gate_output = self.output_gate(gate, targets[:,:,1])
+
+      # 'probabilities': tf.reshape(probabilities2D, original_shape),
+      # 'predictions': tf.reshape(predictions1D, flat_shape),
+      original_shape = tf.shape(arc_logits)
+      batch_size = original_shape[0]
+      bucket_size = original_shape[1]
+      flat_shape = tf.stack([batch_size, bucket_size])
+      probabilities = tf.reshape(tf.multiply(arc_output['probabilities'], tf.nn.sigmoid(gate)))
+      # predictions = tf.argmax(tf.reshape(probabilities, flat_shape))
+
+      probs2D = tf.reshape(probabilities, tf.stack([batch_size * bucket_size, -1]))
+
+      predictions = tf.reshape(tf.to_int32(tf.argmax(probs2D, 1)), flat_shape)
+
       if moving_params is None:
-        predictions = targets[:,:,1]
+        predictions_ = targets[:,:,1]
       else:
-        predictions = arc_output['predictions']
+        predictions_ = tf.argmax(tf.reshape(probabilities, flat_shape)) #arc_output['predictions']
     with tf.variable_scope('Rels', reuse=reuse):
-      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
+      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions_)
       rel_output = self.output(rel_logits, targets[:,:,2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
     
     output = {}
-    output['probabilities'] = tf.tuple([arc_output['probabilities'],
+    output['probabilities'] = tf.tuple([probabilities, #arc_output['probabilities'],
                                         rel_output['probabilities']])
-    output['predictions'] = tf.stack([arc_output['predictions'],
+    output['predictions'] = tf.stack([predictions, #arc_output['predictions'],
                                      rel_output['predictions']])
     output['correct'] = arc_output['correct'] * rel_output['correct']
     output['tokens'] = arc_output['tokens']
