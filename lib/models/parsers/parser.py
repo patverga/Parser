@@ -92,7 +92,9 @@ class Parser(BaseParser):
     # if normalization is done in layer_preprocess, then it shuold also be done
     # on the output, since the output can grow very large, being the sum of
     # a whole stack of unnormalized layer outputs.
+
     top_recur = nn.layer_norm(top_recur, reuse)
+
 
     with tf.variable_scope('MLP', reuse=reuse):
       dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
@@ -100,9 +102,11 @@ class Parser(BaseParser):
       head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
     
     with tf.variable_scope('Arcs', reuse=reuse):
+      gate = self.gate(top_recur, hidden_size, hidden_size)
       arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
+      arc_logits_gated = tf.multiply(arc_logits, gate)
       # arc_output = self.output(arc_logits, targets[:,:,1])
-      arc_output = self.output_svd(arc_logits, targets[:,:,1])
+      arc_output = self.output_svd(arc_logits_gated, targets[:,:,1])
       if moving_params is None:
         predictions = targets[:,:,1]
       else:

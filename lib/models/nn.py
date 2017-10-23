@@ -182,6 +182,29 @@ def dot_product_attention(q, k, v,
     weights_drop = tf.nn.dropout(weights, dropout_rate)
     return tf.matmul(weights_drop, v), weights
 
+def dot_product_gate(q, k,
+                      bias,
+                      name=None):
+  """dot-product attention.
+  Args:
+    k: a Tensor with shape [batch, heads, length_kv, depth_k]
+    v: a Tensor with shape [batch, heads, length_kv, depth_v]
+    bias: bias Tensor (see attention_bias())
+    dropout_rate: a floating point number
+    name: an optional string
+  Returns:
+    A Tensor.
+  """
+  with tf.variable_scope(name, default_name="dot_product_gate", values=[q, k]):
+    # [batch, num_heads, query_length, memory_length]
+    logits = tf.matmul(q, k, transpose_b=True)
+    if bias is not None:
+      logits += bias
+    weights = tf.nn.softmax(logits, name="gate_weights")
+    # dropping out the attention links for each of the heads
+    weights_softmax = tf.nn.sigmoid(weights)
+    return weights_softmax
+
 
 def compute_qkv(antecedent, total_key_depth, total_value_depth):
   """Computes query, key and value.
@@ -393,6 +416,43 @@ class NN(Configurable):
     conv_out = nonlinearity(conv_out)
     conv_out = tf.nn.dropout(conv_out, dropout_keep_rate)
     return conv_out
+
+  def gate(self,
+           antecedent,
+           total_key_depth,
+           total_value_depth,
+           name=None):
+    """Multihead scaled-dot-product attention with input/output transformations.
+    Args:
+      bias: bias Tensor (see attention_bias())
+      total_key_depth: an integer
+      total_value_depth: an integer
+      output_depth: an integer
+      num_heads: an integer dividing total_key_depth and total_value_depth
+      dropout_rate: a floating point number
+      name: an optional string
+    Returns:
+      A Tensor.
+    Raises:
+      ValueError: if the key depth or value depth are not divisible by the
+        number of attention heads.
+    """
+    lengths = tf.reshape(tf.to_int64(self.sequence_lengths), [-1])
+    bias = attention_bias_ignore_padding(lengths)
+    with tf.variable_scope(name, default_name="gating", values=[antecedent]):
+      q, k, _ = compute_qkv(antecedent, total_key_depth, total_value_depth)
+      q = split_heads(q, 1)
+      k = split_heads(k, 1)
+      # v = split_heads(v, 1)
+      # key_depth_per_head = total_key_depth
+      # q *= key_depth_per_head**-0.5
+      gate = dot_product_gate(q, k, bias)
+      # x = combine_heads(x)
+      # params = tf.get_variable("final_proj", [1, 1, total_key_depth, output_depth])
+      # x = tf.expand_dims(x, 1)
+      # x = tf.nn.conv2d(x, params, [1, 1, 1, 1], "SAME")
+      # x = tf.squeeze(x, 1)
+      return gate
 
   # =============================================================
   def transformer(self, inputs, hidden_size, num_heads, attn_dropout, relu_dropout, prepost_dropout, relu_hidden_size,
