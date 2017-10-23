@@ -104,7 +104,7 @@ class Parser(BaseParser):
     with tf.variable_scope('Arcs', reuse=reuse):
       gate = self.gate(top_recur, hidden_size, hidden_size)
       arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
-      arc_logits_gated = tf.multiply(arc_logits, gate)
+      arc_logits_gated = tf.add(arc_logits, gate)
       # arc_logits_gated = tf.Print(arc_logits_gated, [tf.shape(arc_logits), tf.shape(gate), tf.shape(arc_logits_gated)])
       # arc_output = self.output(arc_logits, targets[:,:,1])
       arc_output = self.output_svd(arc_logits_gated, targets[:,:,1])
