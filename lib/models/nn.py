@@ -182,7 +182,7 @@ def dot_product_attention(q, k, v,
     weights_drop = tf.nn.dropout(weights, dropout_rate)
     return tf.matmul(weights_drop, v), weights
 
-def dot_product_gate(q, k,
+def additive_gate(q, k,
                       bias,
                       name=None):
   """dot-product attention.
@@ -200,9 +200,9 @@ def dot_product_gate(q, k,
     logits = tf.matmul(q, k, transpose_b=True)
     if bias is not None:
       logits += bias
-    weights = tf.nn.softmax(logits, name="gate_weights")
+    # weights = tf.nn.softmax(logits, name="gate_weights")
     # dropping out the attention links for each of the heads
-    weights_softmax = tf.nn.sigmoid(weights)
+    weights_softmax = tf.nn.tanh(logits)
     return weights_softmax
 
 
@@ -446,7 +446,7 @@ class NN(Configurable):
       # v = split_heads(v, 1)
       # key_depth_per_head = total_key_depth
       # q *= key_depth_per_head**-0.5
-      gate = dot_product_gate(q, k, bias)
+      gate = additive_gate(q, k, bias)
       # x = combine_heads(x)
       # params = tf.get_variable("final_proj", [1, 1, total_key_depth, output_depth])
       # x = tf.expand_dims(x, 1)
