@@ -95,17 +95,35 @@ class Parser(BaseParser):
 
     top_recur = nn.layer_norm(top_recur, reuse)
 
-
     with tf.variable_scope('MLP', reuse=reuse):
       dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
       dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
       head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
-    
+
+
+    #   # 'probabilities': tf.reshape(probabilities2D, original_shape),
+    #   # 'predictions': tf.reshape(predictions1D, flat_shape),
+    #   original_shape = tf.shape(arc_logits)
+    #   batch_size = original_shape[0]
+    #   bucket_size = original_shape[1]
+    #   flat_shape = tf.stack([batch_size, bucket_size])
+    #   probabilities = tf.multiply(arc_output['probabilities'], tf.nn.sigmoid(gate))
+    #   # predictions = tf.argmax(tf.reshape(probabilities, flat_shape))
+    #
+    #   probs2D = tf.reshape(probabilities, tf.stack([batch_size * bucket_size, -1]))
+    #
+    #   predictions = tf.reshape(tf.to_int32(tf.argmax(probs2D, 1)), flat_shape)
+    #
+    #   if moving_params is None:
+    #     predictions_ = targets[:,:,1]
+    #   else:
+    #     predictions_ = tf.argmax(tf.reshape(probabilities, flat_shape)) #arc_output['predictions']
+
+
     with tf.variable_scope('Arcs', reuse=reuse):
       gate = self.gate(top_recur, hidden_size, hidden_size)
       arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
       # arc_logits_gated = tf.add(arc_logits, gate)
-      # arc_logits_gated = tf.Print(arc_logits_gated, [tf.shape(arc_logits), tf.shape(gate), tf.shape(arc_logits_gated)])
       arc_output = self.output(arc_logits, targets[:,:,1])
       # arc_output = self.output_svd(arc_logits_gated, targets[:,:,1])
       gate_output = self.output_gate(gate, targets[:,:,1])
@@ -124,11 +142,11 @@ class Parser(BaseParser):
       predictions = tf.reshape(tf.to_int32(tf.argmax(probs2D, 1)), flat_shape)
 
       if moving_params is None:
-        predictions_ = targets[:,:,1]
+        predictions2 = targets[:,:,1]
       else:
-        predictions_ = tf.argmax(tf.reshape(probabilities, flat_shape)) #arc_output['predictions']
+        predictions2 = predictions #arc_output['predictions']
     with tf.variable_scope('Rels', reuse=reuse):
-      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions_)
+      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions2)
       rel_output = self.output(rel_logits, targets[:,:,2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
     
