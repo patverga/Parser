@@ -410,9 +410,11 @@ class NN(Configurable):
       dropout_keep_rate = 1.0
 
     params = tf.get_variable('CNN', [kernel1, kernel2, input_size, output_size], initializer=initializer)
-    inputs = tf.expand_dims(inputs, 1)
+    if kernel1 == 1:
+      inputs = tf.expand_dims(inputs, 1)
     conv_out = tf.nn.conv2d(inputs, params, [1, 1, 1, 1], 'SAME')
-    conv_out = tf.squeeze(conv_out, 1)
+    if kernel1 == 1:
+      conv_out = tf.sqeeze(conv_out, 1)
     conv_out = nonlinearity(conv_out)
     conv_out = tf.nn.dropout(conv_out, dropout_keep_rate)
     return conv_out
