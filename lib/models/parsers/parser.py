@@ -111,7 +111,7 @@ class Parser(BaseParser):
     # top_recur = nn.layer_norm(top_recur, reuse)
 
     ##### HEADS / DEPS MLP #####
-    with tf.variable_scope('MLP', reuse=reuse):
+    # with tf.variable_scope('MLP', reuse=reuse):
     #   dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
     #   dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
     #   head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
