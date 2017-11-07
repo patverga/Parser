@@ -1259,8 +1259,9 @@ class NN(Configurable):
     for i, d in enumerate(degrees):
       laplacian[i, i] = d
 
-    e = scipy.linalg.svd(laplacian, compute_uv=False)
-    rank = np.sum(np.greater(e, 1e-15))
+    # e = scipy.linalg.svd(laplacian, compute_uv=False)
+    # rank = np.sum(np.greater(e, 1e-15))
+    rank = 5
 
     adj = np.zeros((len(parse_preds), len(parse_preds)))
     for i, p in enumerate(parse_preds):  # [1:length]):
