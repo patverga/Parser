@@ -28,7 +28,7 @@ from lib.models import rnn
 from configurable import Configurable
 from vocab import Vocab
 
-import scipy.linalg
+# import scipy.linalg
 
 def layer_norm(inputs, reuse, epsilon=1e-6):
   """Applies layer normalization.
