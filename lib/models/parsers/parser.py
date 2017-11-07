@@ -194,9 +194,9 @@ class Parser(BaseParser):
     output['rel_loss'] = rel_output['loss']
     output['log_loss'] = arc_output['loss'] #arc_output['log_loss']
 
-    output['2cycle_loss'] = 0 #arc_output['2cycle_loss']
-    output['roots_loss'] = 0 #arc_output['roots_loss']
-    output['svd_loss'] = 0 #arc_output['svd_loss']
+    output['2cycle_loss'] = tf.constant(0) #arc_output['2cycle_loss']
+    output['roots_loss'] = tf.constant(0) #arc_output['roots_loss']
+    output['svd_loss'] = tf.constant(0) #arc_output['svd_loss']
     # output['2cycle_loss'] = gate_output['2cycle_loss']
     # output['roots_loss'] = gate_output['roots_loss']
     # output['svd_loss'] = gate_output['svd_loss']
