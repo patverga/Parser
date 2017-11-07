@@ -160,7 +160,7 @@ class Parser(BaseParser):
         targ = i1 * bucket_size * bucket_size * num_classes + i2 * bucket_size * num_classes + i3 * num_classes + flat_labels
         idx = tf.reshape(targ, [-1])
         conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, 128]), idx) # todo dont hardcode
-        conditioned = tf.reshape(conditioned, [batch_size, bucket_size, -1])
+        conditioned = tf.reshape(conditioned, [batch_size, bucket_size, 128])
         dep_rel_mlp, head_rel_mlp = self.MLP(conditioned, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
 
     with tf.variable_scope('Rels', reuse=reuse):
