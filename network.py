@@ -172,8 +172,9 @@ class Network(Configurable):
                 inputs = feed_dict[self._validset.inputs]
                 targets = feed_dict[self._validset.targets]
                 start_time = time.time()
-                loss, n_correct, n_tokens, predictions, attn_weights = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
-                attn_weights_named.update({"b%d:%s" % (k, dk): v for dk, v in attn_weights.items()})
+                loss, n_correct, n_tokens, predictions = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
+                # loss, n_correct, n_tokens, predictions, attn_weights = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
+                # attn_weights_named.update({"b%d:%s" % (k, dk): v for dk, v in attn_weights.items()})
                 valid_time += time.time() - start_time
                 valid_loss += loss
                 n_valid_sents += len(targets)
@@ -181,7 +182,7 @@ class Network(Configurable):
                 n_valid_tokens += n_tokens
                 self.model.sanity_check(inputs, targets, predictions, self._vocabs, f, feed_dict=feed_dict)
             # save attention weights
-            np.savez(os.path.join(self.save_dir, "attn_weights"), **attn_weights_named)
+            # np.savez(os.path.join(self.save_dir, "attn_weights"), **attn_weights_named)
             valid_loss /= k+1
             valid_accuracy = 100 * n_valid_correct / n_valid_tokens
             valid_time = n_valid_sents / valid_time
@@ -373,8 +374,7 @@ class Network(Configurable):
     ops['valid_op'] = [valid_output['loss'],
                        valid_output['n_correct'],
                        valid_output['n_tokens'],
-                       valid_output['predictions'],
-                       valid_output['attn_weights']]
+                       valid_output['predictions']]
     ops['test_op'] = [valid_output['probabilities'],
                       test_output['probabilities']]
     ops['optimizer'] = optimizer
