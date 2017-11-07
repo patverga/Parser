@@ -145,11 +145,13 @@ class Parser(BaseParser):
       # predictions = tf.reshape(tf.to_int32(tf.argmax(probs2D, 1)), flat_shape)
 
       if moving_params is None:
-        predictions2 = targets[:,:,1]
+        predictions = targets[:,:,1]
       else:
-        predictions2 = arc_output['predictions']
+        predictions = arc_output['predictions']
+
+      predictions = tf.Print(predictions, [tf.shape(predictions)], summarize=10)
     with tf.variable_scope('Rels', reuse=reuse):
-      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions2)
+      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
       rel_output = self.output(rel_logits, targets[:,:,2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
     
