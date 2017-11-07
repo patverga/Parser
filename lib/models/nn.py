@@ -398,7 +398,7 @@ class NN(Configurable):
     return top_recur, end_recur
 
   # =============================================================
-  def CNN(self, inputs, kernel, output_size, dropout_keep_rate, nonlinearity):
+  def CNN(self, inputs, kernel1, kernel2, output_size, dropout_keep_rate, nonlinearity):
     """"""
     input_size = inputs.get_shape().as_list()[-1]
 
@@ -409,7 +409,7 @@ class NN(Configurable):
     if self.moving_params is not None:
       dropout_keep_rate = 1.0
 
-    params = tf.get_variable('CNN', [1, kernel, input_size, output_size], initializer=initializer)
+    params = tf.get_variable('CNN', [kernel1, kernel2, input_size, output_size], initializer=initializer)
     inputs = tf.expand_dims(inputs, 1)
     conv_out = tf.nn.conv2d(inputs, params, [1, 1, 1, 1], 'SAME')
     conv_out = tf.squeeze(conv_out, 1)
@@ -823,6 +823,41 @@ class NN(Configurable):
   
   #=============================================================
   def output(self, logits3D, targets3D):
+    """"""
+
+    original_shape = tf.shape(logits3D)
+    batch_size = original_shape[0]
+    bucket_size = original_shape[1]
+    flat_shape = tf.stack([batch_size, bucket_size])
+
+    logits2D = tf.reshape(logits3D, tf.stack([batch_size*bucket_size, -1]))
+    targets1D = tf.reshape(targets3D, [-1])
+    tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
+
+    predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
+    probabilities2D = tf.nn.softmax(logits2D)
+    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
+
+    correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
+    n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
+    accuracy = n_correct / self.n_tokens
+    loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
+
+    output = {
+      'probabilities': tf.reshape(probabilities2D, original_shape),
+      'predictions': tf.reshape(predictions1D, flat_shape),
+      'tokens': tokens_to_keep1D,
+      'correct': correct1D * tokens_to_keep1D,
+      'n_correct': n_correct,
+      'n_tokens': self.n_tokens,
+      'accuracy': accuracy,
+      'loss': loss
+    }
+
+    return output
+
+  #=============================================================
+  def output2d(self, logits3D, targets3D):
     """"""
 
     original_shape = tf.shape(logits3D)

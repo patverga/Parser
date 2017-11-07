@@ -65,7 +65,7 @@ class Parser(BaseParser):
 
     for i in xrange(self.cnn_layers):
       with tf.variable_scope('CNN%d' % i, reuse=reuse):
-        top_recur = self.CNN(top_recur, kernel, self.cnn_dim,
+        top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim,
                              self.recur_keep_prob if i < self.n_recur - 1 else 1.0,
                              self.info_func if i < self.n_recur - 1 else tf.identity)
 
@@ -75,85 +75,88 @@ class Parser(BaseParser):
       top_recur = tf.nn.conv2d(top_recur, params, [1, 1, 1, 1], "SAME")
       top_recur = tf.squeeze(top_recur, 1)
 
-    top_recur = nn.add_timing_signal_1d(top_recur)
-    attn_weights_by_layer = {}
+    with tf.variable_scope('2d', reuse=reuse):
+      input_shape = tf.shape(embed_inputs)
+      # batch_size = input_shape[0]
+      bucket_size = input_shape[1]
+      top_recur_rows, top_recur_cols = tf.split(top_recur, num_or_size_splits=2, axis=-1)
+      top_recur_rows = tf.tile(tf.expand_dims(top_recur_rows, 1), [1, bucket_size, 1, 1])
+      top_recur_cols = tf.tile(tf.expand_dims(top_recur_cols, 2), [1, 1, bucket_size, 1])
+      top_recur_2d = tf.concat([top_recur_cols, top_recur_rows], axis=-1)
+      for i in xrange(4): # todo pass this in
+        with tf.variable_scope('CNN%d' % i, reuse=reuse):
+          top_recur_2d = self.CNN(top_recur_2d, kernel, kernel, 128, # todo pass this in
+                               self.recur_keep_prob if i < self.n_recur - 1 else 1.0,
+                               self.info_func if i < self.n_recur - 1 else tf.identity)
 
-    for i in xrange(self.n_recur):
-      # RNN:
-      # with tf.variable_scope('RNN%d' % i, reuse=reuse):
-      #   top_recur, _ = self.RNN(top_recur)
-
-      # Transformer:
-      with tf.variable_scope('Transformer%d' % i, reuse=reuse):
-        top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
-                                     attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
-                                     self.info_func, reuse)
-        attn_weights_by_layer[tf.get_variable_scope().name] = attn_weights
-    # if normalization is done in layer_preprocess, then it shuold also be done
-    # on the output, since the output can grow very large, being the sum of
-    # a whole stack of unnormalized layer outputs.
-
-    top_recur = nn.layer_norm(top_recur, reuse)
-
-    with tf.variable_scope('MLP', reuse=reuse):
-      dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
-      dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
-      head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
-
-
-    #   # 'probabilities': tf.reshape(probabilities2D, original_shape),
-    #   # 'predictions': tf.reshape(predictions1D, flat_shape),
-    #   original_shape = tf.shape(arc_logits)
-    #   batch_size = original_shape[0]
-    #   bucket_size = original_shape[1]
-    #   flat_shape = tf.stack([batch_size, bucket_size])
-    #   probabilities = tf.multiply(arc_output['probabilities'], tf.nn.sigmoid(gate))
-    #   # predictions = tf.argmax(tf.reshape(probabilities, flat_shape))
+    #### TRANSFORMER ####
+    # top_recur = nn.add_timing_signal_1d(top_recur)
+    # attn_weights_by_layer = {}
     #
-    #   probs2D = tf.reshape(probabilities, tf.stack([batch_size * bucket_size, -1]))
+    # for i in xrange(self.n_recur):
+    #   # RNN:
+    #   # with tf.variable_scope('RNN%d' % i, reuse=reuse):
+    #   #   top_recur, _ = self.RNN(top_recur)
     #
-    #   predictions = tf.reshape(tf.to_int32(tf.argmax(probs2D, 1)), flat_shape)
+    #   # Transformer:
+    #   with tf.variable_scope('Transformer%d' % i, reuse=reuse):
+    #     top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
+    #                                  attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
+    #                                  self.info_func, reuse)
+    #     attn_weights_by_layer[tf.get_variable_scope().name] = attn_weights
+    # # if normalization is done in layer_preprocess, then it shuold also be done
+    # # on the output, since the output can grow very large, being the sum of
+    # # a whole stack of unnormalized layer outputs.
     #
-    #   if moving_params is None:
-    #     predictions_ = targets[:,:,1]
-    #   else:
-    #     predictions_ = tf.argmax(tf.reshape(probabilities, flat_shape)) #arc_output['predictions']
+    # top_recur = nn.layer_norm(top_recur, reuse)
+
+    ##### HEADS / DEPS MLP #####
+    # with tf.variable_scope('MLP', reuse=reuse):
+    #   dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
+    #   dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
+    #   head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
 
 
     with tf.variable_scope('Arcs', reuse=reuse):
-      gate = self.gate(top_recur, hidden_size, hidden_size)
-      arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
-      # arc_logits_gated = tf.add(arc_logits, gate)
-      arc_output = self.output(arc_logits, targets[:,:,1])
-      # arc_output = self.output_svd(arc_logits_gated, targets[:,:,1])
-      gate_output = self.output_gate(gate, targets[:,:,1])
+
+      #### OLD ####
+      # gate = self.gate(top_recur, hidden_size, hidden_size)
+      # arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
+      # # arc_logits_gated = tf.add(arc_logits, gate)
+      # arc_output = self.output(arc_logits, targets[:,:,1])
+      # # arc_output = self.output_svd(arc_logits_gated, targets[:,:,1])
+      # gate_output = self.output_gate(gate, targets[:,:,1])
+
+      arc_logits = self.MLP(top_recur_2d, 1, n_splits=1)
+      dep_rel_mlp, head_rel_mlp = self.MLP(top_recur_2d, 128, n_splits=2) # todo don't hardcode this
+
+      arc_output = self.output2d(arc_logits, targets[:, :, 1])
+
 
       # 'probabilities': tf.reshape(probabilities2D, original_shape),
       # 'predictions': tf.reshape(predictions1D, flat_shape),
-      original_shape = tf.shape(arc_logits)
-      batch_size = original_shape[0]
-      bucket_size = original_shape[1]
-      flat_shape = tf.stack([batch_size, bucket_size])
-      probabilities = tf.multiply(arc_output['probabilities'], tf.nn.sigmoid(gate))
+      # original_shape = tf.shape(arc_logits)
+      # batch_size = original_shape[0]
+      # bucket_size = original_shape[1]
+      # flat_shape = tf.stack([batch_size, bucket_size])
+      # probabilities = arc_output['probabilities']
       # predictions = tf.argmax(tf.reshape(probabilities, flat_shape))
-
-      probs2D = tf.reshape(probabilities, tf.stack([batch_size * bucket_size, -1]))
-
-      predictions = tf.reshape(tf.to_int32(tf.argmax(probs2D, 1)), flat_shape)
+      # probs2D = tf.reshape(probabilities, tf.stack([batch_size * bucket_size, -1]))
+      # predictions = tf.reshape(tf.to_int32(tf.argmax(probs2D, 1)), flat_shape)
 
       if moving_params is None:
         predictions2 = targets[:,:,1]
       else:
-        predictions2 = predictions #arc_output['predictions']
+        predictions2 = arc_output['predictions']
     with tf.variable_scope('Rels', reuse=reuse):
       rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions2)
       rel_output = self.output(rel_logits, targets[:,:,2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
     
     output = {}
-    output['probabilities'] = tf.tuple([probabilities, #arc_output['probabilities'],
+    output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])
-    output['predictions'] = tf.stack([predictions, #arc_output['predictions'],
+    output['predictions'] = tf.stack([arc_output['predictions'],
                                      rel_output['predictions']])
     output['correct'] = arc_output['correct'] * rel_output['correct']
     output['tokens'] = arc_output['tokens']
@@ -166,10 +169,10 @@ class Parser(BaseParser):
     
     output['embed'] = embed_inputs
     output['recur'] = top_recur
-    output['dep_arc'] = dep_arc_mlp
-    output['head_dep'] = head_arc_mlp
-    output['dep_rel'] = dep_rel_mlp
-    output['head_rel'] = head_rel_mlp
+    # output['dep_arc'] = dep_arc_mlp
+    # output['head_dep'] = head_arc_mlp
+    # output['dep_rel'] = dep_rel_mlp
+    # output['head_rel'] = head_rel_mlp
     output['arc_logits'] = arc_logits
     output['rel_logits'] = rel_logits
 
@@ -179,11 +182,11 @@ class Parser(BaseParser):
     # output['2cycle_loss'] = arc_output['2cycle_loss']
     # output['roots_loss'] = arc_output['roots_loss']
     # output['svd_loss'] = arc_output['svd_loss']
-    output['2cycle_loss'] = gate_output['2cycle_loss']
-    output['roots_loss'] = gate_output['roots_loss']
-    output['svd_loss'] = gate_output['svd_loss']
+    # output['2cycle_loss'] = gate_output['2cycle_loss']
+    # output['roots_loss'] = gate_output['roots_loss']
+    # output['svd_loss'] = gate_output['svd_loss']
 
-    output['attn_weights'] = attn_weights_by_layer
+    # output['attn_weights'] = attn_weights_by_layer
     return output
   
   #=============================================================
