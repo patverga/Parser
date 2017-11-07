@@ -111,10 +111,11 @@ class Parser(BaseParser):
     # top_recur = nn.layer_norm(top_recur, reuse)
 
     ##### HEADS / DEPS MLP #####
-    # with tf.variable_scope('MLP', reuse=reuse):
+    with tf.variable_scope('MLP', reuse=reuse):
     #   dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
     #   dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
     #   head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
+      dep_rel_mlp, head_rel_mlp = self.MLP(top_recur_2d, 128, n_splits=2) # todo don't hardcode this
 
 
     with tf.variable_scope('Arcs', reuse=reuse):
@@ -128,7 +129,6 @@ class Parser(BaseParser):
       # gate_output = self.output_gate(gate, targets[:,:,1])
 
       arc_logits = self.MLP(top_recur_2d, 1, n_splits=1)
-      dep_rel_mlp, head_rel_mlp = self.MLP(top_recur_2d, 128, n_splits=2) # todo don't hardcode this
 
       arc_output = self.output2d(arc_logits, targets[:, :, 1])
 
