@@ -63,7 +63,7 @@ class Parser(BaseParser):
         top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
 
     with tf.variable_scope('proj', reuse=reuse):
-      top_recur_rows, top_recur_cols = self.MLP(top_recur, hidden_size, n_splits=2)
+      top_recur_rows, top_recur_cols = self.MLP(top_recur, self.cnn_dim//4, n_splits=2)
 
     top_recur_rows = nn.add_timing_signal_1d(top_recur_rows)
     top_recur_cols = nn.add_timing_signal_1d(top_recur_cols)
