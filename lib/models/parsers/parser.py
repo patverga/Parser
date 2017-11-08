@@ -44,15 +44,8 @@ class Parser(BaseParser):
     top_recur = embed_inputs
 
     kernel = 3
-    # cnn_dim = 768
-    # cnn_layers = 2
-    # num_heads = 4
-    # head_size = 128
     hidden_size = self.num_heads * self.head_size
-    attn_dropout = 0.67
-    prepost_dropout = 0.67
-    relu_dropout = 0.67
-    # relu_hidden_size = 512
+    print("n_recur: ", self.n_recur)
     print("num heads: ", self.num_heads)
     print("cnn dim: ", self.cnn_dim)
     print("relu hidden size: ", self.relu_hidden_size)
