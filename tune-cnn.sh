@@ -57,7 +57,7 @@ for lr in ${lrs[@]}; do
                                                     for svd_penalty in ${svd_penalties[@]}; do
                                                         for rep in `seq $reps`; do
                                                             fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$pairs_penalty-$roots_penalty-$svd_penalty"
-                                                            commands+=("srun --gres=gpu:1 --partition=m40-short --time=08:00:00 python network.py \
+                                                            commands+=("srun --gres=gpu:1 --partition=m40-short python network.py \
                                                             --config_file config/myconf.cfg \
                                                             --save_dir $OUT_LOG/scores-$fname_append \
                                                             --save_every 500 \
