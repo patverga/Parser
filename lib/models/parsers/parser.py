@@ -80,7 +80,7 @@ class Parser(BaseParser):
       top_recur_2d = tf.concat([top_recur_cols, top_recur_rows], axis=-1)
 
       # apply num_convs 2d conv layers
-      for i in xrange(4):  # todo pass this in
+      for i in xrange(self.n_recur):  # todo pass this in
         with tf.variable_scope('CNN%d' % i, reuse=reuse):
           top_recur_2d = self.CNN(top_recur_2d, kernel, kernel, 128,  # todo pass this in
                                   self.recur_keep_prob if i < self.n_recur - 1 else 1.0,
