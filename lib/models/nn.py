@@ -28,7 +28,7 @@ from lib.models import rnn
 from configurable import Configurable
 from vocab import Vocab
 
-# import scipy.linalg
+import scipy.linalg
 
 def layer_norm(inputs, reuse, epsilon=1e-6):
   """Applies layer normalization.
@@ -1261,9 +1261,9 @@ class NN(Configurable):
     for i, d in enumerate(degrees):
       laplacian[i, i] = d
 
-    # e = scipy.linalg.svd(laplacian, compute_uv=False)
-    # rank = np.sum(np.greater(e, 1e-15))
-    rank = 5
+    e = scipy.linalg.svd(laplacian, compute_uv=False)
+    rank = np.sum(np.greater(e, 1e-15))
+    # rank = 5
 
     adj = np.zeros((len(parse_preds), len(parse_preds)))
     for i, p in enumerate(parse_preds):  # [1:length]):
