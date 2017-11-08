@@ -114,8 +114,8 @@ class Parser(BaseParser):
       i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
       targ = i1 * bucket_size * bucket_size + i2 * bucket_size + predictions
       idx = tf.reshape(targ, [-1])
-      conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, self.relu_hidden_size]), idx) # todo don't hardcode this
-      conditioned = tf.reshape(conditioned, [batch_size, bucket_size, self.relu_hidden_size])
+      conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, self.head_size]), idx) # todo don't hardcode this
+      conditioned = tf.reshape(conditioned, [batch_size, bucket_size, self.head_size])
       dep_rel_mlp, head_rel_mlp = self.MLP(conditioned, self.class_mlp_size + self.attn_mlp_size, n_splits=2)
 
     with tf.variable_scope('Rels', reuse=reuse):
