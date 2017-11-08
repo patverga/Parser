@@ -80,9 +80,10 @@ class Parser(BaseParser):
       top_recur_2d = tf.concat([top_recur_cols, top_recur_rows], axis=-1)
 
       # apply num_convs 2d conv layers
+      dim = 128
       for i in xrange(self.n_recur):  # todo pass this in
         with tf.variable_scope('CNN%d' % i, reuse=reuse):
-          top_recur_2d = self.CNN(top_recur_2d, kernel, kernel, self.head_size,  # todo pass this in
+          top_recur_2d = self.CNN(top_recur_2d, kernel, kernel, dim,  # todo pass this in
                                   self.recur_keep_prob if i < self.n_recur - 1 else 1.0,
                                   self.info_func if i < self.n_recur - 1 else tf.identity)
 
@@ -108,8 +109,8 @@ class Parser(BaseParser):
       i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
       targ = i1 * bucket_size * bucket_size + i2 * bucket_size + predictions
       idx = tf.reshape(targ, [-1])
-      conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, 128]), idx) # todo don't hardcode this
-      conditioned = tf.reshape(conditioned, [batch_size, bucket_size, 128])
+      conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, dim]), idx) # todo don't hardcode this
+      conditioned = tf.reshape(conditioned, [batch_size, bucket_size, dim])
       dep_rel_mlp, head_rel_mlp = self.MLP(conditioned, self.class_mlp_size + self.attn_mlp_size, n_splits=2)
 
     with tf.variable_scope('Rels', reuse=reuse):
