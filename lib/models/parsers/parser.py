@@ -105,6 +105,7 @@ class Parser(BaseParser):
 
     with tf.variable_scope('Arcs', reuse=reuse):
       arc_logits = self.MLP(top_recur_2d, 1, n_splits=1)
+      arc_logits = tf.squeeze(arc_logits, axis=-1)
       arc_output = self.output_svd(arc_logits, targets[:, :, 1])
       if moving_params is None:
         predictions = targets[:, :, 1]
