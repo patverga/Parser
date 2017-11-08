@@ -90,6 +90,55 @@ def add_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4):
   signal = tf.reshape(signal, [1, length, channels])
   return x + signal
 
+def add_timing_signal_nd(x, min_timescale=1.0, max_timescale=1.0e4):
+  """Adds a bunch of sinusoids of different frequencies to a Tensor.
+  Each channel of the input Tensor is incremented by a sinusoid of a different
+  frequency and phase in one of the positional dimensions.
+  This allows attention to learn to use absolute and relative positions.
+  Timing signals should be added to some precursors of both the query and the
+  memory inputs to attention.
+  The use of relative position is possible because sin(a+b) and cos(a+b) can be
+  experessed in terms of b, sin(a) and cos(a).
+  x is a Tensor with n "positional" dimensions, e.g. one dimension for a
+  sequence or two dimensions for an image
+  We use a geometric sequence of timescales starting with
+  min_timescale and ending with max_timescale.  The number of different
+  timescales is equal to channels // (n * 2). For each timescale, we
+  generate the two sinusoidal signals sin(timestep/timescale) and
+  cos(timestep/timescale).  All of these sinusoids are concatenated in
+  the channels dimension.
+  Args:
+    x: a Tensor with shape [batch, d1 ... dn, channels]
+    min_timescale: a float
+    max_timescale: a float
+  Returns:
+    a Tensor the same shape as x.
+  """
+  static_shape = x.get_shape().as_list()
+  num_dims = len(static_shape) - 2
+  channels = tf.shape(x)[-1]
+  num_timescales = channels // (num_dims * 2)
+  log_timescale_increment = (
+      np.log(float(max_timescale) / float(min_timescale)) /
+      (tf.to_float(num_timescales) - 1))
+  inv_timescales = min_timescale * tf.exp(
+      tf.to_float(tf.range(num_timescales)) * -log_timescale_increment)
+  for dim in xrange(num_dims):
+    length = tf.shape(x)[dim + 1]
+    position = tf.to_float(tf.range(length))
+    scaled_time = tf.expand_dims(position, 1) * tf.expand_dims(
+        inv_timescales, 0)
+    signal = tf.concat([tf.sin(scaled_time), tf.cos(scaled_time)], axis=1)
+    prepad = dim * 2 * num_timescales
+    postpad = channels - (dim + 1) * 2 * num_timescales
+    signal = tf.pad(signal, [[0, 0], [prepad, postpad]])
+    for _ in xrange(1 + dim):
+      signal = tf.expand_dims(signal, 0)
+    for _ in xrange(num_dims - 1 - dim):
+      signal = tf.expand_dims(signal, -2)
+    x += signal
+  return x
+
 
 def attention_bias_ignore_padding(lengths):
   """Create an bias tensor to be added to attention logits.
@@ -147,6 +196,28 @@ def split_heads(x, num_heads):
   return tf.transpose(split_last_dimension(x, num_heads), [0, 2, 1, 3])
 
 
+def split_heads_2d(x, num_heads):
+  """Split channels (dimension 4) into multiple heads (becomes dimension 1).
+  Args:
+    x: a Tensor with shape [batch, height, width, channels]
+    num_heads: an integer
+  Returns:
+    a Tensor with shape [batch, num_heads, height, width, channels / num_heads]
+  """
+  return tf.transpose(split_last_dimension(x, num_heads), [0, 3, 1, 2, 4])
+
+
+def combine_heads_2d(x):
+  """Inverse of split_heads_2d.
+  Args:
+    x: a Tensor with shape
+      [batch, num_heads, height, width, channels / num_heads]
+  Returns:
+    a Tensor with shape [batch, height, width, channels]
+  """
+  return combine_last_two_dimensions(tf.transpose(x, [0, 2, 3, 1, 4]))
+
+
 def combine_heads(x):
   """Inverse of split_heads.
   Args:
@@ -197,6 +268,76 @@ def compute_qkv(antecedent, total_key_depth, total_value_depth):
   qkv_combined = tf.squeeze(qkv_combined, 1)
   q, k, v = tf.split(qkv_combined, [total_key_depth, total_key_depth, total_value_depth], axis=2)
   return q, k, v
+
+
+def compute_qkv_2d(antecedent, total_key_depth, total_value_depth):
+  """Computes query, key and value.
+  Args:
+    query_antecedent: a Tensor with shape [batch, h, w, depth_k]
+    memory_antecedent: a Tensor with shape [batch, h, w, depth_k]
+    total_key_depth: an integer
+    total_value_depth: and integer
+  Returns:
+    q, k, v : [batch, h, w, depth_k] tensors
+  """
+  params = tf.get_variable("qkv_transform", [1, 1, total_key_depth, 2*total_key_depth + total_value_depth])
+  qkv_combined = tf.nn.conv2d(antecedent, params, [1, 1, 1, 1], "SAME")
+  q, k, v = tf.split(qkv_combined, [total_key_depth, total_key_depth, total_value_depth], axis=2)
+  return q, k, v
+
+
+def multihead_attention_2d(antecedent,
+                           bias,
+                           total_key_depth,
+                           total_value_depth,
+                           output_depth,
+                           num_heads,
+                           dropout_rate,
+                           name=None):
+  """2d Multihead scaled-dot-product attention with inp/output transformations.
+  Args:
+    query_antecedent: a Tensor with shape [batch, h, w, depth_k]
+    memory_antecedent: a Tensor with shape [batch, h, w, depth_k]
+    total_key_depth: an integer
+    total_value_depth: an integer
+    output_depth: an integer
+    num_heads: an integer dividing total_key_depth and total_value_depth
+    attention_type: String, type of attention function to use.
+    query_shape: an tuple indicating the height and width of each query block.
+    memory_flange: an integer indicating how much to look in height and width
+    name: an optional string
+  Returns:
+    A Tensor of shape [batch, h, w, depth_k]
+  Raises:
+    ValueError: if the key depth or value depth are not divisible by the
+      number of attention heads.
+  """
+  with tf.variable_scope(
+      name,
+      default_name="multihead_attention_2d",
+      values=[antecedent]):
+    q, k, v = compute_qkv_2d(antecedent, total_key_depth, total_value_depth)
+    # after splitting, shape is [batch, heads, h, w, depth]
+    q = split_heads_2d(q, num_heads)
+    k = split_heads_2d(k, num_heads)
+    v = split_heads_2d(v, num_heads)
+    key_depth_per_head = total_key_depth // num_heads
+    q *= key_depth_per_head**-0.5
+    # flatten out h/w dim
+    shape = tf.shape(q)
+    q = tf.reshape(q, [shape[0], shape[1], -1, shape[-1]])
+    k = tf.reshape(k, [shape[0], shape[1], -1, shape[-1]])
+    v = tf.reshape(v, [shape[0], shape[1], -1, shape[-1]])
+    x = dot_product_attention(q, k, v, bias, dropout_rate)
+    # unflatten
+    x = tf.reshape(x, [shape[0], shape[1], shape[2], shape[3], -1])
+    x = combine_heads_2d(x)
+    x = tf.layers.conv2d(
+        x,
+        output_depth,
+        (1, 1),
+        name="output_transform")
+    return x
 
 
 def multihead_attention(antecedent,

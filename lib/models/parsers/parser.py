@@ -65,9 +65,8 @@ class Parser(BaseParser):
 
     for i in xrange(self.cnn_layers):
       with tf.variable_scope('CNN%d' % i, reuse=reuse):
-        top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim,
-                             self.recur_keep_prob if i < self.n_recur - 1 else 1.0,
-                             self.info_func if i < self.n_recur - 1 else tf.identity)
+        # todo this looks like not what you want
+        top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
 
     with tf.variable_scope('proj', reuse=reuse):
       top_recur = tf.expand_dims(top_recur, 1)
@@ -76,7 +75,6 @@ class Parser(BaseParser):
       top_recur = tf.squeeze(top_recur, 1)
 
     top_recur = nn.add_timing_signal_1d(top_recur)
-
 
     with tf.variable_scope('2d', reuse=reuse):
       # set up input (split -> 2d)
@@ -88,10 +86,9 @@ class Parser(BaseParser):
       top_recur_2d = tf.concat([top_recur_cols, top_recur_rows], axis=-1)
 
       # apply num_convs 2d conv layers
-      num_convs = 4
-      for i in xrange(num_convs):  # todo pass this in
+      for i in xrange(self.n_recur):  # todo pass this in
         with tf.variable_scope('CNN%d' % i, reuse=reuse):
-          top_recur_2d = self.CNN(top_recur_2d, kernel, kernel, 128,  # todo pass this in
+          top_recur_2d = self.CNN(top_recur_2d, kernel, kernel, self.attn_mlp_size,  # todo pass this in
                                   self.recur_keep_prob if i < self.n_recur - 1 else 1.0,
                                   self.info_func if i < self.n_recur - 1 else tf.identity)
 
@@ -108,7 +105,6 @@ class Parser(BaseParser):
         predictions = arc_output['predictions']
 
     # Project each predicted (or gold) edge into head and dep rel representations
-    edge_proj_dim = 128  # todo don't hardcode this
     with tf.variable_scope('MLP', reuse=reuse):
       # flat_labels = tf.reshape(predictions, [-1])
       original_shape = tf.shape(arc_logits)
@@ -118,8 +114,8 @@ class Parser(BaseParser):
       i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
       targ = i1 * bucket_size * bucket_size + i2 * bucket_size + predictions
       idx = tf.reshape(targ, [-1])
-      conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, edge_proj_dim]), idx)
-      conditioned = tf.reshape(conditioned, [batch_size, bucket_size, edge_proj_dim])
+      conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, self.relu_hidden_size]), idx) # todo don't hardcode this
+      conditioned = tf.reshape(conditioned, [batch_size, bucket_size, self.relu_hidden_size])
       dep_rel_mlp, head_rel_mlp = self.MLP(conditioned, self.class_mlp_size + self.attn_mlp_size, n_splits=2)
 
     with tf.variable_scope('Rels', reuse=reuse):
