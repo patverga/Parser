@@ -98,11 +98,6 @@ class Parser(BaseParser):
     # should normalize before adding
     # top_recur = nn.layer_norm(top_recur, reuse)
 
-    # Project each edge into head and dep rel representations
-    edge_proj_dim = 128  # todo don't hardcode this
-    with tf.variable_scope('MLP', reuse=reuse):
-      dep_rel_mlp, head_rel_mlp = self.MLP(top_recur_2d, edge_proj_dim, n_splits=2)
-
     with tf.variable_scope('Arcs', reuse=reuse):
       arc_logits = self.MLP(top_recur_2d, 1, n_splits=1)
       arc_logits = tf.squeeze(arc_logits, axis=-1)
@@ -111,9 +106,24 @@ class Parser(BaseParser):
         predictions = targets[:, :, 1]
       else:
         predictions = arc_output['predictions']
+
+    # Project each predicted (or gold) edge into head and dep rel representations
+    edge_proj_dim = 128  # todo don't hardcode this
+    with tf.variable_scope('MLP', reuse=reuse):
+      # flat_labels = tf.reshape(predictions, [-1])
+      original_shape = tf.shape(arc_logits)
+      batch_size = original_shape[0]
+      bucket_size = original_shape[1]
+      # num_classes = len(vocabs[2])
+      i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+      targ = i1 * bucket_size * bucket_size + i2 * bucket_size + predictions
+      idx = tf.reshape(targ, [-1])
+      conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, edge_proj_dim]), idx)
+      conditioned = tf.reshape(conditioned, [batch_size, bucket_size, edge_proj_dim])
+      dep_rel_mlp, head_rel_mlp = self.MLP(conditioned, self.class_mlp_size + self.attn_mlp_size, n_splits=2)
+
     with tf.variable_scope('Rels', reuse=reuse):
-      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]),
-                                                                         predictions)
+      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
       rel_output = self.output(rel_logits, targets[:, :, 2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
 
