@@ -56,6 +56,7 @@ class Parser(BaseParser):
     print("num heads: ", self.num_heads)
     print("cnn dim: ", self.cnn_dim)
     print("relu hidden size: ", self.relu_hidden_size)
+    print("head size: ", self.head_size)
 
     # if moving_params is not None:
     #   attn_dropout = 1.0
