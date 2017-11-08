@@ -5,9 +5,11 @@ import matplotlib.pyplot as plt
 import os
 import string
 
+plt.ioff()
+
 data = np.load("attn_weights.npz")
 lines = map(lambda x: x.split('\t'), open("sanitycheck.txt", 'r').readlines())
-save_dir = "attn_plots"
+save_dir = "attn_plots3"
 sentences = []
 current_sent = []
 for line in lines:
@@ -18,6 +20,9 @@ for line in lines:
         current_sent.append(map(string.strip, (line[1], line[6], line[7], line[8], line[9])))
 sentences.append(map(list, zip(*current_sent)))
 max_layer = 3
+
+remove_padding = True
+plot = False
 
 batch_sum = 0
 fig, axes = plt.subplots(nrows=2, ncols=4)
@@ -31,8 +36,6 @@ for arr_name in sorted(data.files):
     # For each element in the batch (one layer)
     # if layer == max_layer and batch > 0:
     for b_i, arrays in enumerate(data[arr_name]):
-        plt.clf()
-
         sentence_idx = batch_sum + b_i
 
         width = arrays.shape[-1]
@@ -41,33 +44,45 @@ for arr_name in sorted(data.files):
 
         sentence = sentences[sentence_idx]
         words = sentence[0]
-        pred_deps = map(int, sentence[1])
+        pred_deps = np.array(map(int, sentence[1]))
         pred_labels = sentence[2]
-        gold_deps = map(int, sentence[3])
+        gold_deps = np.array(map(int, sentence[3]))
         gold_labels = sentence[4]
-        text = words + ['PAD'] * (width - len(words))
-        print(' '.join(text))
+        sent_len = len(words)
+        text = words + [] if remove_padding else (['PAD'] * (width - sent_len))
 
-        gold_deps_xy = list(enumerate(gold_deps))
-        pred_deps_xy = list(enumerate(pred_deps))
+        gold_deps_xy = np.array(list(enumerate(gold_deps)))
+        pred_deps_xy = np.array(list(enumerate(pred_deps)))
 
-        correct_dir = "correct" if gold_deps == pred_deps and gold_labels == pred_labels else "incorrect"
+        labels_incorrect = map(lambda x: x[0] != x[1], zip(pred_labels, gold_labels))
+        incorrect_indices = np.where((pred_deps != gold_deps) | labels_incorrect)
 
-        fig.suptitle(name, fontsize=16)
-        # For each attention head
-        for arr, ax in zip(arrays, axes.flat):
-            res = ax.imshow(arr, cmap=plt.cm.viridis, interpolation='nearest')
-            ax.set_xticks(range(len(text)))
-            ax.set_yticks(range(len(text)))
-            ax.set_xticklabels(text, rotation=75, fontsize=4)
-            ax.set_yticklabels(text, fontsize=4)
+        pred_deps_xy_incorrect = pred_deps_xy[incorrect_indices]
+        pred_labels_incorrect = np.array(pred_labels)[incorrect_indices]
 
-            map(lambda x: ax.text(x[0][1], x[0][0], x[1], ha="center", va="center", fontsize=2), zip(gold_deps_xy, gold_labels))
-            map(lambda x: ax.text(x[0][1], x[0][0], x[1], ha="center", va="center", fontsize=2, color='red'), zip(pred_deps_xy, pred_labels))
+        if 'prep' in pred_labels_incorrect:
+            print(' '.join(text))
+            print(' '.join(pred_labels))
+            print(' '.join(gold_labels))
 
-        fig.tight_layout()
-        plt.savefig(os.path.join(save_dir, correct_dir, name + ".pdf"))
+        if plot:
+            correct_dir = "correct" if len(incorrect_indices[0]) == 0 else "incorrect"
+
+            fig.suptitle(name, fontsize=16)
+            # For each attention head
+            for arr, ax in zip(arrays, axes.flat):
+                res = ax.imshow(arr[:sent_len, :sent_len], cmap=plt.cm.viridis, interpolation=None)
+                ax.set_xticks(range(sent_len))
+                ax.set_yticks(range(sent_len))
+                ax.set_xticklabels(text, rotation=75, fontsize=2)
+                ax.set_yticklabels(text, fontsize=2)
+
+                map(lambda x: ax.text(x[0][1], x[0][0], x[1], ha="center", va="center", fontsize=1), zip(gold_deps_xy, gold_labels))
+                map(lambda x: ax.text(x[0][1], x[0][0], x[1], ha="center", va="bottom", fontsize=1, color='red'), zip(pred_deps_xy_incorrect, pred_labels_incorrect))
+
+            fig.tight_layout()
+            fig.savefig(os.path.join(save_dir, correct_dir, name + ".pdf"))
+            map(lambda x: x.clear(), axes.flat)
+
     if layer == max_layer:
         batch_sum += batch_size
-
-# plt.show()
