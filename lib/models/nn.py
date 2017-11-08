@@ -1366,6 +1366,7 @@ class NN(Configurable):
       length = np.sum(tokens_to_keep)
       parse_probs = parse_probs * tokens_to_keep
       parse_preds = np.argmax(parse_probs, axis=1)
+      print(parse_preds)
       num_roots = sum([1 if i == p else 0 for i, p in enumerate(parse_preds[:length])])
       roots_lt = 1. if num_roots < 1 else 0.
       roots_gt = 1. if num_roots > 1 else 0.
