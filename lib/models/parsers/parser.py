@@ -156,8 +156,8 @@ class Parser(BaseParser):
         batch_size = original_shape[0]
         bucket_size = original_shape[1]
         num_classes = len(vocabs[2])
-        i1, i2, i3 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), tf.range(bucket_size), indexing="ij")
-        targ = i1 * bucket_size * bucket_size * num_classes + i2 * bucket_size * num_classes + i3 * num_classes + predictions
+        i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+        targ = i1 * bucket_size * bucket_size + i2 * bucket_size + predictions
         idx = tf.reshape(targ, [-1])
         conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, 128]), idx) # todo dont hardcode
         conditioned = tf.reshape(conditioned, [batch_size, bucket_size, 128])
