@@ -60,7 +60,7 @@ for lr in ${lrs[@]}; do
                                                             for cnn_dim_2d in ${cnn_dim_2ds[@]}; do
                                                                 for rep in `seq $reps`; do
                                                                     fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$cnn2d_layer-$cnn_dim_2d"
-                                                                    commands+=("srun --gres=gpu:1 --partition=m40-short python network.py \
+                                                                    commands+=("srun --gres=gpu:1 --partition=m40-short,m40-long --time=04:00:00 python network.py \
                                                                     --config_file config/myconf.cfg \
                                                                     --save_dir $OUT_LOG/scores-$fname_append \
                                                                     --save_every 500 \
