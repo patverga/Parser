@@ -421,4 +421,12 @@ class Configurable(object):
   def svd_tree(self):
     return self._config.getboolean('Training', 'svd_tree')
   argparser.add_argument('--svd_tree')
-  
+
+  @property
+  def cnn2d_layers(self):
+    return self._config.getint('Training', 'cnn2d_layers')
+  argparser.add_argument('--cnn2d_layers')
+  @property
+  def cnn_dim_2d(self):
+    return self._config.getint('Training', 'cnn_dim_2d')
+  argparser.add_argument('--cnn_dim_2d')
