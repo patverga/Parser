@@ -71,14 +71,15 @@ class Parser(BaseParser):
 
     # add a transformer layer here y not
     # Transformer:
-    with tf.variable_scope('Transformer%d' % i, reuse=reuse):
-      top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
-                                   attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
-                                   self.info_func, reuse)
-    # if normalization is done in layer_preprocess, then it shuold also be done
-    # on the output, since the output can grow very large, being the sum of
-    # a whole stack of unnormalized layer outputs.
-    # top_recur = nn.layer_norm(top_recur, reuse)
+    for i in range(self.n_recur):
+      with tf.variable_scope('Transformer%d' % i, reuse=reuse):
+        top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
+                                     attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
+                                     self.info_func, reuse)
+        # if normalization is done in layer_preprocess, then it shuold also be done
+        # on the output, since the output can grow very large, being the sum of
+        # a whole stack of unnormalized layer outputs.
+        top_recur = nn.layer_norm(top_recur, reuse)
 
     with tf.variable_scope('proj2', reuse=reuse):
       top_recur_rows, top_recur_cols = self.MLP(top_recur, hidden_size//2, n_splits=2)
@@ -97,9 +98,10 @@ class Parser(BaseParser):
       # apply num_convs 2d conv layers
       for i in xrange(self.cnn2d_layers):  # todo pass this in
         with tf.variable_scope('CNN%d' % i, reuse=reuse):
-          top_recur_2d = self.CNN(top_recur_2d, kernel, kernel, self.cnn_dim_2d,  # todo pass this in
+          top_recur_2d += self.CNN(top_recur_2d, kernel, kernel, self.cnn_dim_2d,  # todo pass this in
                                   self.recur_keep_prob if i < self.n_recur - 1 else 1.0,
                                   self.info_func if i < self.n_recur - 1 else tf.identity)
+        top_recur_2d = nn.layer_norm(top_recur_2d, reuse)
 
     # should normalize before adding
     # top_recur = nn.layer_norm(top_recur, reuse)
