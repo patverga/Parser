@@ -78,7 +78,7 @@ class Parser(BaseParser):
     # if normalization is done in layer_preprocess, then it shuold also be done
     # on the output, since the output can grow very large, being the sum of
     # a whole stack of unnormalized layer outputs.
-    top_recur = nn.layer_norm(top_recur, reuse)
+    # top_recur = nn.layer_norm(top_recur, reuse)
 
     with tf.variable_scope('proj2', reuse=reuse):
       top_recur_rows, top_recur_cols = self.MLP(top_recur, hidden_size//2, n_splits=2)
