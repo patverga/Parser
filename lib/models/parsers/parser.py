@@ -82,7 +82,7 @@ class Parser(BaseParser):
     top_recur = nn.layer_norm(top_recur, reuse)
 
     with tf.variable_scope('proj2', reuse=reuse):
-      top_recur_rows, top_recur_cols = self.MLP(top_recur, hidden_size//2, n_splits=2)
+      top_recur_rows, top_recur_cols = self.MLP(top_recur, self.cnn_dim_2d//2, n_splits=2)
 
     top_recur_rows = nn.add_timing_signal_1d(top_recur_rows)
     top_recur_cols = nn.add_timing_signal_1d(top_recur_cols)
