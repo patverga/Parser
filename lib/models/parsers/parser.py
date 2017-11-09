@@ -51,6 +51,9 @@ class Parser(BaseParser):
     print("relu hidden size: ", self.relu_hidden_size)
     print("head size: ", self.head_size)
 
+    attn_dropout = 0.67
+    prepost_dropout = 0.67
+    relu_dropout = 0.67
     # if moving_params is not None:
     #   attn_dropout = 1.0
     #   prepost_dropout = 1.0
@@ -59,11 +62,25 @@ class Parser(BaseParser):
 
     for i in xrange(self.cnn_layers):
       with tf.variable_scope('CNN%d' % i, reuse=reuse):
-        # todo this looks like not what you want
         top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
 
+
+
+    top_recur = nn.add_timing_signal_1d(top_recur)
+
+    # add a transformer layer here y not
+    # Transformer:
+    with tf.variable_scope('Transformer%d' % i, reuse=reuse):
+      top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
+                                   attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
+                                   self.info_func, reuse)
+    # if normalization is done in layer_preprocess, then it shuold also be done
+    # on the output, since the output can grow very large, being the sum of
+    # a whole stack of unnormalized layer outputs.
+    top_recur = nn.layer_norm(top_recur, reuse)
+
     with tf.variable_scope('proj', reuse=reuse):
-      top_recur_rows, top_recur_cols = self.MLP(top_recur, self.cnn_dim//4, n_splits=2)
+      top_recur_rows, top_recur_cols = self.MLP(top_recur, hidden_size//2, n_splits=2)
 
     top_recur_rows = nn.add_timing_signal_1d(top_recur_rows)
     top_recur_cols = nn.add_timing_signal_1d(top_recur_cols)
@@ -105,7 +122,7 @@ class Parser(BaseParser):
       i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
       targ = i1 * bucket_size * bucket_size + i2 * bucket_size + predictions
       idx = tf.reshape(targ, [-1])
-      conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, self.head_size]), idx) # todo don't hardcode this
+      conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, self.head_size]), idx)
       conditioned = tf.reshape(conditioned, [batch_size, bucket_size, self.head_size])
       dep_rel_mlp, head_rel_mlp = self.MLP(conditioned, self.class_mlp_size + self.attn_mlp_size, n_splits=2)
 
