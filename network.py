@@ -427,7 +427,10 @@ if __name__ == '__main__':
     cargs['config_file'] = os.path.join(cargs['save_dir'], 'config.cfg')
   network = Network(model, **cargs)
   os.system('echo Model: %s > %s/MODEL' % (network.model.__class__.__name__, network.save_dir))
-  print([v.name for v in network.save_vars])
+
+  # print variable names (but not the optimizer ones)
+  print([v.name for v in network.save_vars if 'Optimizer' not in v.name])
+
   config_proto = tf.ConfigProto()
   config_proto.gpu_options.per_process_gpu_memory_fraction = network.per_process_gpu_memory_fraction
   with tf.Session(config=config_proto) as sess:
