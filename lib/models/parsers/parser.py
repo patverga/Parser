@@ -64,10 +64,11 @@ class Parser(BaseParser):
       with tf.variable_scope('CNN%d' % i, reuse=reuse):
         top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
 
-    with tf.variable_scope('proj1', reuse=reuse):
-      top_recur = self.MLP(top_recur, hidden_size, n_splits=1)
+    if self.n_recur > 0:
+      with tf.variable_scope('proj1', reuse=reuse):
+        top_recur = self.MLP(top_recur, hidden_size, n_splits=1)
 
-    top_recur = nn.add_timing_signal_1d(top_recur)
+      top_recur = nn.add_timing_signal_1d(top_recur)
 
     # add a transformer layer here y not
     # Transformer:
@@ -79,7 +80,8 @@ class Parser(BaseParser):
     # if normalization is done in layer_preprocess, then it shuold also be done
     # on the output, since the output can grow very large, being the sum of
     # a whole stack of unnormalized layer outputs.
-    top_recur = nn.layer_norm(top_recur, reuse)
+    if self.n_recur > 0:
+      top_recur = nn.layer_norm(top_recur, reuse)
 
     with tf.variable_scope('proj2', reuse=reuse):
       top_recur_rows, top_recur_cols = self.MLP(top_recur, self.cnn_dim_2d//2, n_splits=2)
