@@ -64,7 +64,8 @@ class Parser(BaseParser):
       with tf.variable_scope('CNN%d' % i, reuse=reuse):
         top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
 
-
+    with tf.variable_scope('proj1', reuse=reuse):
+      top_recur = self.MLP(top_recur, hidden_size, n_splits=1)
 
     top_recur = nn.add_timing_signal_1d(top_recur)
 
@@ -79,7 +80,7 @@ class Parser(BaseParser):
     # a whole stack of unnormalized layer outputs.
     top_recur = nn.layer_norm(top_recur, reuse)
 
-    with tf.variable_scope('proj', reuse=reuse):
+    with tf.variable_scope('proj2', reuse=reuse):
       top_recur_rows, top_recur_cols = self.MLP(top_recur, hidden_size//2, n_splits=2)
 
     top_recur_rows = nn.add_timing_signal_1d(top_recur_rows)
