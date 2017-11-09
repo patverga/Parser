@@ -51,6 +51,9 @@ class Parser(BaseParser):
     print("relu hidden size: ", self.relu_hidden_size)
     print("head size: ", self.head_size)
 
+    print("cnn2d_layers: ", self.cnn2d_layers)
+    print("cnn_dim_2d: ", self.cnn_dim_2d)
+
     attn_dropout = 0.67
     prepost_dropout = 0.67
     relu_dropout = 0.67
