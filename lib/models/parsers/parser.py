@@ -63,10 +63,15 @@ class Parser(BaseParser):
     #   relu_dropout = 1.0
     #   self.recur_keep_prob = 1.0
 
+    if self.cnn_layers > 0:
+      with tf.variable_scope('proj0', reuse=reuse):
+        top_recur = self.MLP(top_recur, self.cnn_dim, n_splits=1)
+
     ####### 1D CNN ########
     for i in xrange(self.cnn_layers):
       with tf.variable_scope('CNN%d' % i, reuse=reuse):
-        top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
+        top_recur += self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
+        top_recur = nn.layer_norm(top_recur, reuse)
 
     if self.n_recur > 0:
       with tf.variable_scope('proj1', reuse=reuse):
