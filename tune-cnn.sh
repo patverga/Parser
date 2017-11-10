@@ -13,7 +13,7 @@ fi
 echo "Writing to $OUT_LOG"
 
 #num_gpus=108
-num_gpus=30
+num_gpus=40
 
 lrs="0.04" # 0.06"
 mus="0.9"
@@ -23,13 +23,15 @@ warmup_steps="8000"
 batch_sizes="5000"
 
 trans_layers="0 1 2 4" # 3
-cnn_dims="1048" # 768
 num_heads="8" #4 8"
 head_sizes="64" # 128"
 relu_hidden_sizes="256"
 
-cnn2d_layers="0 1 2 4"
-cnn_dim_2ds="64 128 256"
+cnn2d_layers="0"
+cnn_dim_2ds="0"
+
+cnn_layers="4 6 8 10"
+cnn_dims="384 512 784 1024"
 
 pairs_penalties="0.0"
 roots_penalties="0.0"
