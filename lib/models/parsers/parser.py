@@ -93,7 +93,7 @@ class Parser(BaseParser):
               top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
                                            attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                            self.info_func, reuse)
-          # if normalization is done in layer_preprocess, then it shuold also be done
+          # if normalization is done in layer_preprocess, then it should also be done
           # on the output, since the output can grow very large, being the sum of
           # a whole stack of unnormalized layer outputs.
           if self.n_recur > 0:
