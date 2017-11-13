@@ -63,7 +63,7 @@ class Parser(BaseParser):
     #   relu_dropout = 1.0
     #   self.recur_keep_prob = 1.0
 
-    for b in self.num_blocks:
+    for b in range(self.num_blocks):
       with tf.variable_scope("block%d" % b, reuse=reuse):  # to share parameters, change scope here
         # Project for CNN input
         if self.cnn_layers > 0:
