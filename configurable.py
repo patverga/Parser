@@ -437,6 +437,6 @@ class Configurable(object):
   argparser.add_argument('--num_blocks')
 
   @property
-  def model(self):
-    return self._config.get('Training', 'model')
-  argparser.add_argument('--model')
+  def dist_model(self):
+    return self._config.get('Training', 'dist_model')
+  argparser.add_argument('--dist_model')

@@ -64,7 +64,7 @@ class Parser(BaseParser):
     #   self.recur_keep_prob = 1.0
 
     assert (self.cnn_layers != 0 or self.n_recur != 0) or self.num_blocks == 0, "num_blocks should be 0 if cnn_layers and n_recur are both 0"
-    assert self.model == 'bilstm' or self.model == 'transformer', 'Model must be either "transformer" or "bilstm"'
+    assert self.dist_model == 'bilstm' or self.dist_model == 'transformer', 'Model must be either "transformer" or "bilstm"'
 
     for b in range(self.num_blocks):
       with tf.variable_scope("block%d" % b, reuse=reuse):  # to share parameters, change scope here
@@ -86,7 +86,7 @@ class Parser(BaseParser):
 
 
         ##### Transformer #######
-        if self.model == 'transformer':
+        if self.dist_model == 'transformer':
           top_recur = nn.add_timing_signal_1d(top_recur)
           for i in range(self.n_recur):
             with tf.variable_scope('Transformer%d' % i, reuse=reuse):
@@ -100,7 +100,7 @@ class Parser(BaseParser):
             top_recur = nn.layer_norm(top_recur, reuse)
 
         ##### BiLSTM #######
-        if self.model == 'bilstm':
+        if self.dist_model == 'bilstm':
           for i in range(self.n_recur):
             with tf.variable_scope('BiLSTM%d' % i, reuse=reuse):
               top_recur, _ = self.RNN(top_recur)
