@@ -63,7 +63,7 @@ class Parser(BaseParser):
     #   relu_dropout = 1.0
     #   self.recur_keep_prob = 1.0
 
-    assert (self.cnn_layers != 0 or self.n_recur != 0) or self.num_blocks == 0, "num_blocks should be 0 if cnn_layers and n_recur are both 0"
+    assert (self.cnn_layers != 0 and self.n_recur != 0) or self.num_blocks == 1, "num_blocks should be 1 if cnn_layers or n_recur is 0"
     assert self.dist_model == 'bilstm' or self.dist_model == 'transformer', 'Model must be either "transformer" or "bilstm"'
 
     for b in range(self.num_blocks):
