@@ -96,6 +96,7 @@ for lr in ${lrs[@]}; do
                                                                             --cnn2d_layers $cnn2d_layer \
                                                                             --cnn_layers $cnn_layer \
                                                                             --num_blocks $num_block \
+                                                                            --dist_model transformer \
                                                                             &> $OUT_LOG/train-$fname_append.log")
                                                                         done
                                                                     done
