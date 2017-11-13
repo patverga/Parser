@@ -63,6 +63,9 @@ class Parser(BaseParser):
     #   relu_dropout = 1.0
     #   self.recur_keep_prob = 1.0
 
+    assert (self.cnn_layers != 0 or self.n_recur != 0) or self.num_blocks == 0, "num_blocks should be 0 if cnn_layers and n_recur are both 0"
+    assert self.model == 'bilstm' or self.model == 'transformer', 'Model must be either "transformer" or "bilstm"'
+
     for b in range(self.num_blocks):
       with tf.variable_scope("block%d" % b, reuse=reuse):  # to share parameters, change scope here
         # Project for CNN input
@@ -81,21 +84,25 @@ class Parser(BaseParser):
           with tf.variable_scope('proj1', reuse=reuse):
             top_recur = self.MLP(top_recur, hidden_size, n_splits=1)
 
-          top_recur = nn.add_timing_signal_1d(top_recur)
 
         ##### Transformer #######
-        # add a transformer layer here y not
-        # Transformer:
-        for i in range(self.n_recur):
-          with tf.variable_scope('Transformer%d' % i, reuse=reuse):
-            top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
-                                         attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
-                                         self.info_func, reuse)
-        # if normalization is done in layer_preprocess, then it shuold also be done
-        # on the output, since the output can grow very large, being the sum of
-        # a whole stack of unnormalized layer outputs.
-        if self.n_recur > 0:
-          top_recur = nn.layer_norm(top_recur, reuse)
+        if self.model == 'transformer':
+          top_recur = nn.add_timing_signal_1d(top_recur)
+          for i in range(self.n_recur):
+            with tf.variable_scope('Transformer%d' % i, reuse=reuse):
+              top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
+                                           attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
+                                           self.info_func, reuse)
+          # if normalization is done in layer_preprocess, then it shuold also be done
+          # on the output, since the output can grow very large, being the sum of
+          # a whole stack of unnormalized layer outputs.
+          if self.n_recur > 0:
+            top_recur = nn.layer_norm(top_recur, reuse)
+
+        ##### BiLSTM #######
+        elif self.model == 'bilstm':
+          for i in range(self.n_recur):
+            with tf.variable_scope('BiLSTM%d' % i, reuse=reuse):
 
     ####### 2D CNN ########
     if self.cnn2d_layers > 0:
