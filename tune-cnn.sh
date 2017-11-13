@@ -12,8 +12,8 @@ fi
 
 echo "Writing to $OUT_LOG"
 
-num_gpus=120
-#num_gpus=40
+#num_gpus=120
+num_gpus=36
 
 lrs="0.04" # 0.06"
 mus="0.9"
@@ -22,18 +22,20 @@ epsilons="1e-12"
 warmup_steps="8000"
 batch_sizes="5000"
 
-trans_layers="1 2 4 6 8" # 3
-num_heads="6 4 8" #4 8"
-head_sizes="64 128"
+trans_layers="1 2 4" # 3
+num_heads="8" #4 8"
+head_sizes="64"
 relu_hidden_sizes="256"
 
 cnn2d_layers="0"
 cnn_dim_2ds="0"
 
-cnn_layers="0 1 2"
-cnn_dims="384 512 784 1024"
+cnn_layers="1 2 4"
+cnn_dims="384 512 768 1024"
 #cnn_layers="4 6 8 10"
 #cnn_dims="384 512 784 1024"
+
+num_blocks="1 2 4"
 
 pairs_penalties="0.0"
 roots_penalties="0.0"
@@ -41,7 +43,7 @@ svd_penalties="0.0"
 
 reps="2"
 
-# 4*3*2*3*4*2
+# 3*3*4*3*2
 
 # array to hold all the commands we'll distribute
 declare -a commands
@@ -63,36 +65,39 @@ for lr in ${lrs[@]}; do
                                                         for cnn2d_layer in ${cnn2d_layers[@]}; do
                                                             for cnn_dim_2d in ${cnn_dim_2ds[@]}; do
                                                                 for cnn_layer in ${cnn_layers[@]}; do
-                                                                    for rep in `seq $reps`; do
-                                                                        fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_layer-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$cnn2d_layer-$cnn_dim_2d"
-                                                                        commands+=("srun --gres=gpu:1 --partition=titanx-short,titanx-long --time=04:00:00 python network.py \
-                                                                        --config_file config/myconf.cfg \
-                                                                        --save_dir $OUT_LOG/scores-$fname_append \
-                                                                        --save_every 500 \
-                                                                        --train_iters 100000 \
-                                                                        --train_batch_size $batch_size \
-                                                                        --warmup_steps $warmup_steps \
-                                                                        --learning_rate $lr \
-                                                                        --cnn_dim $cnn_dim \
-                                                                        --n_recur $trans_layer \
-                                                                        --num_heads $num_head \
-                                                                        --head_size $head_size \
-                                                                        --relu_hidden_size $relu_hidden_size \
-                                                                        --mu $mu \
-                                                                        --nu $nu \
-                                                                        --epsilon $epsilon \
-                                                                        --pairs_penalty $pairs_penalty \
-                                                                        --roots_penalty $roots_penalty \
-                                                                        --svd_penalty $svd_penalty \
-                                                                        --svd_tree True \
-                                                                        --mask_pairs True \
-                                                                        --mask_roots True \
-                                                                        --ensure_tree False \
-                                                                        --save False \
-                                                                        --cnn_dim_2d $cnn_dim_2d \
-                                                                        --cnn2d_layers $cnn2d_layer \
-                                                                        --cnn_layers $cnn_layer
-                                                                        &> $OUT_LOG/train-$fname_append.log")
+                                                                    for num_block in ${num_blocks[@]}; do
+                                                                        for rep in `seq $reps`; do
+                                                                            fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$num_block-$cnn_layer-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$cnn2d_layer-$cnn_dim_2d"
+                                                                            commands+=("srun --gres=gpu:1 --partition=m40-short,m40-long --time=04:00:00 python network.py \
+                                                                            --config_file config/myconf.cfg \
+                                                                            --save_dir $OUT_LOG/scores-$fname_append \
+                                                                            --save_every 500 \
+                                                                            --train_iters 100000 \
+                                                                            --train_batch_size $batch_size \
+                                                                            --warmup_steps $warmup_steps \
+                                                                            --learning_rate $lr \
+                                                                            --cnn_dim $cnn_dim \
+                                                                            --n_recur $trans_layer \
+                                                                            --num_heads $num_head \
+                                                                            --head_size $head_size \
+                                                                            --relu_hidden_size $relu_hidden_size \
+                                                                            --mu $mu \
+                                                                            --nu $nu \
+                                                                            --epsilon $epsilon \
+                                                                            --pairs_penalty $pairs_penalty \
+                                                                            --roots_penalty $roots_penalty \
+                                                                            --svd_penalty $svd_penalty \
+                                                                            --svd_tree True \
+                                                                            --mask_pairs True \
+                                                                            --mask_roots True \
+                                                                            --ensure_tree False \
+                                                                            --save False \
+                                                                            --cnn_dim_2d $cnn_dim_2d \
+                                                                            --cnn2d_layers $cnn2d_layer \
+                                                                            --cnn_layers $cnn_layer \
+                                                                            --num_blocks $num_block \
+                                                                            &> $OUT_LOG/train-$fname_append.log")
+                                                                        done
                                                                     done
                                                                 done
                                                             done
