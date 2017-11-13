@@ -100,9 +100,10 @@ class Parser(BaseParser):
             top_recur = nn.layer_norm(top_recur, reuse)
 
         ##### BiLSTM #######
-        elif self.model == 'bilstm':
+        if self.model == 'bilstm':
           for i in range(self.n_recur):
             with tf.variable_scope('BiLSTM%d' % i, reuse=reuse):
+              top_recur, _ = self.RNN(top_recur)
 
     ####### 2D CNN ########
     if self.cnn2d_layers > 0:
