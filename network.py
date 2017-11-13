@@ -429,7 +429,7 @@ if __name__ == '__main__':
   os.system('echo Model: %s > %s/MODEL' % (network.model.__class__.__name__, network.save_dir))
 
   # print variable names (but not the optimizer ones)
-  print([v.name for v in network.save_vars if 'Optimizer' not in v.name])
+  print([v.name for v in network.save_vars if 'Optimizer' not in v.name and 'layer_norm' not in v.name])
 
   config_proto = tf.ConfigProto()
   config_proto.gpu_options.per_process_gpu_memory_fraction = network.per_process_gpu_memory_fraction
