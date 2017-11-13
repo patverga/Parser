@@ -430,3 +430,8 @@ class Configurable(object):
   def cnn_dim_2d(self):
     return self._config.getint('Training', 'cnn_dim_2d')
   argparser.add_argument('--cnn_dim_2d')
+
+  @property
+  def num_blocks(self):
+    return self._config.getint('Training', 'num_blocks')
+  argparser.add_argument('--num_blocks')

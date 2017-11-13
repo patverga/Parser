@@ -63,35 +63,39 @@ class Parser(BaseParser):
     #   relu_dropout = 1.0
     #   self.recur_keep_prob = 1.0
 
-    if self.cnn_layers > 0:
-      with tf.variable_scope('proj0', reuse=reuse):
-        top_recur = self.MLP(top_recur, self.cnn_dim, n_splits=1)
+    for b in self.num_blocks:
+      with tf.variable_scope("block%d" % b, reuse=reuse):  # to share parameters, change scope here
+        # Project for CNN input
+        if self.cnn_layers > 0:
+          with tf.variable_scope('proj0', reuse=reuse):
+            top_recur = self.MLP(top_recur, self.cnn_dim, n_splits=1)
 
-    ####### 1D CNN ########
-    for i in xrange(self.cnn_layers):
-      with tf.variable_scope('CNN%d' % i, reuse=reuse):
-        top_recur += self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
-        top_recur = nn.layer_norm(top_recur, reuse)
+        ####### 1D CNN ########
+        for i in xrange(self.cnn_layers):
+          with tf.variable_scope('CNN%d' % i, reuse=reuse):
+            top_recur += self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
+            top_recur = nn.layer_norm(top_recur, reuse)
 
-    if self.n_recur > 0:
-      with tf.variable_scope('proj1', reuse=reuse):
-        top_recur = self.MLP(top_recur, hidden_size, n_splits=1)
+        # Project for Tranformer input
+        if self.n_recur > 0:
+          with tf.variable_scope('proj1', reuse=reuse):
+            top_recur = self.MLP(top_recur, hidden_size, n_splits=1)
 
-      top_recur = nn.add_timing_signal_1d(top_recur)
+          top_recur = nn.add_timing_signal_1d(top_recur)
 
-    ##### Transformer #######
-    # add a transformer layer here y not
-    # Transformer:
-    for i in range(self.n_recur):
-      with tf.variable_scope('Transformer%d' % i, reuse=reuse):
-        top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
-                                     attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
-                                     self.info_func, reuse)
-    # if normalization is done in layer_preprocess, then it shuold also be done
-    # on the output, since the output can grow very large, being the sum of
-    # a whole stack of unnormalized layer outputs.
-    if self.n_recur > 0:
-      top_recur = nn.layer_norm(top_recur, reuse)
+        ##### Transformer #######
+        # add a transformer layer here y not
+        # Transformer:
+        for i in range(self.n_recur):
+          with tf.variable_scope('Transformer%d' % i, reuse=reuse):
+            top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
+                                         attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
+                                         self.info_func, reuse)
+        # if normalization is done in layer_preprocess, then it shuold also be done
+        # on the output, since the output can grow very large, being the sum of
+        # a whole stack of unnormalized layer outputs.
+        if self.n_recur > 0:
+          top_recur = nn.layer_norm(top_recur, reuse)
 
     ####### 2D CNN ########
     if self.cnn2d_layers > 0:
