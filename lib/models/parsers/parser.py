@@ -66,12 +66,14 @@ class Parser(BaseParser):
     assert (self.cnn_layers != 0 and self.n_recur != 0) or self.num_blocks == 1, "num_blocks should be 1 if cnn_layers or n_recur is 0"
     assert self.dist_model == 'bilstm' or self.dist_model == 'transformer', 'Model must be either "transformer" or "bilstm"'
 
+    # Project for CNN input
+    # todo moved this out for residual impl -- requires that transformer and cnn have same dims
+    if self.cnn_layers > 0:
+      with tf.variable_scope('proj0', reuse=reuse):
+        top_recur = self.MLP(top_recur, self.cnn_dim, n_splits=1)
+
     for b in range(self.num_blocks):
       with tf.variable_scope("block%d" % b, reuse=reuse):  # to share parameters, change scope here
-        # Project for CNN input
-        if self.cnn_layers > 0:
-          with tf.variable_scope('proj0', reuse=reuse):
-            top_recur = self.MLP(top_recur, self.cnn_dim, n_splits=1)
 
         ####### 1D CNN ########
         for i in xrange(self.cnn_layers):
@@ -82,7 +84,8 @@ class Parser(BaseParser):
         # Project for Tranformer input
         if self.n_recur > 0:
           with tf.variable_scope('proj1', reuse=reuse):
-            top_recur = self.MLP(top_recur, hidden_size, n_splits=1)
+            # todo changed this to plus for residual -- requires that transformer and cnn have same dims
+            top_recur += self.MLP(top_recur, hidden_size, n_splits=1)
 
 
         ##### Transformer #######
