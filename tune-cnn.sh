@@ -35,7 +35,7 @@ cnn_dims="384 512 768 1024"
 #cnn_layers="4 6 8 10"
 #cnn_dims="384 512 784 1024"
 
-num_blocks="1 2 4"
+num_blocks="1"
 
 pairs_penalties="0.0"
 roots_penalties="0.0"
@@ -43,7 +43,7 @@ svd_penalties="0.0"
 
 reps="2"
 
-# 3*3*4*3*2
+# 3*3*4*2
 
 # array to hold all the commands we'll distribute
 declare -a commands
@@ -96,7 +96,7 @@ for lr in ${lrs[@]}; do
                                                                             --cnn2d_layers $cnn2d_layer \
                                                                             --cnn_layers $cnn_layer \
                                                                             --num_blocks $num_block \
-                                                                            --dist_model transformer \
+                                                                            --dist_model bilstm \
                                                                             &> $OUT_LOG/train-$fname_append.log")
                                                                         done
                                                                     done
