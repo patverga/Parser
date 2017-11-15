@@ -30,6 +30,7 @@ from vocab import Vocab
 
 import scipy.linalg
 
+
 def layer_norm(inputs, reuse, epsilon=1e-6):
   """Applies layer normalization.
 
@@ -89,6 +90,7 @@ def add_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4):
   signal = tf.pad(signal, [[0, 0], [0, tf.mod(channels, 2)]])
   signal = tf.reshape(signal, [1, length, channels])
   return x + signal
+
 
 def add_timing_signal_nd(x, min_timescale=1.0, max_timescale=1.0e4):
   """Adds a bunch of sinusoids of different frequencies to a Tensor.

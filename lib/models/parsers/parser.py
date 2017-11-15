@@ -81,12 +81,17 @@ class Parser(BaseParser):
               top_recur = nn.layer_norm(top_recur, reuse)
             else:
               top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
+        if self.cnn_residual and self.n_recur > 0:
+          top_recur = nn.layer_norm(top_recur, reuse)
 
-        # Project for Tranformer input
+        # Project for Tranformer / residual LSTM input
         if self.n_recur > 0:
-          with tf.variable_scope('proj1', reuse=reuse):
-            top_recur = self.MLP(top_recur, hidden_size, n_splits=1)
-
+          if self.dist_model == "transformer":
+            with tf.variable_scope('proj1', reuse=reuse):
+              top_recur = self.MLP(top_recur, hidden_size, n_splits=1)
+          if self.lstm_residual and self.dist_model == "bilstm":
+            with tf.variable_scope('proj1', reuse=reuse):
+              top_recur = self.MLP(top_recur, 2 * self.recur_size, n_splits=1)
 
         ##### Transformer #######
         if self.dist_model == 'transformer':
@@ -112,6 +117,10 @@ class Parser(BaseParser):
                 top_recur = nn.layer_norm(top_recur, reuse)
               else:
                 top_recur, _ = self.RNN(top_recur)
+          if self.lstm_residual and self.n_recur > 0:
+            top_recur = nn.layer_norm(top_recur, reuse)
+      if self.num_blocks > 1:
+        top_recur = nn.layer_norm(top_recur, reuse)
 
     ####### 2D CNN ########
     if self.cnn2d_layers > 0:
