@@ -440,3 +440,13 @@ class Configurable(object):
   def dist_model(self):
     return self._config.get('Training', 'dist_model')
   argparser.add_argument('--dist_model')
+
+  @property
+  def lstm_residual(self):
+    return self._config.getboolean('Training', 'lstm_residual')
+  argparser.add_argument('--lstm_residual')
+
+  @property
+  def cnn_residual(self):
+    return self._config.getboolean('Training', 'cnn_residual')
+  argparser.add_argument('--cnn_residual')

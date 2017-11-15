@@ -76,8 +76,11 @@ class Parser(BaseParser):
         ####### 1D CNN ########
         for i in xrange(self.cnn_layers):
           with tf.variable_scope('CNN%d' % i, reuse=reuse):
-            top_recur += self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
-            top_recur = nn.layer_norm(top_recur, reuse)
+            if self.cnn_residual:
+              top_recur += self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
+              top_recur = nn.layer_norm(top_recur, reuse)
+            else:
+              top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
 
         # Project for Tranformer input
         if self.n_recur > 0:
@@ -103,7 +106,12 @@ class Parser(BaseParser):
         if self.dist_model == 'bilstm':
           for i in range(self.n_recur):
             with tf.variable_scope('BiLSTM%d' % i, reuse=reuse):
-              top_recur, _ = self.RNN(top_recur)
+              if self.lstm_residual:
+                top_recur_curr, _ = self.RNN(top_recur)
+                top_recur += top_recur_curr
+                top_recur = nn.layer_norm(top_recur, reuse)
+              else:
+                top_recur, _ = self.RNN(top_recur)
 
     ####### 2D CNN ########
     if self.cnn2d_layers > 0:

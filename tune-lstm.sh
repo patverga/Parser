@@ -15,11 +15,11 @@ echo "Writing to $OUT_LOG"
 #num_gpus=120
 num_gpus=32
 
-lrs="0.002 0.04" # 0.06"
+lrs="0.04" # 0.06"
 mus="0.9"
 nus="0.98 0.9"
 epsilons="1e-12"
-warmup_steps="0 4000 8000"
+warmup_steps="8000"
 batch_sizes="5000"
 
 lstm_layers="1 2 4 6"
@@ -38,9 +38,11 @@ pairs_penalties="0.0"
 roots_penalties="0.0"
 svd_penalties="0.0"
 
+residuals="True False"
+
 reps="2"
 
-# 2*2*3*4*2 = 96
+# 4*2*2*2
 
 # array to hold all the commands we'll distribute
 declare -a commands
@@ -60,35 +62,38 @@ for lr in ${lrs[@]}; do
                                                 for cnn_dim_2d in ${cnn_dim_2ds[@]}; do
                                                     for cnn_layer in ${cnn_layers[@]}; do
                                                         for num_block in ${num_blocks[@]}; do
-                                                            for rep in `seq $reps`; do
-                                                                fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_step-$batch_size-$num_block-$cnn_layer-$cnn_dim-$lstm_layer-$cnn2d_layer-$cnn_dim_2d"
-                                                                commands+=("srun --gres=gpu:1 --partition=titanx-long python network.py \
-                                                                --config_file config/myconf.cfg \
-                                                                --save_dir $OUT_LOG/scores-$fname_append \
-                                                                --save_every 500 \
-                                                                --train_iters 100000 \
-                                                                --train_batch_size $batch_size \
-                                                                --warmup_steps $warmup_step \
-                                                                --learning_rate $lr \
-                                                                --cnn_dim $cnn_dim \
-                                                                --n_recur $lstm_layer \
-                                                                --mu $mu \
-                                                                --nu $nu \
-                                                                --epsilon $epsilon \
-                                                                --pairs_penalty $pairs_penalty \
-                                                                --roots_penalty $roots_penalty \
-                                                                --svd_penalty $svd_penalty \
-                                                                --svd_tree True \
-                                                                --mask_pairs True \
-                                                                --mask_roots True \
-                                                                --ensure_tree False \
-                                                                --save False \
-                                                                --cnn_dim_2d $cnn_dim_2d \
-                                                                --cnn2d_layers $cnn2d_layer \
-                                                                --cnn_layers $cnn_layer \
-                                                                --num_blocks $num_block \
-                                                                --dist_model bilstm \
-                                                                &> $OUT_LOG/train-$fname_append.log")
+                                                            for residual in ${residuals[@]}; do
+                                                                for rep in `seq $reps`; do
+                                                                    fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_step-$batch_size-$num_block-$cnn_layer-$cnn_dim-$lstm_layer-$residual-$cnn2d_layer-$cnn_dim_2d"
+                                                                    commands+=("srun --gres=gpu:1 --partition=titanx-short python network.py \
+                                                                    --config_file config/myconf.cfg \
+                                                                    --save_dir $OUT_LOG/scores-$fname_append \
+                                                                    --save_every 500 \
+                                                                    --train_iters 100000 \
+                                                                    --train_batch_size $batch_size \
+                                                                    --warmup_steps $warmup_step \
+                                                                    --learning_rate $lr \
+                                                                    --cnn_dim $cnn_dim \
+                                                                    --n_recur $lstm_layer \
+                                                                    --mu $mu \
+                                                                    --nu $nu \
+                                                                    --epsilon $epsilon \
+                                                                    --pairs_penalty $pairs_penalty \
+                                                                    --roots_penalty $roots_penalty \
+                                                                    --svd_penalty $svd_penalty \
+                                                                    --svd_tree True \
+                                                                    --mask_pairs True \
+                                                                    --mask_roots True \
+                                                                    --ensure_tree False \
+                                                                    --save False \
+                                                                    --cnn_dim_2d $cnn_dim_2d \
+                                                                    --cnn2d_layers $cnn2d_layer \
+                                                                    --cnn_layers $cnn_layer \
+                                                                    --num_blocks $num_block \
+                                                                    --dist_model bilstm \
+                                                                    --lstm_residual $residual \
+                                                                    &> $OUT_LOG/train-$fname_append.log")
+                                                                done
                                                             done
                                                         done
                                                     done
