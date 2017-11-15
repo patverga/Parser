@@ -74,15 +74,16 @@ class Parser(BaseParser):
             top_recur = self.MLP(top_recur, self.cnn_dim, n_splits=1)
 
         ####### 1D CNN ########
-        for i in xrange(self.cnn_layers):
-          with tf.variable_scope('CNN%d' % i, reuse=reuse):
-            if self.cnn_residual:
-              top_recur += self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
-              top_recur = nn.layer_norm(top_recur, reuse)
-            else:
-              top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
-        if self.cnn_residual and self.n_recur > 0:
-          top_recur = nn.layer_norm(top_recur, reuse)
+        with tf.variable_scope('CNN', reuse=reuse):
+          for i in xrange(self.cnn_layers):
+            with tf.variable_scope('layer%d' % i, reuse=reuse):
+              if self.cnn_residual:
+                top_recur += self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
+                top_recur = nn.layer_norm(top_recur, reuse)
+              else:
+                top_recur = self.CNN(top_recur, 1, kernel, self.cnn_dim, self.recur_keep_prob, self.info_func)
+          if self.cnn_residual and self.n_recur > 0:
+            top_recur = nn.layer_norm(top_recur, reuse)
 
         # Project for Tranformer / residual LSTM input
         if self.n_recur > 0:
@@ -91,36 +92,38 @@ class Parser(BaseParser):
               top_recur = self.MLP(top_recur, hidden_size, n_splits=1)
           if self.lstm_residual and self.dist_model == "bilstm":
             with tf.variable_scope('proj1', reuse=reuse):
-              top_recur = self.MLP(top_recur, 2 * self.recur_size, n_splits=1)
+              top_recur = self.MLP(top_recur, (2 if self.recur_bidir else 1) * self.recur_size, n_splits=1)
 
         ##### Transformer #######
         if self.dist_model == 'transformer':
-          top_recur = nn.add_timing_signal_1d(top_recur)
-          for i in range(self.n_recur):
-            with tf.variable_scope('Transformer%d' % i, reuse=reuse):
-              top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
-                                           attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
-                                           self.info_func, reuse)
-          # if normalization is done in layer_preprocess, then it should also be done
-          # on the output, since the output can grow very large, being the sum of
-          # a whole stack of unnormalized layer outputs.
-          if self.n_recur > 0:
-            top_recur = nn.layer_norm(top_recur, reuse)
+          with tf.variable_scope('Transformer', reuse=reuse):
+            top_recur = nn.add_timing_signal_1d(top_recur)
+            for i in range(self.n_recur):
+              with tf.variable_scope('layer%d' % i, reuse=reuse):
+                top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
+                                             attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
+                                             self.info_func, reuse)
+            # if normalization is done in layer_preprocess, then it should also be done
+            # on the output, since the output can grow very large, being the sum of
+            # a whole stack of unnormalized layer outputs.
+            if self.n_recur > 0:
+              top_recur = nn.layer_norm(top_recur, reuse)
 
         ##### BiLSTM #######
         if self.dist_model == 'bilstm':
-          for i in range(self.n_recur):
-            with tf.variable_scope('BiLSTM%d' % i, reuse=reuse):
-              if self.lstm_residual:
-                top_recur_curr, _ = self.RNN(top_recur)
-                top_recur += top_recur_curr
-                top_recur = nn.layer_norm(top_recur, reuse)
-              else:
-                top_recur, _ = self.RNN(top_recur)
-          if self.lstm_residual and self.n_recur > 0:
-            top_recur = nn.layer_norm(top_recur, reuse)
-      if self.num_blocks > 1:
-        top_recur = nn.layer_norm(top_recur, reuse)
+          with tf.variable_scope("BiLSTM", reuse=reuse):
+            for i in range(self.n_recur):
+              with tf.variable_scope('layer%d' % i, reuse=reuse):
+                if self.lstm_residual:
+                  top_recur_curr, _ = self.RNN(top_recur)
+                  top_recur += top_recur_curr
+                  top_recur = nn.layer_norm(top_recur, reuse)
+                else:
+                  top_recur, _ = self.RNN(top_recur)
+            if self.lstm_residual and self.n_recur > 0:
+              top_recur = nn.layer_norm(top_recur, reuse)
+        if self.num_blocks > 1:
+          top_recur = nn.layer_norm(top_recur, reuse)
 
     ####### 2D CNN ########
     if self.cnn2d_layers > 0:
