@@ -117,11 +117,11 @@ class Parser(BaseParser):
                 if self.lstm_residual:
                   top_recur_curr, _ = self.RNN(top_recur)
                   top_recur += top_recur_curr
-                  top_recur = nn.layer_norm(top_recur, reuse)
+                  # top_recur = nn.layer_norm(top_recur, reuse)
                 else:
                   top_recur, _ = self.RNN(top_recur)
-            if self.lstm_residual and self.n_recur > 0:
-              top_recur = nn.layer_norm(top_recur, reuse)
+            # if self.lstm_residual and self.n_recur > 0:
+            #   top_recur = nn.layer_norm(top_recur, reuse)
         if self.num_blocks > 1:
           top_recur = nn.layer_norm(top_recur, reuse)
 
