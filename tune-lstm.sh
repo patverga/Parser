@@ -13,9 +13,9 @@ fi
 echo "Writing to $OUT_LOG"
 
 #num_gpus=120
-num_gpus=32
+num_gpus=96
 
-lrs="0.04" # 0.06"
+lrs="0.04 0.1 0.01" # 0.06"
 mus="0.9"
 nus="0.98 0.9"
 epsilons="1e-12"
@@ -42,7 +42,7 @@ residuals="True False"
 
 reps="2"
 
-# 4*2*2*2
+# 4*2*2*2*3
 
 # array to hold all the commands we'll distribute
 declare -a commands
