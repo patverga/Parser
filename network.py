@@ -171,7 +171,7 @@ class Network(Configurable):
                 inputs = feed_dict[self._validset.inputs]
                 targets = feed_dict[self._validset.targets]
                 start_time = time.time()
-                loss, n_correct, n_tokens, predictions = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
+                loss, n_correct, n_tokens, predictions, cycles = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
                 valid_time += time.time() - start_time
                 valid_loss += loss
                 n_valid_sents += len(targets)
@@ -250,12 +250,12 @@ class Network(Configurable):
       filename = self.valid_file
       minibatches = self.valid_minibatches
       dataset = self._validset
-      op = self.ops['test_op'][0]
+      op = self.ops['test_op'][:2]
     else:
       filename = self.test_file
       minibatches = self.test_minibatches
       dataset = self._testset
-      op = self.ops['test_op'][1]
+      op = self.ops['test_op'][2:]
     
     all_predictions = [[]]
     all_sents = [[]]
@@ -266,12 +266,15 @@ class Network(Configurable):
     cycles_2_total = 0.
     cycles_n_total = 0.
     not_tree_total = 0.
+    forward_total_time = 0.
     for (feed_dict, sents) in minibatches():
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
-      mb_probs = sess.run(op, feed_dict=feed_dict)
-      preds, time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees = self.model.validate(mb_inputs, mb_targets, mb_probs)
-      total_time += time
+      forward_start = time.time()
+      probs, cycles = sess.run(op, feed_dict=feed_dict)
+      forward_total_time += time.time() - forward_start
+      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees = self.model.validate(mb_inputs, mb_targets, probs, cycles)
+      total_time += parse_time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
       cycles_2_total += cycles_2
@@ -285,6 +288,7 @@ class Network(Configurable):
           all_predictions.append([])
           all_sents.append([])
     print("Total time in prob_argmax: %f" % total_time)
+    print("Total time in forward: %f" % forward_total_time)
     print("Not tree: %d" % not_tree_total)
     print("Roots < 1: %d; Roots > 1: %d; 2-cycles: %d; n-cycles: %d" % (roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total))
     with open(os.path.join(self.save_dir, os.path.basename(filename)), 'w') as f:
@@ -308,6 +312,9 @@ class Network(Configurable):
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
       f.write(s)
+    las = np.mean(correct["LAS"]) * 100
+    uas = np.mean(correct["UAS"]) * 100
+    print('UAS: %.2f    LAS: %.2f' % (uas, las))
     return correct
   
   #=============================================================
@@ -370,9 +377,13 @@ class Network(Configurable):
     ops['valid_op'] = [valid_output['loss'],
                        valid_output['n_correct'],
                        valid_output['n_tokens'],
-                       valid_output['predictions']]
+                       valid_output['predictions'],
+                       valid_output['cycles']]
     ops['test_op'] = [valid_output['probabilities'],
-                      test_output['probabilities']]
+                      valid_output['cycles'],
+                      test_output['probabilities'],
+                      test_output['cycles']
+                      ]
     ops['optimizer'] = optimizer
     
     return ops

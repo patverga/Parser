@@ -29,6 +29,7 @@ from configurable import Configurable
 from vocab import Vocab
 
 import scipy.linalg
+import scipy.sparse
 
 
 def layer_norm(inputs, reuse, epsilon=1e-6):
@@ -997,6 +998,13 @@ class NN(Configurable):
                        lambda: tf.constant(0.0),
                        lambda: self.compute_svd_loss(logits2D, tokens_to_keep1D, batch_size, bucket_size))
 
+    # at test time
+    # if self.moving_params is not None and self.svd_tree:
+    if self.svd_tree:
+      cycles = self.compute_cycles(logits2D, tokens_to_keep1D, batch_size, bucket_size)
+    else:
+      cycles = tf.constant(-1.)
+
     ######## condition on pairwise selection, root selection #########
     # # try masking zeroth row before computing pairs mask, so as not to conflict w/ roots
     # pairs_idx_cols = tf.stack([idx1, tf.zeros([bucket_size * batch_size], dtype=tf.int32), idx2], axis=-1)
@@ -1057,6 +1065,7 @@ class NN(Configurable):
       'roots_loss': roots_loss,
       '2cycle_loss': pairs_log_loss,
       'svd_loss': svd_loss,
+      'cycles': cycles
     }
 
     return output
@@ -1134,6 +1143,41 @@ class NN(Configurable):
     except np.linalg.linalg.LinAlgError:
       print("SVD did not converge")
     return svd_loss
+
+
+  ########### cycles ##########
+  def compute_cycles(self, logits2D, tokens_to_keep1D, batch_size, bucket_size):
+    # construct predicted adjacency matrix
+    maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
+    maxes_tiled = tf.tile(maxes, [1, bucket_size])
+    adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
+    adj_flat = adj_flat * tf.expand_dims(tokens_to_keep1D, -1)
+    adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
+    # zero out diagonal
+    adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
+    # make it undirected
+    undirected_adj = tf.cast(tf.logical_or(tf.cast(adj, tf.bool), tf.transpose(tf.cast(adj, tf.bool), [0, 2, 1])), tf.float32)
+
+    # compute laplacian & its trace
+    degrees = tf.reduce_sum(undirected_adj, axis=1)
+    l_trace = tf.reduce_sum(degrees, axis=1)
+    laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
+
+    # svd_loss = 0.
+    # try:
+    # dtype = laplacian.dtype
+    # _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, True], [dtype, dtype, dtype])
+    s, _, _ = tf.svd(laplacian)
+    l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
+
+    # cycles iff: 0.5 * l_trace > l_rank + 1
+    cycles = tf.greater(0.5 * l_trace, l_rank + 1)
+    # svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
+    # svd_loss_masked = self.tokens_to_keep3D * svd_loss
+    # svd_loss = self.svd_penalty * tf.reduce_sum(svd_loss)  # / self.n_tokens
+    # except np.linalg.linalg.LinAlgError:
+    #   print("SVD did not converge")
+    return cycles
 
 
   ######### roots loss (diag) ##########
@@ -1223,184 +1267,120 @@ class NN(Configurable):
 
     # has_cycle = len_2_cycles or (0.5 * np.trace(laplacian) >= rank + 1)
     return int(len_2_cycles), int((0.5 * np.trace(laplacian) >= rank + 1))
-  
+
+  # ensure at least one root
+  def ensure_gt_one_root(self, parse_preds, parse_probs, tokens):
+    # The current root probabilities
+    root_probs = np.diagonal(parse_probs[tokens])
+    # The current head probabilities
+    old_head_probs = parse_probs[tokens, parse_preds[tokens]]
+    # Get new potential root probabilities
+    new_root_probs = root_probs / old_head_probs
+    # Select the most probable root
+    new_root = tokens[np.argmax(new_root_probs)]
+    # Make the change
+    parse_preds[new_root] = new_root
+    return parse_preds
+
+  # ensure at most one root
+  def ensure_lt_two_root(self, parse_preds, parse_probs, roots, tokens):
+    # The probabilities of the current heads
+    root_probs = parse_probs[roots, roots]
+    # Set the probability of depending on the root zero
+    parse_probs[roots, roots] = 0
+    # Get new potential heads and their probabilities
+    new_heads = np.argmax(parse_probs[roots][:, tokens], axis=1) + 1
+    new_head_probs = parse_probs[roots, new_heads] / root_probs
+    # Select the most probable root
+    new_root = roots[np.argmin(new_head_probs)]
+    # Make the change
+    parse_preds[roots] = new_heads
+    parse_preds[new_root] = new_root
+    return parse_preds
+
   #=============================================================
-  def parse_argmax(self, parse_probs, tokens_to_keep):
+  def parse_argmax(self, parse_probs, tokens_to_keep, cycle=None):
     """"""
-    if self.ensure_tree and self.svd_tree:
-      tokens_to_keep[0] = True
-      length = np.sum(tokens_to_keep)
-      I = np.eye(len(tokens_to_keep))
-      # block loops and pad heads
-      parse_probs = parse_probs * tokens_to_keep * (1 - I)
-      parse_preds = np.argmax(parse_probs, axis=1)
-      tokens = np.arange(1, length)
-      roots = np.where(parse_preds[tokens] == 0)[0] + 1
-      roots_lt = 1. if len(roots) < 1 else 0.
-      roots_gt = 1. if len(roots) > 1 else 0.
+    tokens_to_keep[0] = True
+    length = np.sum(tokens_to_keep)
+    # tokens = np.arange(1, length)
+    tokens = np.arange(length)
+    parse_probs = parse_probs * tokens_to_keep
+    parse_preds = np.argmax(parse_probs, axis=1)
+    roots = [i for i, p in enumerate(parse_preds[:length]) if i == p]
+    num_roots = len(roots)
+    roots_lt = 1. if num_roots < 1 else 0.
+    roots_gt = 1. if num_roots > 1 else 0.
+    len_2_cycles = 0
+    n_cycles = 0
+    ensure_tree = self.ensure_tree
 
-      # ensure at least one root
-      if roots_lt:
-        # The current root probabilities
-        root_probs = parse_probs[tokens, 0]
-        # The current head probabilities
-        old_head_probs = parse_probs[tokens, parse_preds[tokens]]
-        # Get new potential root probabilities
-        new_root_probs = root_probs / old_head_probs
-        # Select the most probable root
-        new_root = tokens[np.argmax(new_root_probs)]
-        # Make the change
-        parse_preds[new_root] = 0
-      # ensure at most one root
-      elif roots_gt:
-        # The probabilities of the current heads
-        root_probs = parse_probs[roots, 0]
-        # Set the probability of depending on the root zero
-        parse_probs[roots, 0] = 0
-        # Get new potential heads and their probabilities
-        new_heads = np.argmax(parse_probs[roots][:, tokens], axis=1) + 1
-        new_head_probs = parse_probs[roots, new_heads] / root_probs
-        # Select the most probable root
-        new_root = roots[np.argmin(new_head_probs)]
-        # Make the change
-        parse_preds[roots] = new_heads
-        parse_preds[new_root] = 0
-      # remove cycles
-
-      len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
-      # print(len_2_cycles)
-      # print(n_cycles)
-      if len_2_cycles or n_cycles:
-        tarjan = Tarjan(parse_preds, tokens)
-        cycles = tarjan.SCCs
-        for SCC in tarjan.SCCs:
-          if len(SCC) > 1:
-            if len(SCC) == 2:
-              len_2_cycles = 1.
-            else:
-              n_cycles = 1.
-            dependents = set()
-            to_visit = set(SCC)
-            while len(to_visit) > 0:
-              node = to_visit.pop()
-              if not node in dependents:
-                dependents.add(node)
-                to_visit.update(tarjan.edges[node])
-            # The indices of the nodes that participate in the cycle
-            cycle = np.array(list(SCC))
-            # The probabilities of the current heads
-            old_heads = parse_preds[cycle]
-            old_head_probs = parse_probs[cycle, old_heads]
-            # Set the probability of depending on a non-head to zero
-            non_heads = np.array(list(dependents))
-            parse_probs[np.repeat(cycle, len(non_heads)), np.repeat([non_heads], len(cycle), axis=0).flatten()] = 0
-            # Get new potential heads and their probabilities
-            new_heads = np.argmax(parse_probs[cycle][:, tokens], axis=1) + 1
-            new_head_probs = parse_probs[cycle, new_heads] / old_head_probs
-            # Select the most probable change
-            change = np.argmax(new_head_probs)
-            changed_cycle = cycle[change]
-            old_head = old_heads[change]
-            new_head = new_heads[change]
-            # Make the change
-            parse_preds[changed_cycle] = new_head
-            tarjan.edges[new_head].add(changed_cycle)
-            tarjan.edges[old_head].remove(changed_cycle)
-      return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
-    elif self.svd_tree:
-      tokens_to_keep[0] = True
-      length = np.sum(tokens_to_keep)
-      parse_probs = parse_probs * tokens_to_keep
-      parse_preds = np.argmax(parse_probs, axis=1)
-      num_roots = sum([1 if i == p else 0 for i, p in enumerate(parse_preds[:length])])
-      roots_lt = 1. if num_roots < 1 else 0.
-      roots_gt = 1. if num_roots > 1 else 0.
-      len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
-      return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
-    elif self.ensure_tree:
-      tokens_to_keep[0] = True
-      length = np.sum(tokens_to_keep)
-      I = np.eye(len(tokens_to_keep))
-      # block loops and pad heads
-      parse_probs = parse_probs * tokens_to_keep * (1 - I)
-      parse_preds = np.argmax(parse_probs, axis=1)
-      tokens = np.arange(1, length)
-      roots = np.where(parse_preds[tokens] == 0)[0] + 1
-      roots_lt = 1. if len(roots) < 1 else 0.
-      roots_gt = 1. if len(roots) > 1 else 0.
+    # todo this should really happen in model, in batch, and be passed in
+    if self.svd_tree:
+      n_cycles = cycle
       # len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
-      # ensure at least one root
+
+    if ensure_tree:
       if roots_lt:
-        # The current root probabilities
-        root_probs = parse_probs[tokens, 0]
-        # The current head probabilities
-        old_head_probs = parse_probs[tokens, parse_preds[tokens]]
-        # Get new potential root probabilities
-        new_root_probs = root_probs / old_head_probs
-        # Select the most probable root
-        new_root = tokens[np.argmax(new_root_probs)]
-        # Make the change
-        parse_preds[new_root] = 0
-      # ensure at most one root
+        parse_preds = self.ensure_gt_one_root(parse_preds, parse_probs, tokens)
       elif roots_gt:
-        # The probabilities of the current heads
-        root_probs = parse_probs[roots, 0]
-        # Set the probability of depending on the root zero
-        parse_probs[roots, 0] = 0
-        # Get new potential heads and their probabilities
-        new_heads = np.argmax(parse_probs[roots][:, tokens], axis=1) + 1
-        new_head_probs = parse_probs[roots, new_heads] / root_probs
-        # Select the most probable root
-        new_root = roots[np.argmin(new_head_probs)]
-        # Make the change
-        parse_preds[roots] = new_heads
-        parse_preds[new_root] = 0
-      # remove cycles
-      tarjan = Tarjan(parse_preds, tokens)
-      cycles = tarjan.SCCs
-      len_2_cycles = 0.
-      n_cycles = 0.
-      for SCC in tarjan.SCCs:
-        if len(SCC) > 1:
-          if len(SCC) == 2:
-            len_2_cycles = 1.
-          else:
-            n_cycles = 1.
-          dependents = set()
-          to_visit = set(SCC)
-          while len(to_visit) > 0:
-            node = to_visit.pop()
-            if not node in dependents:
-              dependents.add(node)
-              to_visit.update(tarjan.edges[node])
-          # The indices of the nodes that participate in the cycle
-          cycle = np.array(list(SCC))
-          # The probabilities of the current heads
-          old_heads = parse_preds[cycle]
-          old_head_probs = parse_probs[cycle, old_heads]
-          # Set the probability of depending on a non-head to zero
-          non_heads = np.array(list(dependents))
-          parse_probs[np.repeat(cycle, len(non_heads)), np.repeat([non_heads], len(cycle), axis=0).flatten()] = 0
-          # Get new potential heads and their probabilities
-          new_heads = np.argmax(parse_probs[cycle][:, tokens], axis=1) + 1
-          new_head_probs = parse_probs[cycle, new_heads] / old_head_probs
-          # Select the most probable change
-          change = np.argmax(new_head_probs)
-          changed_cycle = cycle[change]
-          old_head = old_heads[change]
-          new_head = new_heads[change]
-          # Make the change
-          parse_preds[changed_cycle] = new_head
-          tarjan.edges[new_head].add(changed_cycle)
-          tarjan.edges[old_head].remove(changed_cycle)
-      return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
-    else:
-      tokens_to_keep[0] = True
-      length = np.sum(tokens_to_keep)
-      # block and pad heads
-      parse_probs = parse_probs * tokens_to_keep
-      parse_preds = np.argmax(parse_probs, axis=1)
-      return parse_preds, 0., 0., 0., 0.
+        parse_preds = self.ensure_lt_two_root(parse_preds, parse_probs, roots, tokens)
+
+      if not self.svd_tree or len_2_cycles or n_cycles:
+        root_probs = np.diag(parse_probs)
+        parse_probs_no_roots = parse_probs * (1 - np.eye(parse_probs.shape[0]))
+        parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])
+        parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
+        mst = scipy.sparse.csgraph.minimum_spanning_tree(-parse_probs_roots_aug)
+        mst_arr = mst.toarray()[1:length+1]
+        roots = mst_arr[:,0]
+        mst_arr = mst_arr[:,1:length+1]
+        mst_arr[tokens, tokens] = roots
+        parse_preds = np.argmin(mst_arr, axis=1)
+
+        # print("tree parse preds", parse_preds)
+
+    # if ensure_tree:
+    #   len_2_cycles = n_cycles = 0
+    #   # remove cycles
+    #   parse_probs_no_roots = parse_probs * (1 - np.eye(len(tokens_to_keep)))
+    #   parse_preds_no_roots = np.argmax(parse_probs_no_roots, axis=1)
+    #   tarjan = Tarjan(parse_preds_no_roots, tokens)
+    #   cycles = tarjan.SCCs
+    #   for SCC in cycles:
+    #     if len(SCC) > 1:
+    #       if len(SCC) == 2:
+    #         len_2_cycles += 1.
+    #       else:
+    #         n_cycles += 1.
+    #       dependents = set()
+    #       to_visit = set(SCC)
+    #       while len(to_visit) > 0:
+    #         node = to_visit.pop()
+    #         if not node in dependents:
+    #           dependents.add(node)
+    #           to_visit.update(tarjan.edges[node])
+    #       # The indices of the nodes that participate in the cycle
+    #       cycle = np.array(list(SCC))
+    #       # The probabilities of the current heads
+    #       old_heads = parse_preds[cycle]
+    #       old_head_probs = parse_probs[cycle, old_heads]
+    #       # Set the probability of depending on a non-head to zero
+    #       non_heads = np.array(list(dependents))
+    #       parse_probs[np.repeat(cycle, len(non_heads)), np.repeat([non_heads], len(cycle), axis=0).flatten()] = 0
+    #       # Get new potential heads and their probabilities
+    #       new_heads = np.argmax(parse_probs[cycle][:, tokens], axis=1) + 1
+    #       new_head_probs = parse_probs[cycle, new_heads] / old_head_probs
+    #       # Select the most probable change
+    #       change = np.argmax(new_head_probs)
+    #       changed_cycle = cycle[change]
+    #       old_head = old_heads[change]
+    #       new_head = new_heads[change]
+    #       # Make the change
+    #       parse_preds[changed_cycle] = new_head
+    #       tarjan.edges[new_head].add(changed_cycle)
+    #       tarjan.edges[old_head].remove(changed_cycle)
+    return parse_preds, roots_lt, roots_gt, len_2_cycles, n_cycles
 
   
   #=============================================================
@@ -1414,9 +1394,10 @@ class NN(Configurable):
       length = np.sum(tokens_to_keep)
       tokens = np.arange(length)
       rel_preds = np.argmax(rel_probs, axis=1)
-      roots = np.where(rel_preds[tokens] == root)[0]+1
+      roots = np.where(rel_preds[tokens] == root)[0] #+1
       if len(roots) < 1:
-        rel_preds[1+np.argmax(rel_probs[tokens,root])] = root
+        # rel_preds[1+np.argmax(rel_probs[tokens,root])] = root
+        rel_preds[np.argmax(rel_probs[tokens, root])] = root
       elif len(roots) > 1:
         root_probs = rel_probs[roots, root]
         rel_probs[roots, root] = 0

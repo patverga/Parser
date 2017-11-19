@@ -36,7 +36,7 @@ class BaseParser(NN):
     raise NotImplementedError
   
   #=============================================================
-  def prob_argmax(self, parse_probs, rel_probs, tokens_to_keep):
+  def prob_argmax(self, parse_probs, rel_probs, tokens_to_keep, cycle=None):
     """"""
     
     raise NotImplementedError
@@ -61,7 +61,7 @@ class BaseParser(NN):
     return
   
   #=============================================================
-  def validate(self, mb_inputs, mb_targets, mb_probs):
+  def validate(self, mb_inputs, mb_targets, mb_probs, cycles):
     """"""
     
     sents = []
@@ -72,10 +72,12 @@ class BaseParser(NN):
     cycles_2_total = 0.
     cycles_n_total = 0.
     non_trees_total = 0.
-    for inputs, targets, parse_probs, rel_probs in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs):
+    if cycles == -1:
+        cycles = [None for _ in range(len(mb_inputs))]
+    for inputs, targets, parse_probs, rel_probs, c in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, cycles):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
-      parse_preds, rel_preds, argmax_time, roots_lt, roots_gt, cycles_2, cycles_n = self.prob_argmax(parse_probs, rel_probs, tokens_to_keep)
+      parse_preds, rel_preds, argmax_time, roots_lt, roots_gt, cycles_2, cycles_n = self.prob_argmax(parse_probs, rel_probs, tokens_to_keep, c)
       total_time += argmax_time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
@@ -112,7 +114,39 @@ class BaseParser(NN):
               correct['LAS'][-1] = 1
     correct = {k:np.array(v) for k, v in correct.iteritems()}
     return 'UAS: %.2f    LAS: %.2f\n' % (np.mean(correct['UAS']) * 100, np.mean(correct['LAS']) * 100), correct
-  
+
+  # =============================================================
+  @staticmethod
+  def evaluate_by_len(filename, punct=NN.PUNCT):
+    """"""
+    # want UAS broken down by: sentence length, dep distance dep label
+    # want LAS broken down by: dep label
+    correct = {'UAS': [], 'LAS': []}
+    correct_by_sent_len = {}
+    correct_by_dep_len = {}
+    correct_by_dep = {}
+    uas_by_sent_len = {}
+    uas_by_dep_len = {}
+    las_by_dep = {}
+    curr_sent_len = 0
+    curr_sent_correct = 0
+    curr_sent_pred = 0
+    with open(filename) as f:
+      for line in f:
+        line = line.strip().split('\t')
+        if len(line) == 10 and line[4] not in punct:
+          correct['UAS'].append(0)
+          correct['LAS'].append(0)
+          if line[6] == line[8]:
+            correct['UAS'][-1] = 1
+            if line[7] == line[9]:
+              correct['LAS'][-1] = 1
+        # elif len(line) != 10:
+        #   # update all the counts by sentence
+
+    correct = {k: np.array(v) for k, v in correct.iteritems()}
+    return 'UAS: %.2f    LAS: %.2f\n' % (np.mean(correct['UAS']) * 100, np.mean(correct['LAS']) * 100), correct
+
   #=============================================================
   @property
   def input_idxs(self):
