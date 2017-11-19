@@ -72,7 +72,7 @@ class BaseParser(NN):
     cycles_2_total = 0.
     cycles_n_total = 0.
     non_trees_total = 0.
-    if cycles == -1:
+    if np.all(cycles == -1):
         cycles = [None for _ in range(len(mb_inputs))]
     for inputs, targets, parse_probs, rel_probs, c in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, cycles):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
