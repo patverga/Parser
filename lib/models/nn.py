@@ -1151,7 +1151,7 @@ class NN(Configurable):
     # construct predicted adjacency matrix
 
     # max values for every token (flattened across batches)
-    mask = (1 - tf.expand_dims(tokens_to_keep1D, -1)) * np.NINF
+    mask = (1 - tf.expand_dims(tokens_to_keep1D, -1)) * tf.reduce_min(logits2D)
     maxes = tf.expand_dims(tf.reduce_max(logits2D + mask, axis=1), -1)
     # tile the maxes across rows
     maxes_tiled = tf.tile(maxes, [1, bucket_size])
