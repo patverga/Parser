@@ -1354,24 +1354,24 @@ class NN(Configurable):
       elif roots_gt:
         parse_preds = self.ensure_lt_two_root(parse_preds, parse_probs, roots, tokens)
 
-      root_probs = np.diag(parse_probs)
-      parse_probs_no_roots = parse_probs * (1 - np.eye(parse_probs.shape[0]))
-      parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])
-      # parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
-      parse_preds_roots_aug = np.argmax(parse_probs_roots_aug, axis=1)
-
-      np.set_printoptions(threshold=np.nan)
-
-      coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1, length + 1), parse_preds_roots_aug[:length])),
-                                    shape=(length + 1, length + 1))
-      coo2 = scipy.sparse.coo_matrix((np.ones(length), (np.arange(length), parse_preds[:length])), shape=(length, length))
+      # root_probs = np.diag(parse_probs)
+      # parse_probs_no_roots = parse_probs * (1 - np.eye(parse_probs.shape[0]))
+      # parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])
+      # # parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
+      # parse_preds_roots_aug = np.argmax(parse_probs_roots_aug, axis=1)
+      #
+      # np.set_printoptions(threshold=np.nan)
+      #
+      # coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1, length + 1), parse_preds_roots_aug[:length])),
+      #                               shape=(length + 1, length + 1))
+      coo2 = scipy.sparse.coo_matrix((np.ones(length), (tokens, parse_preds[:length])), shape=(length, length))
       cc_count, ccs = scipy.sparse.csgraph.connected_components(coo2, directed=True, connection='weak', return_labels=True)
       if cc_count > 1 or n_cycles > 0 or len_2_cycles > 0:
-        _, sizes = np.unique(ccs, return_counts=True)
-        len_2_cycles_tar = np.any(sizes == 2)
-        n_cycles_tar = np.any(sizes != 2)
+        # _, sizes = np.unique(ccs, return_counts=True)
+        # len_2_cycles_tar = np.any(sizes == 2)
+        # n_cycles_tar = np.any(sizes != 2)
         print("SVD: len_2_cycles: %d; n_cycles: %d" % (len_2_cycles, n_cycles))
-        print("Tarjan: len_2_cycles: %d; n_cycles: %d" % (len_2_cycles_tar, n_cycles_tar))
+        print("Tarjan: n_cycles: %d" % (cc_count > 1))
         print("labels: ", ccs)
         # a = coo.toarray()
         # for r in a:
@@ -1382,6 +1382,9 @@ class NN(Configurable):
           print(' '.join(map(str, r)))
 
       if not self.svd_tree or len_2_cycles or n_cycles:
+        root_probs = np.diag(parse_probs)
+        parse_probs_no_roots = parse_probs * (1 - np.eye(parse_probs.shape[0]))
+        parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])
         parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
         mst = scipy.sparse.csgraph.minimum_spanning_tree(-parse_probs_roots_aug)
         mst_arr = mst.toarray()[1:length+1]
