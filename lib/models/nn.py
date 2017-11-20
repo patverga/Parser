@@ -1157,20 +1157,27 @@ class NN(Configurable):
   def compute_cycles(self, logits2D_masked, tokens_to_keep3D, batch_size, bucket_size):
     # construct predicted adjacency matrix
 
-    # max values for every token (flattened across batches)
-    # mask = (1 - tokens_to_keep3D) * -(tf.abs(tf.reduce_min(logits3D)) + tf.abs(tf.reduce_max(logits3D)))
-    # logits3D_masked = logits3D + mask
-    # logits3D_masked = tf.transpose(mask, [0, 2, 1]) + logits3D_masked
-    # logits2D_masked = tf.reshape(logits3D_masked, [batch_size * bucket_size, -1])
-    maxes = tf.expand_dims(tf.reduce_max(logits2D_masked, axis=1), -1)
-    # tile the maxes across rows
-    maxes_tiled = tf.tile(maxes, [1, bucket_size])
-    # 1 where logits2d == max, 0 elsewhere
-    adj_flat = tf.cast(tf.equal(logits2D_masked, maxes_tiled), tf.float32)
-    # zero out padding
-    adj_flat = adj_flat * tf.reshape(tokens_to_keep3D, [-1, 1])
-    # reshape into [batch, bucket, bucket]
-    adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
+    # # max values for every token (flattened across batches)
+    # # mask = (1 - tokens_to_keep3D) * -(tf.abs(tf.reduce_min(logits3D)) + tf.abs(tf.reduce_max(logits3D)))
+    # # logits3D_masked = logits3D + mask
+    # # logits3D_masked = tf.transpose(mask, [0, 2, 1]) + logits3D_masked
+    # # logits2D_masked = tf.reshape(logits3D_masked, [batch_size * bucket_size, -1])
+    # maxes = tf.expand_dims(tf.reduce_max(logits2D_masked, axis=1), -1)
+    # # tile the maxes across rows
+    # maxes_tiled = tf.tile(maxes, [1, bucket_size])
+    # # 1 where logits2d == max, 0 elsewhere
+    # adj_flat = tf.cast(tf.equal(logits2D_masked, maxes_tiled), tf.float32)
+    # # zero out padding
+    # adj_flat = adj_flat * tf.reshape(tokens_to_keep3D, [-1, 1])
+    # # reshape into [batch, bucket, bucket]
+    # adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
+    max_vals = tf.argmax(tf.reshape(logits2D_masked, [batch_size, bucket_size, bucket_size]), axis=1)
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.stack([i1, i2, max_vals], axis=-1)
+    adj = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+
+
+
     # zero out diagonal
     adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
     # make it undirected
