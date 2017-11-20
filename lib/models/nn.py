@@ -1181,6 +1181,11 @@ class NN(Configurable):
     # svd_loss = self.svd_penalty * tf.reduce_sum(svd_loss)  # / self.n_tokens
     # except np.linalg.linalg.LinAlgError:
     #   print("SVD did not converge")
+
+    n_cycles = tf.Print(n_cycles, [n_cycles], "n_cycles", summarize=50)
+    len_2_cycles = tf.Print(len_2_cycles, [len_2_cycles], "len_2_cycles", summarize=50)
+
+
     return n_cycles, len_2_cycles
 
 
