@@ -1392,7 +1392,7 @@ class NN(Configurable):
 
         a = coo2.toarray()
         for r in a:
-          print("[%s]," % ' '.join(map(str, r)))
+          print("[%s]," % ', '.join(map(str, r)))
 
       if not self.svd_tree or len_2_cycles or n_cycles:
         root_probs = np.diag(parse_probs)
