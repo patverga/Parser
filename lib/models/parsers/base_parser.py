@@ -81,8 +81,8 @@ class BaseParser(NN):
       total_time += argmax_time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
-      cycles_2_total += len_2_cycle
-      cycles_n_total += n_cycle
+      cycles_2_total += int(len_2_cycle)
+      cycles_n_total += int(n_cycle)
       if roots_lt or roots_gt or len_2_cycle or n_cycle:
         non_trees_total += 1.
       sent = -np.ones( (length, 9), dtype=int)
