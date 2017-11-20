@@ -1364,7 +1364,9 @@ class NN(Configurable):
         n_cycles = np.any(sizes != 2)
         print("len_2_cycles: %d; n_cycles: %d" % (len_2_cycles, n_cycles))
         print("labels: ", ccs)
-        print(coo.toarray())
+        a = coo.toarray()
+        for r in a:
+          print(' '.join(r))
 
       if not self.svd_tree or len_2_cycles or n_cycles:
         parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
