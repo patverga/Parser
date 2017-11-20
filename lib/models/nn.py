@@ -1171,7 +1171,7 @@ class NN(Configurable):
     # adj_flat = adj_flat * tf.reshape(tokens_to_keep3D, [-1, 1])
     # # reshape into [batch, bucket, bucket]
     # adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
-    max_vals = tf.argmax(tf.reshape(logits2D_masked, [batch_size, bucket_size, bucket_size]), axis=1)
+    max_vals = tf.cast(tf.argmax(tf.reshape(logits2D_masked, [batch_size, bucket_size, bucket_size]), axis=1), tf.int32)
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.stack([i1, i2, max_vals], axis=-1)
     adj = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
