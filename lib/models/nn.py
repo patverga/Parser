@@ -1357,14 +1357,20 @@ class NN(Configurable):
 
       coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1, length + 1), parse_preds_roots_aug[:length])),
                                     shape=(length + 1, length + 1))
-      cc_count, ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak', return_labels=True)
+      coo2 = scipy.sparse.coo_matrix((np.ones(length), (np.arange(length), parse_preds_roots_aug[:length])),
+                                    shape=(length, length))
+      cc_count, ccs = scipy.sparse.csgraph.connected_components(coo2, directed=True, connection='weak', return_labels=True)
       if cc_count > 1:
         _, sizes = np.unique(ccs, return_counts=True)
         len_2_cycles = np.any(sizes == 2)
         n_cycles = np.any(sizes != 2)
         print("len_2_cycles: %d; n_cycles: %d" % (len_2_cycles, n_cycles))
         print("labels: ", ccs)
-        a = coo.toarray()
+        # a = coo.toarray()
+        # for r in a:
+        #   print(' '.join(map(str, r)))
+
+        a = coo2.toarray()
         for r in a:
           print(' '.join(map(str, r)))
 
