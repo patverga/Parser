@@ -1399,7 +1399,7 @@ class NN(Configurable):
       parse_probs_roots_aug = parse_probs_roots_aug[:length]
       roots = parse_probs_roots_aug[:, 0]
       parse_probs_roots_aug = parse_probs_roots_aug[:, 1:length + 1]
-      print(parse_probs_roots_aug)
+      # print(parse_probs_roots_aug)
       parse_probs_roots_aug[np.arange(length), np.arange(length)] = roots
       parse_preds = np.argmin(parse_probs_roots_aug, axis=1)
     return parse_preds, roots_lt, roots_gt
