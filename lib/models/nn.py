@@ -1335,32 +1335,34 @@ class NN(Configurable):
       elif roots_gt:
         parse_preds = self.ensure_lt_two_root(parse_preds, parse_probs, roots, tokens)
 
-
-
-      # if not self.svd_tree or len_2_cycles > 0 or n_cycles > 0:
-      #   root_probs = np.diag(parse_probs)
-      #   parse_probs_no_roots = parse_probs * (1 - np.eye(parse_probs.shape[0]))
-      #   parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])
-      #   parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
-      #   mst = scipy.sparse.csgraph.minimum_spanning_tree(-parse_probs_roots_aug)
-      #   mst_arr = mst.toarray()[1:length+1]
-      #   roots = mst_arr[:,0]
-      #   mst_arr = mst_arr[:,1:length+1]
-      #   mst_arr[tokens, tokens] = roots
-      #   parse_preds = np.argmin(mst_arr, axis=1)
-
-        # print("tree parse preds", parse_preds)
-
       root_probs = np.diag(parse_probs)
       parse_probs_no_roots = parse_probs * (1 - np.eye(parse_probs.shape[0]))
       parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])
       # parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
       parse_preds_roots_aug = np.argmax(parse_probs_roots_aug, axis=1)
 
-      coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1,length+1), parse_preds_roots_aug[:length])), shape=(length+1, length+1))
-      cc_count, ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak', return_labels=True)
+      coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1, length + 1), parse_preds_roots_aug[:length])),
+                                    shape=(length + 1, length + 1))
+      cc_count, ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak',
+                                                                return_labels=True)
       if cc_count > 1:
-        print("%d ccs:" % cc_count, ccs)
+        _, sizes = np.unique(ccs)
+        len_2_cycles = np.any(sizes == 2)
+        n_cycles = np.any(sizes != 2)
+        print("len_2_cycles: %d; n_cycles: %d" % (len_2_cycles, n_cycles))
+
+      if not self.svd_tree or len_2_cycles or n_cycles:
+        parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
+        mst = scipy.sparse.csgraph.minimum_spanning_tree(-parse_probs_roots_aug)
+        mst_arr = mst.toarray()[1:length+1]
+        roots = mst_arr[:,0]
+        mst_arr = mst_arr[:,1:length+1]
+        mst_arr[tokens, tokens] = roots
+        parse_preds = np.argmin(mst_arr, axis=1)
+
+        # print("tree parse preds", parse_preds)
+
+
 
     # # if ensure_tree:
     #   len_2_cycles = n_cycles = 0
