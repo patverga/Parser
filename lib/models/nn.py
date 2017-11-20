@@ -1001,7 +1001,7 @@ class NN(Configurable):
     # at test time
     # if self.moving_params is not None and self.svd_tree:
     if self.svd_tree:
-      n_cycles, len_2_cycles = self.compute_cycles(logits2D, tokens_to_keep1D, batch_size, bucket_size)
+      n_cycles, len_2_cycles = self.compute_cycles(logits3D, tokens_to_keep3D, batch_size, bucket_size)
     else:
       n_cycles = len_2_cycles = tf.constant(-1.)
 
@@ -1147,18 +1147,22 @@ class NN(Configurable):
 
 
   ########### cycles ##########
-  def compute_cycles(self, logits2D, tokens_to_keep1D, batch_size, bucket_size):
+  def compute_cycles(self, logits3D, tokens_to_keep3D, batch_size, bucket_size):
     # construct predicted adjacency matrix
 
     # max values for every token (flattened across batches)
-    mask = (1 - tf.expand_dims(tokens_to_keep1D, -1)) * tf.reduce_min(logits2D)
-    maxes = tf.expand_dims(tf.reduce_max(logits2D + mask, axis=1), -1)
+    mask = (1 - tokens_to_keep3D) * -(tf.abs(tf.reduce_min(logits3D)) + tf.abs(tf.reduce_max(logits3D)))
+    logits3D_masked = logits3D + mask
+    mask_t = tf.transpose(mask, [0, 2, 1])
+    logits3D_masked = tf.transpose(mask, [0, 2, 1]) + logits3D_masked
+    logits2D_masked = tf.reshape(logits3D_masked, [batch_size * bucket_size, -1])
+    maxes = tf.expand_dims(tf.reduce_max(logits2D_masked, axis=1), -1)
     # tile the maxes across rows
     maxes_tiled = tf.tile(maxes, [1, bucket_size])
     # 1 where logits2d == max, 0 elsewhere
-    adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
+    adj_flat = tf.cast(tf.equal(logits2D_masked, maxes_tiled), tf.float32)
     # zero out padding
-    adj_flat = adj_flat * tf.expand_dims(tokens_to_keep1D, -1)
+    adj_flat = adj_flat * tf.reshape(tokens_to_keep3D, [-1])
     # reshape into [batch, bucket, bucket]
     adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
     # zero out diagonal
@@ -1350,7 +1354,7 @@ class NN(Configurable):
       # parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
       parse_preds_roots_aug = np.argmax(parse_probs_roots_aug, axis=1)
 
-      coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1, length + 1), parse_preds_roots_aug[:length]+1)),
+      coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1, length + 1), parse_preds_roots_aug[:length])),
                                     shape=(length + 1, length + 1))
       cc_count, ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak', return_labels=True)
       if cc_count > 1:
@@ -1359,7 +1363,7 @@ class NN(Configurable):
         n_cycles = np.any(sizes != 2)
         print("len_2_cycles: %d; n_cycles: %d" % (len_2_cycles, n_cycles))
         print("labels: ", ccs)
-        # print(coo.toarray())
+        print(coo.toarray())
 
       if not self.svd_tree or len_2_cycles or n_cycles:
         parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
