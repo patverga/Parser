@@ -1162,7 +1162,7 @@ class NN(Configurable):
     # 1 where logits2d == max, 0 elsewhere
     adj_flat = tf.cast(tf.equal(logits2D_masked, maxes_tiled), tf.float32)
     # zero out padding
-    adj_flat = adj_flat * tf.reshape(tokens_to_keep3D, [-1])
+    adj_flat = adj_flat * tf.reshape(tokens_to_keep3D, [-1, 1])
     # reshape into [batch, bucket, bucket]
     adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
     # zero out diagonal
