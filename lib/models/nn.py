@@ -1174,7 +1174,7 @@ class NN(Configurable):
     # cycles iff: 0.5 * l_trace > l_rank + 1
     n_cycles = tf.greater(0.5 * l_trace, l_rank + 1)
 
-    len_2_cycles = tf.reduce_sum(tf.greater(tf.multiply(adj, np.transpose(adj)), tf.constant(0)))
+    len_2_cycles = tf.greater(tf.reduce_sum(tf.reshape(tf.multiply(adj, np.transpose(adj)), [batch_size, -1]), axis=-1), tf.constant(0.))
 
     # svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
     # svd_loss_masked = self.tokens_to_keep3D * svd_loss
