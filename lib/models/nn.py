@@ -1351,6 +1351,11 @@ class NN(Configurable):
 
         # print("tree parse preds", parse_preds)
 
+      root_probs = np.diag(parse_probs)
+      parse_probs_no_roots = parse_probs * (1 - np.eye(parse_probs.shape[0]))
+      parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])
+      parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
+
     # if ensure_tree:
       len_2_cycles = n_cycles = 0
       # remove cycles
