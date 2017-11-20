@@ -1182,8 +1182,8 @@ class NN(Configurable):
     # except np.linalg.linalg.LinAlgError:
     #   print("SVD did not converge")
 
-    n_cycles = tf.Print(n_cycles, [tf.reduce_sum(n_cycles)], "n_cycles", summarize=50)
-    len_2_cycles = tf.Print(len_2_cycles, [tf.reduce_sum(len_2_cycles)], "len_2_cycles", summarize=50)
+    n_cycles = tf.Print(n_cycles, [tf.reduce_sum(tf.cast(n_cycles, tf.int32))], "n_cycles", summarize=50)
+    len_2_cycles = tf.Print(len_2_cycles, [tf.reduce_sum(tf.cast(len_2_cycles, tf.int32))], "len_2_cycles", summarize=50)
 
 
     return n_cycles, len_2_cycles
