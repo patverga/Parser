@@ -1182,7 +1182,7 @@ class NN(Configurable):
     # zero out diagonal
     adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
     # make it undirected
-    undirected_adj = tf.cast(tf.logical_or(tf.cast(adj, tf.bool), tf.transpose(tf.cast(adj, tf.bool), [0, 2, 1]) * tokens_to_keep3D), tf.float32)
+    undirected_adj = tf.cast(tf.logical_or(tf.cast(adj, tf.bool), tf.cast(tf.transpose(adj, [0, 2, 1]) * tokens_to_keep3D), tf.bool), tf.float32)
 
     # compute laplacian & its trace
     degrees = tf.reduce_sum(undirected_adj, axis=1)
