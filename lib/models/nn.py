@@ -1366,7 +1366,7 @@ class NN(Configurable):
                                     shape=(length + 1, length + 1))
       coo2 = scipy.sparse.coo_matrix((np.ones(length), (np.arange(length), parse_preds[:length])), shape=(length, length))
       cc_count, ccs = scipy.sparse.csgraph.connected_components(coo2, directed=True, connection='weak', return_labels=True)
-      if cc_count > 1:
+      if cc_count > 1 or n_cycles > 0 or len_2_cycles > 0:
         _, sizes = np.unique(ccs, return_counts=True)
         len_2_cycles_tar = np.any(sizes == 2)
         n_cycles_tar = np.any(sizes != 2)
