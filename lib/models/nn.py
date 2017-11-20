@@ -1204,6 +1204,10 @@ class NN(Configurable):
     n_cycles = tf.Print(n_cycles, [tf.reduce_sum(tf.cast(n_cycles, tf.int32))], "n_cycles in batch", summarize=50)
     len_2_cycles = tf.Print(len_2_cycles, [tf.reduce_sum(tf.cast(len_2_cycles, tf.int32))], "len_2_cycles in batch", summarize=50)
 
+    ij_0 = (tf.constant(0), n_cycles)
+    c = lambda i, j: i < batch_size
+    b = lambda i, j: tf.cond(tf.logical_or(n_cycles[i], len_2_cycles[i]), lambda: tf.Print(j, [adj[i]], summarize=10000), lambda: j)
+    _, n_cycles = tf.while_loop(c, b, ij_0)
 
     return n_cycles, len_2_cycles
 
