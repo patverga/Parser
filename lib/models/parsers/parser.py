@@ -219,7 +219,8 @@ class Parser(BaseParser):
     output['2cycle_loss'] = arc_output['2cycle_loss']
     output['roots_loss'] = arc_output['roots_loss']
     output['svd_loss'] = arc_output['svd_loss']
-    output['cycles'] = arc_output['cycles']
+    output['n_cycles'] = arc_output['n_cycles']
+    output['len_2_cycles'] = arc_output['len_2_cycles']
 
     #### OLD: TRANSFORMER ####
     # top_recur = nn.add_timing_signal_1d(top_recur)
@@ -291,8 +292,8 @@ class Parser(BaseParser):
   def prob_argmax(self, parse_probs, rel_probs, tokens_to_keep, cycle=None):
     """"""
     start_time = time.time()
-    parse_preds, roots_lt, roots_gt, cycles_2, cycles_n = self.parse_argmax(parse_probs, tokens_to_keep, cycle)
+    parse_preds, roots_lt, roots_gt = self.parse_argmax(parse_probs, tokens_to_keep, n_cycles, len_2_cycles)
     rel_probs = rel_probs[np.arange(len(parse_preds)), parse_preds]
     rel_preds = self.rel_argmax(rel_probs, tokens_to_keep)
     total_time = time.time() - start_time
-    return parse_preds, rel_preds, total_time, roots_lt, roots_gt, cycles_2, cycles_n
+    return parse_preds, rel_preds, total_time, roots_lt, roots_gt

@@ -1001,9 +1001,9 @@ class NN(Configurable):
     # at test time
     # if self.moving_params is not None and self.svd_tree:
     if self.svd_tree:
-      cycles = self.compute_cycles(logits2D, tokens_to_keep1D, batch_size, bucket_size)
+      n_cycles, len_2_cycles = self.compute_cycles(logits2D, tokens_to_keep1D, batch_size, bucket_size)
     else:
-      cycles = tf.constant(-1.)
+      n_cycles = len_2_cycles = tf.constant(-1.)
 
     ######## condition on pairwise selection, root selection #########
     # # try masking zeroth row before computing pairs mask, so as not to conflict w/ roots
@@ -1065,7 +1065,8 @@ class NN(Configurable):
       'roots_loss': roots_loss,
       '2cycle_loss': pairs_log_loss,
       'svd_loss': svd_loss,
-      'cycles': cycles
+      'n_cycles': n_cycles,
+      'len_2_cycles': len_2_cycles
     }
 
     return output
@@ -1171,13 +1172,16 @@ class NN(Configurable):
     l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
 
     # cycles iff: 0.5 * l_trace > l_rank + 1
-    cycles = tf.greater(0.5 * l_trace, l_rank + 1)
+    n_cycles = tf.greater(0.5 * l_trace, l_rank + 1)
+
+    len_2_cycles = tf.reduce_sum(tf.greater(tf.multiply(adj, np.transpose(adj)), tf.constant(0)))
+
     # svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
     # svd_loss_masked = self.tokens_to_keep3D * svd_loss
     # svd_loss = self.svd_penalty * tf.reduce_sum(svd_loss)  # / self.n_tokens
     # except np.linalg.linalg.LinAlgError:
     #   print("SVD did not converge")
-    return cycles
+    return n_cycles, len_2_cycles
 
 
   ######### roots loss (diag) ##########
@@ -1299,7 +1303,7 @@ class NN(Configurable):
     return parse_preds
 
   #=============================================================
-  def parse_argmax(self, parse_probs, tokens_to_keep, cycle=None):
+  def parse_argmax(self, parse_probs, tokens_to_keep, n_cycles=-1, len_2_cycles=-1):
     """"""
     tokens_to_keep[0] = True
     length = np.sum(tokens_to_keep)
@@ -1311,22 +1315,22 @@ class NN(Configurable):
     num_roots = len(roots)
     roots_lt = 1. if num_roots < 1 else 0.
     roots_gt = 1. if num_roots > 1 else 0.
-    len_2_cycles = 0
-    n_cycles = 0
-    ensure_tree = self.ensure_tree
+    # len_2_cycles = 0
+    # n_cycles = 0
+    # ensure_tree = self.ensure_tree
 
     # todo this should really happen in model, in batch, and be passed in
-    if self.svd_tree:
-      n_cycles = cycle
+    # if self.svd_tree:
+      # n_cycles = cycle
       # len_2_cycles, n_cycles = self.check_cycles_svd(parse_preds, length)
 
-    if ensure_tree:
+    if self.ensure_tree:
       if roots_lt:
         parse_preds = self.ensure_gt_one_root(parse_preds, parse_probs, tokens)
       elif roots_gt:
         parse_preds = self.ensure_lt_two_root(parse_preds, parse_probs, roots, tokens)
 
-      if not self.svd_tree or len_2_cycles or n_cycles:
+      if not self.svd_tree or len_2_cycles > 0 or n_cycles > 0:
         root_probs = np.diag(parse_probs)
         parse_probs_no_roots = parse_probs * (1 - np.eye(parse_probs.shape[0]))
         parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])

@@ -36,7 +36,7 @@ class BaseParser(NN):
     raise NotImplementedError
   
   #=============================================================
-  def prob_argmax(self, parse_probs, rel_probs, tokens_to_keep, cycle=None):
+  def prob_argmax(self, parse_probs, rel_probs, tokens_to_keep, n_cycles=-1, len_2_cycles=-1):
     """"""
     
     raise NotImplementedError
@@ -61,7 +61,7 @@ class BaseParser(NN):
     return
   
   #=============================================================
-  def validate(self, mb_inputs, mb_targets, mb_probs, cycles):
+  def validate(self, mb_inputs, mb_targets, mb_probs, n_cycles, len_2_cycles):
     """"""
     
     sents = []
@@ -72,18 +72,18 @@ class BaseParser(NN):
     cycles_2_total = 0.
     cycles_n_total = 0.
     non_trees_total = 0.
-    if np.all(cycles == -1):
-        cycles = [None for _ in range(len(mb_inputs))]
-    for inputs, targets, parse_probs, rel_probs, c in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, cycles):
+    if np.all(n_cycles == -1):
+        n_cycles = len_2_cycles = [-1] * len(mb_inputs)
+    for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
-      parse_preds, rel_preds, argmax_time, roots_lt, roots_gt, cycles_2, cycles_n = self.prob_argmax(parse_probs, rel_probs, tokens_to_keep, c)
+      parse_preds, rel_preds, argmax_time, roots_lt, roots_gt = self.prob_argmax(parse_probs, rel_probs, tokens_to_keep, n_cycle, len_2_cycle)
       total_time += argmax_time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
-      cycles_2_total += cycles_2
-      cycles_n_total += cycles_n
-      if roots_lt or roots_gt or cycles_2 or cycles_n:
+      cycles_2_total += len_2_cycle
+      cycles_n_total += n_cycle
+      if roots_lt or roots_gt or len_2_cycle or n_cycle:
         non_trees_total += 1.
       sent = -np.ones( (length, 9), dtype=int)
       tokens = np.arange(length)
