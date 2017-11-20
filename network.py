@@ -273,7 +273,7 @@ class Network(Configurable):
       forward_start = time.time()
       probs, n_cycles, len_2_cycles = sess.run(op, feed_dict=feed_dict)
       forward_total_time += time.time() - forward_start
-      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees = self.model.validate(mb_inputs, mb_targets, probs, cycles)
+      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles)
       total_time += parse_time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
