@@ -1396,6 +1396,7 @@ class NN(Configurable):
           parse_preds_no_roots[changed_cycle] = new_head
           tarjan.edges[new_head].add(changed_cycle)
           tarjan.edges[old_head].remove(changed_cycle)
+      parse_probs_roots_aug = parse_probs_roots_aug[1:length + 1]
       roots = parse_probs_roots_aug[:, 0]
       parse_probs_roots_aug = parse_probs_roots_aug[:, 1:length + 1]
       parse_probs_roots_aug[tokens, tokens] = roots
