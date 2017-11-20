@@ -1008,7 +1008,7 @@ class NN(Configurable):
     # at test time
     # if self.moving_params is not None and self.svd_tree:
     if self.svd_tree:
-      n_cycles, len_2_cycles = self.compute_cycles(logits3D, self.tokens_to_keep3D, batch_size, bucket_size)
+      n_cycles, len_2_cycles = self.compute_cycles(logits2D, self.tokens_to_keep3D, batch_size, bucket_size)
     else:
       n_cycles = len_2_cycles = tf.constant(-1.)
 
@@ -1154,14 +1154,14 @@ class NN(Configurable):
 
 
   ########### cycles ##########
-  def compute_cycles(self, logits3D, tokens_to_keep3D, batch_size, bucket_size):
+  def compute_cycles(self, logits2D_masked, tokens_to_keep3D, batch_size, bucket_size):
     # construct predicted adjacency matrix
 
     # max values for every token (flattened across batches)
-    mask = (1 - tokens_to_keep3D) * -(tf.abs(tf.reduce_min(logits3D)) + tf.abs(tf.reduce_max(logits3D)))
-    logits3D_masked = logits3D + mask
-    logits3D_masked = tf.transpose(mask, [0, 2, 1]) + logits3D_masked
-    logits2D_masked = tf.reshape(logits3D_masked, [batch_size * bucket_size, -1])
+    # mask = (1 - tokens_to_keep3D) * -(tf.abs(tf.reduce_min(logits3D)) + tf.abs(tf.reduce_max(logits3D)))
+    # logits3D_masked = logits3D + mask
+    # logits3D_masked = tf.transpose(mask, [0, 2, 1]) + logits3D_masked
+    # logits2D_masked = tf.reshape(logits3D_masked, [batch_size * bucket_size, -1])
     maxes = tf.expand_dims(tf.reduce_max(logits2D_masked, axis=1), -1)
     # tile the maxes across rows
     maxes_tiled = tf.tile(maxes, [1, bucket_size])
