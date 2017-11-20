@@ -250,12 +250,12 @@ class Network(Configurable):
       filename = self.valid_file
       minibatches = self.valid_minibatches
       dataset = self._validset
-      op = self.ops['test_op'][:2]
+      op = self.ops['test_op'][:3]
     else:
       filename = self.test_file
       minibatches = self.test_minibatches
       dataset = self._testset
-      op = self.ops['test_op'][2:]
+      op = self.ops['test_op'][3:]
     
     all_predictions = [[]]
     all_sents = [[]]
@@ -380,9 +380,11 @@ class Network(Configurable):
                        valid_output['predictions'],
                        valid_output['cycles']]
     ops['test_op'] = [valid_output['probabilities'],
-                      valid_output['cycles'],
+                      valid_output['n_cycles'],
+                      valid_output['len_2_cycles'],
                       test_output['probabilities'],
-                      test_output['cycles']
+                      test_output['n_cycles'],
+                      test_output['len_2_cycles']
                       ]
     ops['optimizer'] = optimizer
     
