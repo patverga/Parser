@@ -1358,9 +1358,8 @@ class NN(Configurable):
       parse_preds_roots_aug = np.argmax(parse_probs_roots_aug, axis=1)
 
       coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1,length+1), parse_preds_roots_aug[:length])), shape=(length+1, length+1))
-      print(coo.toarray())
-      ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak', return_labels=True)
-      print(ccs)
+      cc_count, ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak', return_labels=True)
+      print(cc_count)
 
     # # if ensure_tree:
     #   len_2_cycles = n_cycles = 0
