@@ -1354,7 +1354,7 @@ class NN(Configurable):
       root_probs = np.diag(parse_probs)
       parse_probs_no_roots = parse_probs * (1 - np.eye(parse_probs.shape[0]))
       parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])
-      parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
+      # parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
 
     # if ensure_tree:
       len_2_cycles = n_cycles = 0
@@ -1396,7 +1396,7 @@ class NN(Configurable):
           parse_preds_no_roots[changed_cycle] = new_head
           tarjan.edges[new_head].add(changed_cycle)
           tarjan.edges[old_head].remove(changed_cycle)
-      parse_probs_roots_aug = parse_probs_roots_aug[1:length + 1]
+      # parse_probs_roots_aug = parse_probs_roots_aug[1:length + 1]
       roots = parse_probs_roots_aug[:, 0]
       parse_probs_roots_aug = parse_probs_roots_aug[:, 1:length + 1]
       parse_probs_roots_aug[tokens, tokens] = roots
