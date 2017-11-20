@@ -1346,7 +1346,7 @@ class NN(Configurable):
       cc_count, ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak',
                                                                 return_labels=True)
       if cc_count > 1:
-        _, sizes = np.unique(ccs)
+        _, sizes = np.unique(ccs, return_counts=True)
         len_2_cycles = np.any(sizes == 2)
         n_cycles = np.any(sizes != 2)
         print("len_2_cycles: %d; n_cycles: %d" % (len_2_cycles, n_cycles))
