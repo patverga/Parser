@@ -1001,7 +1001,7 @@ class NN(Configurable):
     # at test time
     # if self.moving_params is not None and self.svd_tree:
     if self.svd_tree:
-      n_cycles, len_2_cycles = self.compute_cycles(logits3D, tokens_to_keep3D, batch_size, bucket_size)
+      n_cycles, len_2_cycles = self.compute_cycles(logits3D, self.tokens_to_keep3D, batch_size, bucket_size)
     else:
       n_cycles = len_2_cycles = tf.constant(-1.)
 
