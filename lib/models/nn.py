@@ -1361,7 +1361,7 @@ class NN(Configurable):
       # remove cycles
       # parse_probs_no_roots = parse_probs * (1 - np.eye(len(tokens_to_keep)))
       parse_preds_no_roots = np.argmax(parse_probs_roots_aug, axis=1)
-      tarjan = Tarjan(parse_preds_no_roots, tokens)
+      tarjan = Tarjan(parse_preds_no_roots, np.arange(1, length))
       cycles = tarjan.SCCs
       for SCC in cycles:
         if len(SCC) > 1:
@@ -1400,7 +1400,7 @@ class NN(Configurable):
       roots = parse_probs_roots_aug[:, 0]
       parse_probs_roots_aug = parse_probs_roots_aug[:, 1:length + 1]
       print(parse_probs_roots_aug)
-      parse_probs_roots_aug[tokens, tokens] = roots
+      parse_probs_roots_aug[np.arange(length), np.arange(length)] = roots
       parse_preds = np.argmin(parse_probs_roots_aug, axis=1)
     return parse_preds, roots_lt, roots_gt
 
