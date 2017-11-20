@@ -1149,10 +1149,16 @@ class NN(Configurable):
   ########### cycles ##########
   def compute_cycles(self, logits2D, tokens_to_keep1D, batch_size, bucket_size):
     # construct predicted adjacency matrix
-    maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), 1)
+
+    # max values for every token (flattened across batches)
+    maxes = tf.expand_dims(tf.reduce_max(logits2D, axis=1), -1)
+    # tile the maxes across rows
     maxes_tiled = tf.tile(maxes, [1, bucket_size])
+    # 1 where logits2d == max, 0 elsewhere
     adj_flat = tf.cast(tf.equal(logits2D, maxes_tiled), tf.float32)
+    # zero out padding
     adj_flat = adj_flat * tf.expand_dims(tokens_to_keep1D, -1)
+    # reshape into [batch, bucket, bucket]
     adj = tf.reshape(adj_flat, [batch_size, bucket_size, bucket_size])
     # zero out diagonal
     adj = tf.matrix_set_diag(adj, tf.zeros([batch_size, bucket_size]))
@@ -1164,7 +1170,9 @@ class NN(Configurable):
     l_trace = tf.reduce_sum(degrees, axis=1)
     laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
 
-    len_2_cycles = tf.greater(tf.reduce_sum(tf.reshape(tf.multiply(adj, tf.transpose(adj, [0, 2, 1])), [batch_size, -1]), axis=-1), tf.constant(0.))
+    # 1 where i->j and j->i are both set in adj
+    pairs = tf.multiply(adj, tf.transpose(adj, [0, 2, 1]))
+    len_2_cycles = tf.greater(tf.reduce_sum(tf.reshape(pairs, [batch_size, -1]), axis=-1), tf.constant(0.))
 
     # svd_loss = 0.
     # try:
@@ -1182,8 +1190,8 @@ class NN(Configurable):
     # except np.linalg.linalg.LinAlgError:
     #   print("SVD did not converge")
 
-    n_cycles = tf.Print(n_cycles, [tf.reduce_sum(tf.cast(n_cycles, tf.int32))], "n_cycles", summarize=50)
-    len_2_cycles = tf.Print(len_2_cycles, [tf.reduce_sum(tf.cast(len_2_cycles, tf.int32))], "len_2_cycles", summarize=50)
+    n_cycles = tf.Print(n_cycles, [tf.reduce_sum(tf.cast(n_cycles, tf.int32))], "n_cycles in batch", summarize=50)
+    len_2_cycles = tf.Print(len_2_cycles, [tf.reduce_sum(tf.cast(len_2_cycles, tf.int32))], "len_2_cycles in batch", summarize=50)
 
 
     return n_cycles, len_2_cycles
@@ -1343,13 +1351,13 @@ class NN(Configurable):
 
       coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1, length + 1), parse_preds_roots_aug[:length])),
                                     shape=(length + 1, length + 1))
-      cc_count, ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak',
-                                                                return_labels=True)
+      cc_count, ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak', return_labels=True)
       if cc_count > 1:
         _, sizes = np.unique(ccs, return_counts=True)
         len_2_cycles = np.any(sizes == 2)
         n_cycles = np.any(sizes != 2)
         print("len_2_cycles: %d; n_cycles: %d" % (len_2_cycles, n_cycles))
+        print("labels: ", ccs)
 
       if not self.svd_tree or len_2_cycles or n_cycles:
         parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
