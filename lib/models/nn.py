@@ -1350,7 +1350,7 @@ class NN(Configurable):
       # parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
       parse_preds_roots_aug = np.argmax(parse_probs_roots_aug, axis=1)
 
-      coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1, length + 1), parse_preds_roots_aug[:length])),
+      coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1, length + 1), parse_preds_roots_aug[:length]+1)),
                                     shape=(length + 1, length + 1))
       cc_count, ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak', return_labels=True)
       if cc_count > 1:
@@ -1359,7 +1359,7 @@ class NN(Configurable):
         n_cycles = np.any(sizes != 2)
         print("len_2_cycles: %d; n_cycles: %d" % (len_2_cycles, n_cycles))
         print("labels: ", ccs)
-        print(coo.toarray())
+        # print(coo.toarray())
 
       if not self.svd_tree or len_2_cycles or n_cycles:
         parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
