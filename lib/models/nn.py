@@ -1397,9 +1397,9 @@ class NN(Configurable):
           tarjan.edges[new_head].add(changed_cycle)
           tarjan.edges[old_head].remove(changed_cycle)
       roots = parse_probs_roots_aug[:, 0]
-      mst_arr = parse_probs_roots_aug[:, 1:length + 1]
-      mst_arr[tokens, tokens] = roots
-      parse_preds = np.argmin(mst_arr, axis=1)
+      parse_probs_roots_aug = parse_probs_roots_aug[:, 1:length + 1]
+      parse_probs_roots_aug[tokens, tokens] = roots
+      parse_preds = np.argmin(parse_probs_roots_aug, axis=1)
     return parse_preds, roots_lt, roots_gt
 
   
