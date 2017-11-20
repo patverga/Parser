@@ -1164,6 +1164,8 @@ class NN(Configurable):
     l_trace = tf.reduce_sum(degrees, axis=1)
     laplacian = tf.matrix_set_diag(-undirected_adj, degrees)
 
+    len_2_cycles = tf.greater(tf.reduce_sum(tf.reshape(tf.multiply(adj, tf.transpose(adj, [0, 2, 1])), [batch_size, -1]), axis=-1), tf.constant(0.))
+
     # svd_loss = 0.
     # try:
     # dtype = laplacian.dtype
@@ -1173,8 +1175,6 @@ class NN(Configurable):
 
     # cycles iff: 0.5 * l_trace > l_rank + 1
     n_cycles = tf.greater(0.5 * l_trace, l_rank + 1)
-
-    len_2_cycles = tf.greater(tf.reduce_sum(tf.reshape(tf.multiply(adj, tf.transpose(adj, [0, 2, 1])), [batch_size, -1]), axis=-1), tf.constant(0.))
 
     # svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
     # svd_loss_masked = self.tokens_to_keep3D * svd_loss
