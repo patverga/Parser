@@ -1153,7 +1153,6 @@ class NN(Configurable):
     # max values for every token (flattened across batches)
     mask = (1 - tokens_to_keep3D) * -(tf.abs(tf.reduce_min(logits3D)) + tf.abs(tf.reduce_max(logits3D)))
     logits3D_masked = logits3D + mask
-    mask_t = tf.transpose(mask, [0, 2, 1])
     logits3D_masked = tf.transpose(mask, [0, 2, 1]) + logits3D_masked
     logits2D_masked = tf.reshape(logits3D_masked, [batch_size * bucket_size, -1])
     maxes = tf.expand_dims(tf.reduce_max(logits2D_masked, axis=1), -1)
@@ -1353,6 +1352,8 @@ class NN(Configurable):
       parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])
       # parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
       parse_preds_roots_aug = np.argmax(parse_probs_roots_aug, axis=1)
+
+      np.set_printoptions(threshold=np.nan)
 
       coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1, length + 1), parse_preds_roots_aug[:length])),
                                     shape=(length + 1, length + 1))
