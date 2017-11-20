@@ -29,7 +29,7 @@ from configurable import Configurable
 from vocab import Vocab
 
 import scipy.linalg
-import scipy.sparse
+import scipy.sparse.csgraph
 
 
 def layer_norm(inputs, reuse, epsilon=1e-6):
