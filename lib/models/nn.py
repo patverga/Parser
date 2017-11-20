@@ -1359,7 +1359,8 @@ class NN(Configurable):
 
       coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(1,length+1), parse_preds_roots_aug[:length])), shape=(length+1, length+1))
       cc_count, ccs = scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak', return_labels=True)
-      print(cc_count)
+      if cc_count > 1:
+        print(ccs)
 
     # # if ensure_tree:
     #   len_2_cycles = n_cycles = 0
