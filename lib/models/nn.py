@@ -1198,10 +1198,10 @@ class NN(Configurable):
     # dtype = laplacian.dtype
     # _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, True], [dtype, dtype, dtype])
     s = tf.svd(laplacian, compute_uv=False)
-    l_rank = tf.reduce_sum(tf.cast(tf.greater_equal(s, 1e-15), tf.float32), axis=1)
+    l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-15), tf.float32), axis=1)
 
-    # cycles iff: 0.5 * l_trace > l_rank + 1
-    n_cycles = tf.greater(0.5 * l_trace, l_rank + 1)
+    # cycles iff: 0.5 * l_trace >= l_rank + 1
+    n_cycles = tf.greater_equal(0.5 * l_trace, l_rank + 1)
 
     # svd_loss = tf.maximum(0.5 * l_trace - (l_rank + 1), tf.constant(0.0))
     # svd_loss_masked = self.tokens_to_keep3D * svd_loss
