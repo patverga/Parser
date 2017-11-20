@@ -1175,6 +1175,7 @@ class NN(Configurable):
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.stack([i1, i2, max_vals], axis=-1)
     adj = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+    adj = adj * tokens_to_keep3D
 
 
 
