@@ -986,6 +986,13 @@ class NN(Configurable):
                        lambda: self.logits_mask_roots(logits3D, batch_size, bucket_size),
                        lambda: logits3D)
 
+
+    mask = (1 - self.tokens_to_keep3D) * -(tf.abs(tf.reduce_min(logits3D)) + tf.abs(tf.reduce_max(logits3D)))
+    logits3D_masked = logits3D + mask
+    logits3D_masked = tf.transpose(mask, [0, 2, 1]) + logits3D_masked
+    logits3D = logits3D_masked
+    # logits2D_masked = tf.reshape(logits3D_masked, [batch_size * bucket_size, -1])
+
     logits2D = tf.reshape(logits3D, tf.stack([batch_size * bucket_size, -1]))
     predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     probabilities2D = tf.nn.softmax(logits2D)
