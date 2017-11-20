@@ -271,7 +271,7 @@ class Network(Configurable):
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
       forward_start = time.time()
-      probs, cycles = sess.run(op, feed_dict=feed_dict)
+      probs, n_cycles, len_2_cycles = sess.run(op, feed_dict=feed_dict)
       forward_total_time += time.time() - forward_start
       preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees = self.model.validate(mb_inputs, mb_targets, probs, cycles)
       total_time += parse_time
