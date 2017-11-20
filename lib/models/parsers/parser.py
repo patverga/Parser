@@ -289,7 +289,7 @@ class Parser(BaseParser):
     return output
   
   #=============================================================
-  def prob_argmax(self, parse_probs, rel_probs, tokens_to_keep, cycle=None):
+  def prob_argmax(self, parse_probs, rel_probs, tokens_to_keep, n_cycles=-1, len_2_cycles=-1):
     """"""
     start_time = time.time()
     parse_preds, roots_lt, roots_gt = self.parse_argmax(parse_probs, tokens_to_keep, n_cycles, len_2_cycles)
