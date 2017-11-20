@@ -1355,53 +1355,58 @@ class NN(Configurable):
       parse_probs_no_roots = parse_probs * (1 - np.eye(parse_probs.shape[0]))
       parse_probs_roots_aug = np.hstack([np.expand_dims(root_probs, -1), parse_probs_no_roots])
       # parse_probs_roots_aug = np.vstack([np.zeros(parse_probs.shape[0]+1), parse_probs_roots_aug])
+      parse_preds_roots_aug = np.argmax(parse_probs_roots_aug, axis=1)
 
-    # if ensure_tree:
-      len_2_cycles = n_cycles = 0
-      # remove cycles
-      # parse_probs_no_roots = parse_probs * (1 - np.eye(len(tokens_to_keep)))
-      parse_preds_no_roots = np.argmax(parse_probs_roots_aug, axis=1)
-      tarjan = Tarjan(parse_preds_no_roots, np.arange(1, length))
-      cycles = tarjan.SCCs
-      for SCC in cycles:
-        if len(SCC) > 1:
-          if len(SCC) == 2:
-            len_2_cycles += 1.
-          else:
-            n_cycles += 1.
-          dependents = set()
-          to_visit = set(SCC)
-          while len(to_visit) > 0:
-            node = to_visit.pop()
-            if not node in dependents:
-              dependents.add(node)
-              to_visit.update(tarjan.edges[node])
-          # The indices of the nodes that participate in the cycle
-          cycle = np.array(list(SCC))
-          # The probabilities of the current heads
-          old_heads = parse_preds_no_roots[cycle]
-          old_head_probs = parse_probs_roots_aug[cycle, old_heads]
-          # Set the probability of depending on a non-head to zero
-          non_heads = np.array(list(dependents))
-          parse_probs_roots_aug[np.repeat(cycle, len(non_heads)), np.repeat([non_heads], len(cycle), axis=0).flatten()] = 0
-          # Get new potential heads and their probabilities
-          new_heads = np.argmax(parse_probs_roots_aug[cycle][:, tokens], axis=1) + 1
-          new_head_probs = parse_probs_roots_aug[cycle, new_heads] / old_head_probs
-          # Select the most probable change
-          change = np.argmax(new_head_probs)
-          changed_cycle = cycle[change]
-          old_head = old_heads[change]
-          new_head = new_heads[change]
-          # Make the change
-          parse_preds_no_roots[changed_cycle] = new_head
-          tarjan.edges[new_head].add(changed_cycle)
-          tarjan.edges[old_head].remove(changed_cycle)
-      parse_probs_roots_aug = parse_probs_roots_aug[:length]
-      roots = parse_probs_roots_aug[:, 0]
-      parse_probs_roots_aug = parse_probs_roots_aug[:, 1:length + 1]
-      # print(parse_probs_roots_aug)
-      parse_probs_roots_aug[np.arange(length), np.arange(length)] = roots
-      parse_preds = np.argmin(parse_probs_roots_aug, axis=1)
+      coo = scipy.sparse.coo_matrix((np.ones(length), (np.arange(length), parse_preds_roots_aug)), shape=(length, length))
+      scipy.sparse.csgraph.connected_components(coo, directed=True, connection='weak', return_labels=True)
+      print(coo)
+
+    # # if ensure_tree:
+    #   len_2_cycles = n_cycles = 0
+    #   # remove cycles
+    #   # parse_probs_no_roots = parse_probs * (1 - np.eye(len(tokens_to_keep)))
+    #   parse_preds_roots_aug = np.argmax(parse_probs_roots_aug, axis=1)
+    #   tarjan = Tarjan(parse_preds_roots_aug, np.arange(1, length))
+    #   cycles = tarjan.SCCs
+    #   for SCC in cycles:
+    #     if len(SCC) > 1:
+    #       if len(SCC) == 2:
+    #         len_2_cycles += 1.
+    #       else:
+    #         n_cycles += 1.
+    #       dependents = set()
+    #       to_visit = set(SCC)
+    #       while len(to_visit) > 0:
+    #         node = to_visit.pop()
+    #         if not node in dependents:
+    #           dependents.add(node)
+    #           to_visit.update(tarjan.edges[node])
+    #       # The indices of the nodes that participate in the cycle
+    #       cycle = np.array(list(SCC))
+    #       # The probabilities of the current heads
+    #       old_heads = parse_preds_roots_aug[cycle]
+    #       old_head_probs = parse_probs_roots_aug[cycle, old_heads]
+    #       # Set the probability of depending on a non-head to zero
+    #       non_heads = np.array(list(dependents))
+    #       parse_probs_roots_aug[np.repeat(cycle, len(non_heads)), np.repeat([non_heads], len(cycle), axis=0).flatten()] = 0
+    #       # Get new potential heads and their probabilities
+    #       new_heads = np.argmax(parse_probs_roots_aug[cycle][:, tokens], axis=1) + 1
+    #       new_head_probs = parse_probs_roots_aug[cycle, new_heads] / old_head_probs
+    #       # Select the most probable change
+    #       change = np.argmax(new_head_probs)
+    #       changed_cycle = cycle[change]
+    #       old_head = old_heads[change]
+    #       new_head = new_heads[change]
+    #       # Make the change
+    #       parse_preds_roots_aug[changed_cycle] = new_head
+    #       tarjan.edges[new_head].add(changed_cycle)
+    #       tarjan.edges[old_head].remove(changed_cycle)
+    #   parse_probs_roots_aug = parse_probs_roots_aug[:length]
+    #   roots = parse_probs_roots_aug[:, 0]
+    #   parse_probs_roots_aug = parse_probs_roots_aug[:, 1:length + 1]
+    #   # print(parse_probs_roots_aug)
+    #   parse_probs_roots_aug[np.arange(length), np.arange(length)] = roots
+    #   parse_preds = np.argmin(parse_probs_roots_aug, axis=1)
     return parse_preds, roots_lt, roots_gt
 
   
