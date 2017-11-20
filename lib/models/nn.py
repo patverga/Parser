@@ -1206,7 +1206,7 @@ class NN(Configurable):
 
     ij_0 = (tf.constant(0), n_cycles)
     c = lambda i, j: i < batch_size
-    b = lambda i, j: tf.cond(tf.logical_or(n_cycles[i], len_2_cycles[i]), lambda: tf.Print(i + 1, [adj[i]], summarize=10000), lambda: i + 1)
+    b = lambda i, j: tf.cond(tf.logical_or(n_cycles[i], len_2_cycles[i]), lambda: (i + 1, tf.Print(n_cycles, [adj[i]], summarize=10000), lambda: (i + 1, n_cycles))
     _, n_cycles = tf.while_loop(c, b, ij_0)
 
     return n_cycles, len_2_cycles
