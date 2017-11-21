@@ -1197,8 +1197,8 @@ class NN(Configurable):
     # try:
     # dtype = laplacian.dtype
     # _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, True], [dtype, dtype, dtype])
-    s = tf.svd(laplacian, compute_uv=False)
-    l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-4), tf.float32), axis=1)
+    s = tf.svd(tf.cast(laplacian, tf.float64), compute_uv=False)
+    l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-6), tf.float32), axis=1)
 
     # cycles iff: 0.5 * l_trace >= l_rank + 1
     n_cycles = tf.greater_equal(0.5 * l_trace, l_rank + 1)
