@@ -88,6 +88,7 @@ class BaseParser(NN):
         non_trees_total += 1.
       sent = -np.ones( (length, 9), dtype=int)
       tokens = np.arange(length)
+      print(inputs[tokens])
       sent[:,0] = tokens
       sent[:,1:4] = inputs[tokens]
       sent[:,4] = targets[tokens,0]
