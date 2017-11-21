@@ -1205,7 +1205,7 @@ class NN(Configurable):
     # tol = tf.reduce_max(s) * tf.cast(tf.reduce_max(tf.shape(laplacian)), tf.float32) * np.finfo(np.float32).eps
 
     # this is what matlab does (maybe the numpy one is more suitable for QR? idk)
-    tol = tf.cast(tf.reduce_max(tf.shape(laplacian)), tf.float32) * np.finfo(np.float32).eps
+    tol = tf.cast(tf.reduce_max(tf.shape(laplacian)), tf.float32) * float32_eps
 
     l_rank = tf.reduce_sum(tf.cast(tf.greater(s, tol), tf.float32), axis=1)
 
