@@ -89,7 +89,6 @@ class Dataset(Configurable):
               buff.append([])
         if buff[-1] == []:
           buff.pop()
-        print(buff)
         buff = self._process_buff(buff)
         while True:
           yield buff
