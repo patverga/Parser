@@ -69,9 +69,9 @@ class Network(Configurable):
                     global_step=self.global_step)
       self._vocabs.append(vocab)
     
-    self._trainset = Dataset(self.train_file, self._vocabs, model, self._config, name='Trainset')
+    # self._trainset = Dataset(self.train_file, self._vocabs, model, self._config, name='Trainset')
     self._validset = Dataset(self.valid_file, self._vocabs, model, self._config, name='Validset')
-    self._testset = Dataset(self.test_file, self._vocabs, model, self._config, name='Testset')
+    # self._testset = Dataset(self.test_file, self._vocabs, model, self._config, name='Testset')
 
     self._ops = self._gen_ops()
     self._save_vars = filter(lambda x: u'Pretrained' not in x.name, tf.global_variables())
