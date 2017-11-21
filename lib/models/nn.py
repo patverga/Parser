@@ -1209,6 +1209,8 @@ class NN(Configurable):
     # except np.linalg.linalg.LinAlgError:
     #   print("SVD did not converge")
 
+    n_cycles = tf.cond(tf.equal(l_trace, 70), lambda: tf.Print(n_cycles, [s], "eigenvalues", summarize=50), lambda: n_cycles)
+
     n_cycles = tf.Print(n_cycles, [tf.reduce_sum(tf.cast(n_cycles, tf.int32))], "n_cycles in batch", summarize=50)
     len_2_cycles = tf.Print(len_2_cycles, [tf.reduce_sum(tf.cast(len_2_cycles, tf.int32))], "len_2_cycles in batch", summarize=50)
 
