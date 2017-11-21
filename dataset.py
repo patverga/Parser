@@ -89,6 +89,7 @@ class Dataset(Configurable):
               buff.append([])
         if buff[-1] == []:
           buff.pop()
+        print(buff)
         buff = self._process_buff(buff)
         while True:
           yield buff
@@ -105,7 +106,7 @@ class Dataset(Configurable):
           head = j
         else:
           head = int(head) - 1
-        print(word)
+        # print(word)
         buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
       # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
