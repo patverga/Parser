@@ -293,7 +293,7 @@ class Network(Configurable):
     print("Roots < 1: %d; Roots > 1: %d; 2-cycles: %d; n-cycles: %d" % (roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total))
     with open(os.path.join(self.save_dir, os.path.basename(filename)), 'w') as f:
       for bkt_idx, idx in dataset._metabucket.data:
-        data = dataset._metabucket[bkt_idx].data[idx]#[1:]
+        data = dataset._metabucket[bkt_idx].data[idx]
         print(data)
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
@@ -310,8 +310,6 @@ class Network(Configurable):
             self.rels[pred[8]] if pred[8] != -1 else '_',
           )
           f.write('%s\t%s\t_\t%s\t%s\t_\t%s\t%s\t%s\t%s\n' % tup)
-          print('%s\t%s\t_\t%s\t%s\t_\t%s\t%s\t%s\t%s\n' % tup)
-        print("bucket")
         f.write('\n')
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
