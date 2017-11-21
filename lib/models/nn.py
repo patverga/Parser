@@ -1204,6 +1204,7 @@ class NN(Configurable):
     # this is the tol used in numpy.linalg.matrix_rank
     # tol = tf.reduce_max(s) * tf.cast(tf.reduce_max(tf.shape(laplacian)), tf.float32) * np.finfo(np.float32).eps
 
+    # this is what matlab does (maybe the numpy one is more suitable for QR? idk)
     tol = tf.cast(tf.reduce_max(tf.shape(laplacian)), tf.float32) * np.finfo(np.float32).eps
 
     l_rank = tf.reduce_sum(tf.cast(tf.greater(s, tol), tf.float32), axis=1)
@@ -1219,10 +1220,10 @@ class NN(Configurable):
 
     # n_cycles = tf.cond(tf.equal(l_trace, 70), lambda: tf.Print(n_cycles, [s], "eigenvalues", summarize=50), lambda: n_cycles)
 
-    ij_0 = (tf.constant(0), n_cycles)
-    c = lambda i, j: i < batch_size
-    b = lambda i, j: tf.cond(tf.equal(l_trace[i], 84), lambda: (i+1, tf.Print(n_cycles, [s[i], l_rank[i], tol], "eigenvalues", summarize=50)), lambda: (i+1, n_cycles))
-    _, n_cycles = tf.while_loop(c, b, ij_0)
+    # ij_0 = (tf.constant(0), n_cycles)
+    # c = lambda i, j: i < batch_size
+    # b = lambda i, j: tf.cond(tf.equal(l_trace[i], 84), lambda: (i+1, tf.Print(n_cycles, [s[i], l_rank[i], tol], "eigenvalues", summarize=50)), lambda: (i+1, n_cycles))
+    # _, n_cycles = tf.while_loop(c, b, ij_0)
 
     # n_cycles = tf.Print(n_cycles, [tf.reduce_sum(tf.cast(n_cycles, tf.int32))], "n_cycles in batch", summarize=50)
     # len_2_cycles = tf.Print(len_2_cycles, [tf.reduce_sum(tf.cast(len_2_cycles, tf.int32))], "len_2_cycles in batch", summarize=50)
