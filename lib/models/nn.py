@@ -1198,7 +1198,7 @@ class NN(Configurable):
     # dtype = laplacian.dtype
     # _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, True], [dtype, dtype, dtype])
     s = tf.svd(laplacian, compute_uv=False)
-    l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-5), tf.float32), axis=1)
+    l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-4), tf.float32), axis=1)
 
     # cycles iff: 0.5 * l_trace >= l_rank + 1
     n_cycles = tf.greater_equal(0.5 * l_trace, l_rank + 1)
@@ -1211,10 +1211,10 @@ class NN(Configurable):
 
     # n_cycles = tf.cond(tf.equal(l_trace, 70), lambda: tf.Print(n_cycles, [s], "eigenvalues", summarize=50), lambda: n_cycles)
 
-    ij_0 = (tf.constant(0), n_cycles)
-    c = lambda i, j: i < batch_size
-    b = lambda i, j: tf.cond(tf.equal(l_trace[i], 70), lambda: (i+1, tf.Print(n_cycles, [s[i], l_rank[i]], "eigenvalues", summarize=50)), lambda: (i+1, n_cycles))
-    _, n_cycles = tf.while_loop(c, b, ij_0)
+    # ij_0 = (tf.constant(0), n_cycles)
+    # c = lambda i, j: i < batch_size
+    # b = lambda i, j: tf.cond(tf.equal(l_trace[i], 70), lambda: (i+1, tf.Print(n_cycles, [s[i], l_rank[i]], "eigenvalues", summarize=50)), lambda: (i+1, n_cycles))
+    # _, n_cycles = tf.while_loop(c, b, ij_0)
 
     n_cycles = tf.Print(n_cycles, [tf.reduce_sum(tf.cast(n_cycles, tf.int32))], "n_cycles in batch", summarize=50)
     len_2_cycles = tf.Print(len_2_cycles, [tf.reduce_sum(tf.cast(len_2_cycles, tf.int32))], "len_2_cycles in batch", summarize=50)
