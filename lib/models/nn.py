@@ -1202,7 +1202,7 @@ class NN(Configurable):
     s = tf.svd(laplacian, compute_uv=False)
 
     # this is the tol used in numpy.linalg.matrix_rank
-    tol = tf.multiply(tf.reduce_max(s), tf.reduce_max(tf.shape(laplacian, out_type=tf.float32))) * float32_eps
+    tol = tf.reduce_max(s) * tf.cast(tf.reduce_max(tf.shape(laplacian)), tf.float32) * float32_eps
 
     l_rank = tf.reduce_sum(tf.cast(tf.greater(s, tol), tf.float32), axis=1)
 
