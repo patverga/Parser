@@ -68,7 +68,7 @@ class Bucket(Configurable):
     idxs = [word[1:] for word in sent]
     self._sents.append(words)
     self._data.append(idxs)
-    return len(self._data)-1
+    return len(self._data)#-1
   
   #=============================================================
   def _finalize(self):
