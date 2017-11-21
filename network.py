@@ -295,9 +295,9 @@ class Network(Configurable):
       for bkt_idx, idx in dataset._metabucket.data:
         data = dataset._metabucket[bkt_idx].data[idx][1:]
         print(data)
-        print(len(data), len(preds), len(words))
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
+        print(len(data), len(preds), len(words))
         for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
           tup = (
             i+1,
