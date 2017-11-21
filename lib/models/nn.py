@@ -1198,7 +1198,7 @@ class NN(Configurable):
     # svd_loss = 0.
     # try:
     dtype = laplacian.dtype
-    s = tf.py_func(np.linalg.svd, [laplacian, False, False], [dtype, dtype, dtype])
+    _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, False], [dtype, dtype, dtype])
     # with tf.device('/cpu:0'):
     #   s = tf.svd(laplacian, compute_uv=False)
 
