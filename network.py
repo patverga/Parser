@@ -294,10 +294,8 @@ class Network(Configurable):
     with open(os.path.join(self.save_dir, os.path.basename(filename)), 'w') as f:
       for bkt_idx, idx in dataset._metabucket.data:
         data = dataset._metabucket[bkt_idx].data[idx]
-        print(data)
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
-        print(len(data), len(preds), len(words))
         for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
           tup = (
             i+1,
