@@ -1197,10 +1197,10 @@ class NN(Configurable):
 
     # svd_loss = 0.
     # try:
-    # dtype = laplacian.dtype
-    # _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, True], [dtype, dtype, dtype])
-    with tf.device('/cpu:0'):
-      s = tf.svd(laplacian, compute_uv=False)
+    dtype = laplacian.dtype
+    s = tf.py_func(np.linalg.svd, [laplacian, False, False], [dtype, dtype, dtype])
+    # with tf.device('/cpu:0'):
+    #   s = tf.svd(laplacian, compute_uv=False)
 
     # this is the tol used in numpy.linalg.matrix_rank
     # tol = tf.reduce_max(s) * tf.cast(tf.reduce_max(tf.shape(laplacian)), tf.float32) * np.finfo(np.float32).eps
