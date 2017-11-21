@@ -89,6 +89,7 @@ class BaseParser(NN):
       sent = -np.ones( (length, 9), dtype=int)
       tokens = np.arange(length)
       print(inputs[tokens])
+      print(inputs[:,0], Vocab.ROOT)
       sent[:,0] = tokens
       sent[:,1:4] = inputs[tokens]
       sent[:,4] = targets[tokens,0]
