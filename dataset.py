@@ -98,7 +98,7 @@ class Dataset(Configurable):
     """"""
     
     words, tags, rels = self.vocabs
-    for i, sent in enumerate(buff[:20]):
+    for i, sent in enumerate(buff):
       for j, token in enumerate(sent):
         word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
         if rel == 'root':
