@@ -31,6 +31,8 @@ from vocab import Vocab
 import scipy.linalg
 import scipy.sparse.csgraph
 
+float32_eps = np.finfo(np.float32).eps
+
 
 def layer_norm(inputs, reuse, epsilon=1e-6):
   """Applies layer normalization.
@@ -1198,7 +1200,10 @@ class NN(Configurable):
     # dtype = laplacian.dtype
     # _, s, _ = tf.py_func(np.linalg.svd, [laplacian, False, True], [dtype, dtype, dtype])
     s = tf.svd(laplacian, compute_uv=False)
-    l_rank = tf.reduce_sum(tf.cast(tf.greater(s, 1e-4), tf.float32), axis=1)
+
+    tol = tf.reduce_max(s) * tf.reduce_max(tf.shape(laplacian)) * float32_eps
+
+    l_rank = tf.reduce_sum(tf.cast(tf.greater(s, tol), tf.float32), axis=1)
 
     # cycles iff: 0.5 * l_trace >= l_rank + 1
     n_cycles = tf.greater_equal(0.5 * l_trace, l_rank + 1)
