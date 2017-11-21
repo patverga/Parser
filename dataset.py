@@ -165,9 +165,9 @@ class Dataset(Configurable):
       feed_dict = {}
       data = self[bkt_idx].data[bkt_mb]
       sents = self[bkt_idx].sents[bkt_mb]
+      maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
       print(data)
       print(maxlen)
-      maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
         self.targets: data[:,:maxlen,target_idxs]
