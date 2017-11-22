@@ -99,18 +99,24 @@ class Dataset(Configurable):
     
     words, tags, rels = self.vocabs
     for i, sent in enumerate(buff):
+      offset = 0
       for j, token in enumerate(sent):
         print(token)
         word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
         if rel == 'root':
           head = j
         elif head == '_':
-          copy_of = int(token[9].split('=')[1])
-          head = buff[i][copy_of][4]
-          rel = buff[i][copy_of][5]
+          offset += 1
+          # copy_of = int(token[9].split('=')[1])
+          # head = buff[i][copy_of][4]
+          # rel = buff[i][copy_of][5]
+          head, rel = token[8].split(':')
+          head = int(head)
           print(head, rel)
+        elif '.' in head:
+          sum(map(int, head.split('.')))
         else:
-          head = int(head) - 1
+          head = int(head) - 1 + offset
         buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
       # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
