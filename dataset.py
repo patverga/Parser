@@ -123,7 +123,8 @@ class Dataset(Configurable):
           buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
       offsets = np.cumsum(offsets)
       for j, o in enumerate(offsets):
-        buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head+o,) + rels[rel]
+        tup = buff[i][j]
+        buff[i][j] = (tup[0],  tup[1],  tup[2],  tup[3],  tup[4]+o, tup[5])
         print(buff[i][j])
       # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
