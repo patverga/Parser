@@ -57,6 +57,7 @@ class KMeans(object):
     while i > 0:
       while self._splits[i-1] >= self._splits[i] or self._splits[i-1] not in self._len_cntr:
         print(self._splits[i-1], self._splits[i], self._len_cntr)
+        break
         self._splits[i-1] -= 1
       i -= 1
 
