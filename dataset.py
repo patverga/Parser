@@ -100,10 +100,10 @@ class Dataset(Configurable):
     words, tags, rels = self.vocabs
     for i, sent in enumerate(buff):
       offsets = []
-      if sent[0] != '#':
-        for j, token in enumerate(sent):
-          offset = 0
-          print(token)
+      for j, token in enumerate(sent):
+        offset = 0
+        print(token)
+        if sent[0] != '#':
           word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
           if rel == 'root':
             head = j
