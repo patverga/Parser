@@ -83,8 +83,9 @@ class Dataset(Configurable):
         for line in f:
           line = line.strip().split()
           if line:
-            print("appending ", line)
-            buff[-1].append(line)
+            if line[0] != '#':
+              print("appending ", line)
+              buff[-1].append(line)
           else:
             if buff[-1]:
               buff.append([])
