@@ -83,6 +83,7 @@ class Dataset(Configurable):
         for line in f:
           line = line.strip().split()
           if line:
+            print("appending ", line)
             buff[-1].append(line)
           else:
             if buff[-1]:
@@ -96,38 +97,33 @@ class Dataset(Configurable):
   #=============================================================
   def _process_buff(self, buff):
     """"""
-    
+
     words, tags, rels = self.vocabs
     for i, sent in enumerate(buff):
       offsets = []
       for j, token in enumerate(sent):
         offset = 0
-        print(token)
-        if token[0] != '#':
-          word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
-          if rel == 'root':
-            head = j
-          elif head == '_':
-            offset = 1
-            # copy_of = int(token[9].split('=')[1])
-            # head = buff[i][copy_of][4]
-            # rel = buff[i][copy_of][5]
-            head, rel = token[8].split(':')
-            head = int(head)
-            # print(head, rel)
-          elif '.' in head:
-            sum(map(int, head.split('.')))
-          else:
-            head = int(head) - 1 + offset
-          offsets.append(offset)
-          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
-      if offsets:
-        offsets = np.cumsum(offsets)
-        for j, o in enumerate(offsets):
-          tup = buff[i][j]
-          print(tup)
-          buff[i][j] = (tup[0],  tup[1],  tup[2],  tup[3],  tup[4]+o, tup[5])
-          print(buff[i][j])
+        word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
+        if rel == 'root':
+          head = j
+        elif head == '_':
+          offset = 1
+          # copy_of = int(token[9].split('=')[1])
+          # head = buff[i][copy_of][4]
+          # rel = buff[i][copy_of][5]
+          head, rel = token[8].split(':')
+          head = int(head)
+          # print(head, rel)
+        elif '.' in head:
+          sum(map(int, head.split('.')))
+        else:
+          head = int(head) - 1 + offset
+        offsets.append(offset)
+        buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
+      offsets = np.cumsum(offsets)
+      for j, o in enumerate(offsets):
+        tup = buff[i][j]
+        buff[i][j] = (tup[0],  tup[1],  tup[2],  tup[3],  tup[4]+o, tup[5])
       # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
   
