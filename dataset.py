@@ -101,7 +101,7 @@ class Dataset(Configurable):
     for i, sent in enumerate(buff):
       offset = 0
       for j, token in enumerate(sent):
-        print(token)
+        # print(token)
         word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
         if rel == 'root':
           head = j
@@ -112,7 +112,7 @@ class Dataset(Configurable):
           # rel = buff[i][copy_of][5]
           head, rel = token[8].split(':')
           head = int(head)
-          print(head, rel)
+          # print(head, rel)
         elif '.' in head:
           sum(map(int, head.split('.')))
         else:
