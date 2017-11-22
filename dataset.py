@@ -124,6 +124,7 @@ class Dataset(Configurable):
       offsets = np.cumsum(offsets)
       for j, o in enumerate(offsets):
         tup = buff[i][j]
+        print(tup)
         buff[i][j] = (tup[0],  tup[1],  tup[2],  tup[3],  tup[4]+o, tup[5])
         print(buff[i][j])
       # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
