@@ -105,7 +105,7 @@ class Dataset(Configurable):
         if rel == 'root':
           head = j
         elif head == '_':
-          copy_of = int(token[9].split('=')[2])
+          copy_of = int(token[9].split('=')[1])
           head = buff[i][copy_of][4]
           rel = buff[i][copy_of][5]
         else:
