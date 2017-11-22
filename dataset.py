@@ -104,6 +104,10 @@ class Dataset(Configurable):
         word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
         if rel == 'root':
           head = j
+        elif head == '_':
+          copy_of = int(token[9].split('=')[2])
+          head = buff[i][copy_of][4]
+          rel = buff[i][copy_of][5]
         else:
           head = int(head) - 1
         buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
