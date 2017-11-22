@@ -142,18 +142,15 @@ class Dataset(Configurable):
   #=============================================================
   def rebucket(self):
     """"""
-    print("rebucket")
 
     buff = self._file_iterator.next()
     len_cntr = Counter()
     
     for sent in buff:
       len_cntr[len(sent)] += 1
-    print("reset")
     self.reset(KMeans(self.n_bkts, len_cntr).splits)
     
     for sent in buff:
-      print("adding sent ", sent)
       self._metabucket.add(sent)
     self._finalize()
     return

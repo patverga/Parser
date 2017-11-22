@@ -52,16 +52,12 @@ class KMeans(object):
     lengths = sorted([l for length, count in self._len_cntr.items() for l in [length] * count])
     self._splits = [np.max(split) for split in np.array_split(lengths, self._k)]
 
-    print(self._splits)
-    
     idx = len(self._splits)-1
     while idx > 0:
       while self._splits[idx] > self._lengths[idx] and ( self._splits[idx-1] >= self._splits[idx] or self._splits[idx-1] not in self._len_cntr):
         self._splits[idx-1] -= 1
       idx -= 1
 
-    print(self._splits)
-    
     idx = 1
     while idx < len(self._splits)-1:
       while self._splits[idx] < self._lengths[-1] and (self._splits[idx] <= self._splits[idx-1] or self._splits[idx] not in self._len_cntr):
@@ -90,8 +86,6 @@ class KMeans(object):
     #   while self[idx] < self.lengths[-1] and (self[idx] <= self[idx - 1] or self[idx] not in self.len2cnt):
     #     self[idx] += 1
     #   idx += 1
-
-    print(self._splits)
 
     # Reindex everything
     split_idx = 0

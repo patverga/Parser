@@ -47,8 +47,7 @@ class Metabucket(Configurable):
   #=============================================================
   def reset(self, sizes, pad=False):
     """"""
-    print("metabucket reset")
-
+    
     if pad:
       self._data = [(0,0)]
     else:
