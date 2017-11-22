@@ -88,6 +88,7 @@ class Dataset(Configurable):
               buff[-1].append(line)
           else:
             if buff[-1]:
+              print("new sent")
               buff.append([])
         if buff[-1] == []:
           buff.pop()
