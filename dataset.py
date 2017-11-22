@@ -61,7 +61,7 @@ class Dataset(Configurable):
             line = line.strip().split()
             if line and line[0] != '#':
               buff[-1].append(line)
-            else:
+            elif not line:
               if len(buff) < self.lines_per_buffer:
                 if buff[-1]:
                   buff.append([])
@@ -76,7 +76,7 @@ class Dataset(Configurable):
             line = line.strip().split()
             if line and line[0] != '#':
               buff = [[line]]
-            else:
+            elif not line:
               buff = [[]]
       else:
         buff = [[]]
@@ -84,7 +84,7 @@ class Dataset(Configurable):
           line = line.strip().split()
           if line and line[0] != '#':
             buff[-1].append(line)
-          else:
+          elif not line:
             if buff[-1]:
               buff.append([])
         if buff[-1] == []:
@@ -123,6 +123,7 @@ class Dataset(Configurable):
       offsets = np.cumsum(offsets)
       for j, o in enumerate(offsets):
         buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head+o,) + rels[rel]
+        # print(buff[i][j])
       # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
   
