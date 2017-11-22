@@ -84,11 +84,11 @@ class Dataset(Configurable):
           line = line.strip().split()
           if line:
             if line[0] != '#':
-              print("appending ", line)
+              # print("appending ", line)
               buff[-1].append(line)
           else:
             if buff[-1]:
-              print("new sent")
+              # print("new sent")
               buff.append([])
         if buff[-1] == []:
           buff.pop()
@@ -126,7 +126,7 @@ class Dataset(Configurable):
       for j, o in enumerate(offsets):
         tup = buff[i][j]
         buff[i][j] = (tup[0],  tup[1],  tup[2],  tup[3],  tup[4]+o, tup[5])
-        print(buff[i][j])
+        # print(buff[i][j])
       # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
   
@@ -142,7 +142,8 @@ class Dataset(Configurable):
   #=============================================================
   def rebucket(self):
     """"""
-    
+    print("rebucket")
+
     buff = self._file_iterator.next()
     len_cntr = Counter()
     
@@ -151,6 +152,7 @@ class Dataset(Configurable):
     self.reset(KMeans(self.n_bkts, len_cntr).splits)
     
     for sent in buff:
+      print("adding sent ", sent)
       self._metabucket.add(sent)
     self._finalize()
     return
