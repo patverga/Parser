@@ -108,6 +108,7 @@ class Dataset(Configurable):
           copy_of = int(token[9].split('=')[1])
           head = buff[i][copy_of][4]
           rel = buff[i][copy_of][5]
+          print(head, rel)
         else:
           head = int(head) - 1
         buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
