@@ -103,7 +103,7 @@ class Dataset(Configurable):
       if sent[0] != '#':
         for j, token in enumerate(sent):
           offset = 0
-          # print(token)
+          print(token)
           word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
           if rel == 'root':
             head = j
