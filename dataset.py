@@ -59,7 +59,7 @@ class Dataset(Configurable):
           line = f.readline()
           while line:
             line = line.strip().split()
-            if line:
+            if line and line[0] != '#':
               buff[-1].append(line)
             else:
               if len(buff) < self.lines_per_buffer:
@@ -74,7 +74,7 @@ class Dataset(Configurable):
             buff = self._process_buff(buff)
             yield buff
             line = line.strip().split()
-            if line:
+            if line and line[0] != '#':
               buff = [[line]]
             else:
               buff = [[]]
@@ -82,7 +82,7 @@ class Dataset(Configurable):
         buff = [[]]
         for line in f:
           line = line.strip().split()
-          if line:
+          if line and line[0] != '#':
             buff[-1].append(line)
           else:
             if buff[-1]:
