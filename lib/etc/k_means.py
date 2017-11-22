@@ -45,29 +45,51 @@ class KMeans(object):
     self._split_cntr = Counter()
     
     # Initialize the splits evenly
-    lengths = []
-    for length, count in self._len_cntr.items():
-      lengths.extend([length]*count)
-    lengths.sort()
+    # lengths = []
+    # for length, count in self._len_cntr.items():
+    #   lengths.extend([length]*count)
+    # lengths.sort()
+    lengths = sorted([l for length, count in self._len_cntr.items() for l in [length] * count])
     self._splits = [np.max(split) for split in np.array_split(lengths, self._k)]
 
     print(self._splits)
     
-    i = len(self._splits)-1
-    while i > 0:
-      while self._splits[i-1] >= self._splits[i] or self._splits[i-1] not in self._len_cntr:
-        print(self._splits[i-1], self._splits[i], self._len_cntr)
-        break
-        self._splits[i-1] -= 1
-      i -= 1
+    idx = len(self._splits)-1
+    while idx > 0:
+      while self._splits[idx] > self._lengths[idx] and ( self._splits[idx-1] >= self._splits[idx] or self._splits[idx-1] not in self._len_cntr):
+        self._splits[idx-1] -= 1
+      idx -= 1
 
     print(self._splits)
     
-    i = 1
-    while i < len(self._splits)-1:
-      while self._splits[i] <= self._splits[i-1] or self._splits[i] not in self._len_cntr:
-        self._splits[i] += 1
-      i += 1
+    idx = 1
+    while idx < len(self._splits)-1:
+      while self._splits[idx] < self._lengths[-1] and (self._splits[idx] <= self._splits[idx-1] or self._splits[idx] not in self._len_cntr):
+        self._splits[idx] += 1
+      idx += 1
+
+    # len2cnt = Counter(data)
+    #
+    # # Initialize
+    # self._len2cnt = len2cnt
+    # self._lengths = sorted(self.len2cnt.keys())
+    #
+    # # Initialize the splits evenly
+    # lengths = sorted([l for length, count in len2cnt.items() for l in [length] * count])
+    # self._splits = [np.max(split) for split in np.array_split(lengths, self.k)]
+    #
+    # # Make sure all the splits are ordered correctly and present in the len2cnt
+    # idx = len(self) - 1
+    # while idx > 0:
+    #   while self[idx] > self.lengths[0] and (self[idx] <= self[idx - 1] or self[idx] not in self.len2cnt):
+    #     self[idx] -= 1
+    #   idx -= 1
+    #
+    # idx = 1
+    # while idx < len(self) - 1:
+    #   while self[idx] < self.lengths[-1] and (self[idx] <= self[idx - 1] or self[idx] not in self.len2cnt):
+    #     self[idx] += 1
+    #   idx += 1
 
     print(self._splits)
 
