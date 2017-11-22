@@ -136,7 +136,7 @@ class Vocab(Configurable):
       buff = []
       for line_num, line in enumerate(f):
         line = line.strip().split()
-        if line:
+        if line and line[0] != '#':
           if len(line) == 10:
             if hasattr(self.conll_idx, '__iter__'):
               for idx in self.conll_idx:
