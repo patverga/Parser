@@ -59,9 +59,9 @@ class Dataset(Configurable):
           line = f.readline()
           while line:
             line = line.strip().split()
-            if line and line[0] != '#':
+            if line:
               buff[-1].append(line)
-            elif not line:
+            else:
               if len(buff) < self.lines_per_buffer:
                 if buff[-1]:
                   buff.append([])
@@ -74,25 +74,24 @@ class Dataset(Configurable):
             buff = self._process_buff(buff)
             yield buff
             line = line.strip().split()
-            if line and line[0] != '#':
+            if line:
               buff = [[line]]
-            elif not line:
+            else:
               buff = [[]]
       else:
         buff = [[]]
         for line in f:
           line = line.strip().split()
-          if line and line[0] != '#':
+          if line:
             buff[-1].append(line)
-          elif not line:
+          else:
             if buff[-1]:
               buff.append([])
         if buff[-1] == []:
           buff.pop()
         buff = self._process_buff(buff)
-        # print(buff)
-        # while True:
-        yield buff
+        while True:
+          yield buff
   
   #=============================================================
   def _process_buff(self, buff):
@@ -101,31 +100,32 @@ class Dataset(Configurable):
     words, tags, rels = self.vocabs
     for i, sent in enumerate(buff):
       offsets = []
-      for j, token in enumerate(sent):
-        offset = 0
-        # print(token)
-        word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
-        if rel == 'root':
-          head = j
-        elif head == '_':
-          offset = 1
-          # copy_of = int(token[9].split('=')[1])
-          # head = buff[i][copy_of][4]
-          # rel = buff[i][copy_of][5]
-          head, rel = token[8].split(':')
-          head = int(head)
-          # print(head, rel)
-        elif '.' in head:
-          sum(map(int, head.split('.')))
-        else:
-          head = int(head) - 1 + offset
-        offsets.append(offset)
-        buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
-      offsets = np.cumsum(offsets)
-      for j, o in enumerate(offsets):
-        buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head+o,) + rels[rel]
-        print(buff[i][j])
-      # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
+      if sent[0] != '#':
+        for j, token in enumerate(sent):
+          offset = 0
+          # print(token)
+          word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
+          if rel == 'root':
+            head = j
+          elif head == '_':
+            offset = 1
+            # copy_of = int(token[9].split('=')[1])
+            # head = buff[i][copy_of][4]
+            # rel = buff[i][copy_of][5]
+            head, rel = token[8].split(':')
+            head = int(head)
+            # print(head, rel)
+          elif '.' in head:
+            sum(map(int, head.split('.')))
+          else:
+            head = int(head) - 1 + offset
+          offsets.append(offset)
+          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
+        offsets = np.cumsum(offsets)
+        for j, o in enumerate(offsets):
+          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head+o,) + rels[rel]
+          print(buff[i][j])
+        # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
   
   #=============================================================
