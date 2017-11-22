@@ -121,11 +121,11 @@ class Dataset(Configurable):
             head = int(head) - 1 + offset
           offsets.append(offset)
           buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
-        offsets = np.cumsum(offsets)
-        for j, o in enumerate(offsets):
-          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head+o,) + rels[rel]
-          print(buff[i][j])
-        # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
+          offsets = np.cumsum(offsets)
+          for j, o in enumerate(offsets):
+            buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head+o,) + rels[rel]
+            print(buff[i][j])
+          # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
   
   #=============================================================
