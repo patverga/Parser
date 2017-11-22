@@ -148,7 +148,10 @@ class Dataset(Configurable):
     len_cntr = Counter()
     
     for sent in buff:
+      print("adding len", sent)
       len_cntr[len(sent)] += 1
+    print("reset"
+          "")
     self.reset(KMeans(self.n_bkts, len_cntr).splits)
     
     for sent in buff:
