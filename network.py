@@ -267,19 +267,21 @@ class Network(Configurable):
     cycles_n_total = 0.
     not_tree_total = 0.
     forward_total_time = 0.
+    non_tree_preds_total = []
     for (feed_dict, sents) in minibatches():
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
       forward_start = time.time()
       probs, n_cycles, len_2_cycles = sess.run(op, feed_dict=feed_dict)
       forward_total_time += time.time() - forward_start
-      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles)
+      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles)
       total_time += parse_time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
       cycles_2_total += cycles_2
       cycles_n_total += cycles_n
       not_tree_total += non_trees
+      non_tree_preds_total.extend(non_tree_preds)
       all_predictions[-1].extend(preds)
       all_sents[-1].extend(sents)
       if len(all_predictions[-1]) == len(dataset[bkt_idx]):
@@ -312,6 +314,9 @@ class Network(Configurable):
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
       f.write(s)
+    with open(os.path.join(self.save_dir, 'non_tree_preds.txt'), 'w') as f:
+      print(non_tree_preds_total)
+      print(non_tree_preds_total, file=f)
     las = np.mean(correct["LAS"]) * 100
     uas = np.mean(correct["UAS"]) * 100
     print('UAS: %.2f    LAS: %.2f' % (uas, las))

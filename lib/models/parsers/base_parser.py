@@ -72,6 +72,7 @@ class BaseParser(NN):
     cycles_2_total = 0.
     cycles_n_total = 0.
     non_trees_total = 0.
+    non_tree_preds = []
     if np.all(n_cycles == -1):
         n_cycles = len_2_cycles = [-1] * len(mb_inputs)
     for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles):
@@ -85,6 +86,7 @@ class BaseParser(NN):
       cycles_n_total += int(n_cycle)
       if roots_lt or roots_gt or len_2_cycle or n_cycle:
         non_trees_total += 1.
+        non_tree_preds.append((parse_probs, int(len_2_cycle), int(n_cycle)))
       sent = -np.ones( (length, 9), dtype=int)
       tokens = np.arange(length)
       sent[:,0] = tokens
@@ -94,7 +96,7 @@ class BaseParser(NN):
       sent[:,6] = rel_preds[tokens]
       sent[:,7:] = targets[tokens, 1:]
       sents.append(sent)
-    return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total
+    return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
   #=============================================================
   @staticmethod
