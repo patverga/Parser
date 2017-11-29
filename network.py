@@ -314,9 +314,9 @@ class Network(Configurable):
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
       f.write(s)
-    with open(os.path.join(self.save_dir, 'non_tree_preds.txt'), 'w') as f:
-      print(non_tree_preds_total)
-      print(non_tree_preds_total, file=f)
+    np.savez(os.path.join(self.save_dir, 'non_tree_preds.txt'), non_tree_preds_total)
+    # print(non_tree_preds_total)
+    # print(non_tree_preds_total, file=f)
     las = np.mean(correct["LAS"]) * 100
     uas = np.mean(correct["UAS"]) * 100
     print('UAS: %.2f    LAS: %.2f' % (uas, las))
