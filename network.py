@@ -314,8 +314,8 @@ class Network(Configurable):
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
       f.write(s)
-    if validate:
-      np.savez(os.path.join(self.save_dir, 'non_tree_preds.txt'), non_tree_preds_total)
+    # if validate:
+    #   np.savez(os.path.join(self.save_dir, 'non_tree_preds.txt'), non_tree_preds_total)
     # print(non_tree_preds_total)
     # print(non_tree_preds_total, file=f)
     las = np.mean(correct["LAS"]) * 100
