@@ -58,9 +58,14 @@ class Network(Configurable):
     self._model = model(self._config, global_step=self.global_step)
     
     self._vocabs = []
-    vocab_files = [(self.word_file, 1, 'Words'),
-                   (self.tag_file, [3, 4], 'Tags'),
-                   (self.rel_file, 7, 'Rels')]
+    if self.conll:
+      vocab_files = [(self.word_file, 1, 'Words'),
+                     (self.tag_file, [3, 4], 'Tags'),
+                     (self.rel_file, 7, 'Rels')]
+    elif self.conll2012:
+      vocab_files = [(self.word_file, 3, 'Words'),
+                     (self.tag_file, 4, 'Tags'),
+                     (self.rel_file, 11, 'Rels')]
     for i, (vocab_file, index, name) in enumerate(vocab_files):
       vocab = Vocab(vocab_file, index, self._config,
                     name=name,

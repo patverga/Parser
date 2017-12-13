@@ -160,6 +160,16 @@ class Configurable(object):
   def lines_per_buffer(self):
     return self._config.getint('Dataset', 'lines_per_buffer')
   argparser.add_argument('--lines_per_buffer')
+
+  @property
+  def conll(self):
+    return self._config.getboolean('Dataset', 'conll')
+  argparser.add_argument('--conll')
+
+  @property
+  def conll2012(self):
+    return self._config.getboolean('Dataset', 'conll2012')
+  argparser.add_argument('--conll2012')
   
   #=============================================================
   # [Layers]
