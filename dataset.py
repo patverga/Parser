@@ -57,7 +57,7 @@ class Dataset(Configurable):
         buff = [[]]
         while True:
           line = f.readline()
-          while line[0] == '#':
+          while line and line[0] == '#':
             line = f.readline()
           while line:
             line = line.strip().split()
@@ -70,6 +70,8 @@ class Dataset(Configurable):
               else:
                 break
             line = f.readline()
+            while line and line[0] == '#':
+              line = f.readline()
           if not line:
             f.seek(0)
           else:
