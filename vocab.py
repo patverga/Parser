@@ -144,7 +144,7 @@ class Vocab(Configurable):
                 self.add(counts, line[idx])
             else:
               self.add(counts, line[self.conll_idx])
-          elif self.conll2012 and len(line) == 16:
+          elif self.conll2012 and len(line) > 12:
             if hasattr(self.conll_idx, '__iter__'):
               for idx in self.conll_idx:
                 self.add(counts, line[idx])
