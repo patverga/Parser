@@ -105,7 +105,6 @@ class Dataset(Configurable):
     for i, sent in enumerate(buff):
       print(sent)
       for j, token in enumerate(sent):
-        print(self.conll, self.conll2012)
         if self.conll:
           word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
           if rel == 'root':
@@ -114,6 +113,7 @@ class Dataset(Configurable):
             head = int(head) - 1
           buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
         elif self.conll2012:
+          # todo actually load predicted pos tags and parses
           word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx], 'NN', 0, token[rels.conll_idx]
           # if rel == 'root':
           #   head = j
