@@ -232,7 +232,7 @@ class Parser(BaseParser):
     grandparents = tf.reshape(tf.gather_nd(parents, idx), [batch_size, bucket_size])
     multitask_targets['grandparents'] = grandparents
 
-    attn_weights = tf.Print(attn_weights, [grandparents], summarize=1000)
+    # attn_weights = tf.Print(attn_weights, [grandparents], summarize=1000)
 
     # for head_logits, (name, targets) in zip(attn_weights, multitask_targets.iteritems()):
     attn_idx = 0
