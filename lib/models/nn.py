@@ -944,6 +944,43 @@ class NN(Configurable):
 
     return output
 
+  #=============================================================
+  def output_2d(self, logits3D, targets3D):
+    """"""
+    # logits3d: batch x bucket x bucket
+    # targets3d: batch x bucket x bucket
+
+    # original_shape = tf.shape(logits3D)
+    # batch_size = original_shape[0]
+    # bucket_size = original_shape[1]
+    # flat_shape = tf.stack([batch_size, bucket_size])
+
+    # logits2D = tf.reshape(logits3D, tf.stack([batch_size*bucket_size, -1]))
+    # targets1D = tf.reshape(targets3D, [-1])
+    # tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
+
+    # predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
+    # probabilities2D = tf.nn.softmax(logits2D)
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits3D, labels=targets3D)
+
+    # correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
+    # n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
+    # accuracy = n_correct / self.n_tokens
+    loss = tf.reduce_sum(cross_entropy * self.tokens_to_keep3D) / self.n_tokens
+
+    output = {
+      # 'probabilities': tf.reshape(probabilities2D, original_shape),
+      # 'predictions': tf.reshape(predictions1D, flat_shape),
+      # 'tokens': tokens_to_keep1D,
+      # 'correct': correct1D * tokens_to_keep1D,
+      # 'n_correct': n_correct,
+      # 'n_tokens': self.n_tokens,
+      # 'accuracy': accuracy,
+      'loss': loss
+    }
+
+    return output
+
   # =============================================================
   def output_svd(self, logits3D, targets3D):
     """"""

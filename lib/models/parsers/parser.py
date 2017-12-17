@@ -202,19 +202,38 @@ class Parser(BaseParser):
     multitask_targets = {}
     multitask_outputs = {}
 
+    # compute targets adj matrix
+    shape = tf.shape(targets[:, :, 1])
+    batch_size = shape[0]
+    bucket_size = shape[1]
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.stack([i1, i2, targets[:, :, 1]], axis=-1)
+    adj = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+    adj = adj * self.tokens_to_keep3D
+
+    roots_mask = 1. - tf.expand_dims(tf.eye(bucket_size), 0)
+
     # normal parse edges
-    multitask_targets['parents'] = targets[:, :, 1]
-    # multitask_targets['children'] = tf.transpose(targets[:, :, 1] )
+    multitask_targets['parents'] = adj
+    multitask_targets['children'] = tf.transpose(adj, [0, 2, 1]) * roots_mask
 
     # attn_weights = tf.Print(attn_weights, [tf.shape(attn_weights), tf.shape(targets[:, :, 1])])
 
     # for head_logits, (name, targets) in zip(attn_weights, multitask_targets.iteritems()):
     attn_idx = 0
-    multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
+    # multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
+    multitask_outputs['parents'] = self.output_2d(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
+    multitask_outputs['children'] = self.output_2d(attn_weights[attn_idx], multitask_targets['children']); attn_idx += 1
+
+    multitask_losses = {'parents': multitask_outputs['parents']['loss'], 'children': multitask_outputs['children']['loss']}
+    multitask_loss_sum = multitask_outputs['parents']['loss'] + multitask_outputs['children']['loss']
 
     output = {}
 
-    output['multitask_loss'] = multitask_outputs['parents']['loss']
+    output['multitask_loss'] = multitask_loss_sum
+    output['multitask_loss'] = multitask_loss_sum
+    output['multitask_losses'] = multitask_losses
+
 
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])

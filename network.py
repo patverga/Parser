@@ -132,7 +132,7 @@ class Network(Configurable):
       train_cycle2_loss = 0
       train_svd_loss = 0
       train_rel_loss = 0
-      train_mul_loss = 0
+      train_mul_loss = {}
       n_train_sents = 0
       n_train_correct = 0
       n_train_tokens = 0
@@ -146,7 +146,7 @@ class Network(Configurable):
           train_inputs = feed_dict[self._trainset.inputs]
           train_targets = feed_dict[self._trainset.targets]
           start_time = time.time()
-          _, loss, n_correct, n_tokens, roots_loss, cycle2_loss, svd_loss, log_loss, rel_loss, multitask_loss = sess.run(self.ops['train_op_svd_multitask'], feed_dict=feed_dict)
+          _, loss, n_correct, n_tokens, roots_loss, cycle2_loss, svd_loss, log_loss, rel_loss, multitask_losses = sess.run(self.ops['train_op_svd_multitask'], feed_dict=feed_dict)
           train_time += time.time() - start_time
           train_loss += loss
           train_log_loss += log_loss
@@ -154,7 +154,11 @@ class Network(Configurable):
           train_cycle2_loss += cycle2_loss
           train_svd_loss += svd_loss
           train_rel_loss += rel_loss
-          train_mul_loss += multitask_loss
+          for n, l in multitask_losses.iteritems():
+            if n not in train_mul_loss.keys():
+              train_mul_loss[n] = 0.
+            train_mul_loss[n] += l
+          # train_mul_loss += multitask_loss
           n_train_sents += len(train_targets)
           n_train_correct += n_correct
           n_train_tokens += n_tokens
@@ -197,8 +201,11 @@ class Network(Configurable):
             train_time = n_train_sents / train_time
             print('%6d) Train loss: %.4f    Train acc: %5.2f%%    Train rate: %6.1f sents/sec\n\tValid loss: %.4f    Valid acc: %5.2f%%    Valid rate: %6.1f sents/sec' % (total_train_iters, train_loss, train_accuracy, train_time, valid_loss, valid_accuracy, valid_time))
             # print('\tlog loss: %f\trel loss: %f\troots loss: %f\t2cycle loss: %f\tsvd loss: %f' % (train_log_loss, train_rel_loss, train_roots_loss, train_cycle2_loss, train_svd_loss))
-            print('\tlog loss: %f\trel loss: %f\troots loss: %f\t2cycle loss: %f\tsvd loss: %f\tmul loss: %f' % (train_log_loss, train_rel_loss, train_roots_loss, train_cycle2_loss, train_svd_loss, train_mul_loss))
-
+            print('\tlog loss: %f\trel loss: %f\troots loss: %f\t2cycle loss: %f\tsvd loss: %f' % (train_log_loss, train_rel_loss, train_roots_loss, train_cycle2_loss, train_svd_loss))
+            multitask_losses_str = ''
+            for n, l in multitask_losses.iteritems():
+              multitask_losses_str += '\t%s loss: %d' % (n, l)
+            print(multitask_losses_str)
             sys.stdout.flush()
             train_time = 0
             train_loss = 0
@@ -394,7 +401,7 @@ class Network(Configurable):
                                  train_output['svd_loss'],
                                  train_output['log_loss'],
                                  train_output['rel_loss'],
-                                 train_output['multitask_loss']]
+                                 train_output['multitask_losses']]
     ops['valid_op'] = [valid_output['loss'],
                        valid_output['n_correct'],
                        valid_output['n_tokens'],
