@@ -42,6 +42,7 @@ class Parser(BaseParser):
     embed_inputs = self.embed_concat(word_inputs, tag_inputs)
     
     top_recur = embed_inputs
+    attn_weights_by_layer = {}
 
     kernel = 3
     hidden_size = self.num_heads * self.head_size
@@ -100,9 +101,11 @@ class Parser(BaseParser):
             top_recur = nn.add_timing_signal_1d(top_recur)
             for i in range(self.n_recur):
               with tf.variable_scope('layer%d' % i, reuse=reuse):
-                top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
+                top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                              attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                              self.info_func, reuse)
+                attn_weights_by_layer[i] = attn_weights
+
             # if normalization is done in layer_preprocess, then it should also be done
             # on the output, since the output can grow very large, being the sum of
             # a whole stack of unnormalized layer outputs.
@@ -191,6 +194,20 @@ class Parser(BaseParser):
       rel_output = self.output(rel_logits, targets[:, :, 2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
 
+    # attn_weights_by_layer[i] = num_heads x seq_len x seq_len for transformer layer i
+    # todo pass this in at command line
+    attn_multitask_layer = 0
+    attn_weights = attn_weights_by_layer[attn_multitask_layer]
+
+    multitask_targets = {}
+    multitask_outputs = {}
+
+    # normal parse edges
+    multitask_targets['parse'] = targets[:, :, 1]
+
+    for head_logits, (name, targets) in zip(attn_weights, multitask_targets.iteritems()):
+      multitask_outputs[name] = self.output_svd(head_logits, targets)
+
     output = {}
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])
@@ -221,6 +238,8 @@ class Parser(BaseParser):
     output['svd_loss'] = arc_output['svd_loss']
     output['n_cycles'] = arc_output['n_cycles']
     output['len_2_cycles'] = arc_output['len_2_cycles']
+
+    output['multitask_loss'] = multitask_outputs['parse']['loss']
 
     #### OLD: TRANSFORMER ####
     # top_recur = nn.add_timing_signal_1d(top_recur)
