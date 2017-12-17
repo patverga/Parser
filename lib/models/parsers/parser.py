@@ -196,7 +196,7 @@ class Parser(BaseParser):
 
     # attn_weights_by_layer[i] = num_heads x seq_len x seq_len for transformer layer i
     # todo pass this in at command line
-    attn_multitask_layer = 0
+    attn_multitask_layer = self.n_recur-1
     attn_weights = attn_weights_by_layer[attn_multitask_layer]
 
     multitask_targets = {}
