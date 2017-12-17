@@ -234,6 +234,9 @@ class Parser(BaseParser):
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.reshape(tf.stack([i1, tf.nn.relu(parents)], axis=-1), [-1, 2])
     targets = tf.Print(targets, [tf.shape(idx)], "idx", summarize=1000)
+    targets = tf.Print(targets, [tf.shape(tf.gather_nd(targets, idx))], "gather", summarize=1000)
+
+
 
     grandparents = tf.reshape(tf.gather_nd(targets, idx), [batch_size, bucket_size])
     # grandparents = grandparents * tf.cast(self.tokens_to_keep3D, tf.int32) # + (1 - self.tokens_to_keep3D) * -1
