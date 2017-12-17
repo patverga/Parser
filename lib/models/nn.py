@@ -973,7 +973,7 @@ class NN(Configurable):
     # correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
     # n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     # accuracy = n_correct / self.n_tokens
-    loss = tf.reduce_sum(cross_entropy * actual_toks_to_keep_3D) / (self.n_tokens * self.n_tokens)# * self.tokens_to_keep3D) / self.n_tokens
+    loss = tf.reduce_sum(cross_entropy * actual_toks_to_keep_3D) / (self.n_tokens)# * self.tokens_to_keep3D) / self.n_tokens
 
     output = {
       # 'probabilities': tf.reshape(probabilities2D, original_shape),
