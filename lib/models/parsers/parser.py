@@ -233,7 +233,10 @@ class Parser(BaseParser):
     multitask_targets['grandparents'] = grandparents
 
     # create siblings targets
-
+    # def count_all_fnc(e):
+    #   return tf.unsorted_segment_sum(tf.ones_like(e), e, n)
+    #
+    # count_all = tf.map_fn(count_all_fnc, t)
 
     attn_idx = 0
     multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
@@ -246,7 +249,7 @@ class Parser(BaseParser):
     # multitask_loss_sum = multitask_outputs['parents']['loss'] + \
                          # multitask_outputs['children']['loss'] + \
                          # multitask_outputs['grandparents']['loss']
-    multitask_loss_sum = multitask_outputs['children']['loss']
+    multitask_loss_sum = multitask_outputs['grandparents']['loss']
 
     output = {}
 
