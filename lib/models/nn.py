@@ -1012,8 +1012,8 @@ class NN(Configurable):
 
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logits3D, labels=targets)
 
-    cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], 'cross ent', summarize=4)
-    cross_entropy = tf.Print(cross_entropy, [tf.shape(self.tokens_to_keep3D)], 'toks to keep', summarize=4)
+    # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], 'cross ent', summarize=4)
+    # cross_entropy = tf.Print(cross_entropy, [tf.shape(self.tokens_to_keep3D)], 'toks to keep', summarize=4)
 
     # cross_entropy = tf.Print(cross_entropy, [tf.shape(actual_toks_to_keep_3D), tf.reduce_sum(actual_toks_to_keep_3D, 1), tf.reduce_sum(actual_toks_to_keep_3D, 2)], 'toks_to_keep', summarize=400)
 
@@ -1021,7 +1021,7 @@ class NN(Configurable):
     # correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
     # n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     # accuracy = n_correct / self.n_tokens
-    loss = tf.reduce_sum(cross_entropy * self.tokens_to_keep3D) / self.n_tokens # * self.tokens_to_keep3D) / self.n_tokens
+    loss = tf.reduce_sum(cross_entropy * tf.squeeze(self.tokens_to_keep3D, -1)) / self.n_tokens # * self.tokens_to_keep3D) / self.n_tokens
 
     output = {
       # 'probabilities': tf.reshape(probabilities2D, original_shape),
