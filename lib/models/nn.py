@@ -1011,7 +1011,7 @@ class NN(Configurable):
     #
     # targets = tf.Print(targets, [tf.reduce_sum(targets3D, axis=1)], "tf.reduce_sum(targets3D, axis=1)", summarize=10000)
     #
-    targets = tf.Print(targets, [targets], "targets", summarize=10000)
+    # targets = tf.Print(targets, [targets], "targets", summarize=10000)
     # targets = tf.Print(targets, [divisors], "divisors", summarize=10000)
 
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logits3D, labels=targets)
