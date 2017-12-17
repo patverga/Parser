@@ -238,7 +238,7 @@ class Parser(BaseParser):
     attn_idx = 0
     multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
     multitask_outputs['grandparents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['grandparents']); attn_idx += 1
-    multitask_outputs['children'] = self.output_multi(attn_weights[attn_idx], multitask_targets['children'], tf.transpose(self.tokens_to_keep3D, [0, 2, 1]); attn_idx += 1
+    multitask_outputs['children'] = self.output_multi(attn_weights[attn_idx], multitask_targets['children'], tf.transpose(self.tokens_to_keep3D, [0, 2, 1])); attn_idx += 1
 
 
     # multitask_outputs['parents'] = self.output_2d(attn_weights[attn_idx], multitask_targets['parents'], mask); attn_idx += 1
