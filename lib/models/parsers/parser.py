@@ -234,9 +234,7 @@ class Parser(BaseParser):
     output = {}
 
     output['multitask_loss'] = multitask_loss_sum
-    output['multitask_loss'] = multitask_loss_sum
     output['multitask_losses'] = multitask_losses
-
 
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])
