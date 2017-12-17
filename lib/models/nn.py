@@ -945,7 +945,7 @@ class NN(Configurable):
     return output
 
   #=============================================================
-  def output_2d(self, logits3D, targets3D):
+  def output_2d(self, logits3D, targets3D, mask):
     """"""
     # logits3d: batch x bucket x bucket
     # targets3d: batch x bucket x bucket
@@ -961,12 +961,7 @@ class NN(Configurable):
 
     # predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     # probabilities2D = tf.nn.softmax(logits2D)
-    # cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits3D, labels=targets3D)
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=tf.expand_dims(logits3D, -1), labels=tf.expand_dims(targets3D, -1))
-
-
-    sq = self.tokens_to_keep3D # tf.squeeze(self.tokens_to_keep3D, -1)
-    actual_toks_to_keep_3D = sq * tf.transpose(sq, [0, 2, 1])
+    cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits3D, labels=targets3D)
 
     # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], 'cross ent', summarize=4)
     # cross_entropy = tf.Print(cross_entropy, [tf.shape(actual_toks_to_keep_3D), tf.reduce_sum(actual_toks_to_keep_3D, 1), tf.reduce_sum(actual_toks_to_keep_3D, 2)], 'toks_to_keep', summarize=400)
@@ -975,7 +970,7 @@ class NN(Configurable):
     # correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
     # n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     # accuracy = n_correct / self.n_tokens
-    loss = tf.reduce_sum(cross_entropy * actual_toks_to_keep_3D) / self.n_tokens # * self.tokens_to_keep3D) / self.n_tokens
+    loss = tf.reduce_sum(cross_entropy * mask) / self.n_tokens # * self.tokens_to_keep3D) / self.n_tokens
 
     output = {
       # 'probabilities': tf.reshape(probabilities2D, original_shape),
