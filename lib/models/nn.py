@@ -1003,9 +1003,9 @@ class NN(Configurable):
     # predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     # probabilities2D = tf.nn.softmax(logits2D)
 
-    divisors = tf.reduce_sum(targets3D, axis=1)
+    divisors = tf.expand_dims(tf.reduce_sum(targets3D, axis=1), -1)
     divisors += 1 - self.tokens_to_keep3D
-    targets = targets3D / tf.expand_dims(divisors, -1)
+    targets = targets3D / divisors
 
     targets = tf.Print(targets, [targets], "targets", summarize=1000)
     targets = tf.Print(targets, [divisors], "divisors", summarize=1000)
