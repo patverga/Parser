@@ -205,7 +205,7 @@ class Parser(BaseParser):
     # normal parse edges
     multitask_targets['parse'] = targets[:, :, 1]
 
-    attn_weights = tf.Print(attn_weights, [tf.shape(attn_weights), batch_size, bucket_size, tf.shape(targets[:, :, 1])])
+    attn_weights = tf.Print(attn_weights, [tf.shape(attn_weights), tf.shape(targets[:, :, 1])])
 
     # for head_logits, (name, targets) in zip(attn_weights, multitask_targets.iteritems()):
     multitask_outputs['parse'] = self.output_svd(attn_weights[0], multitask_targets['parse'])
