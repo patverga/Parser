@@ -204,7 +204,7 @@ class Parser(BaseParser):
 
     # normal parse edges
     multitask_targets['parents'] = targets[:, :, 1]
-    multitask_targets['children'] = tf.transpose(targets[:, :, 1] )
+    # multitask_targets['children'] = tf.transpose(targets[:, :, 1] )
 
     # attn_weights = tf.Print(attn_weights, [tf.shape(attn_weights), tf.shape(targets[:, :, 1])])
 
@@ -214,9 +214,7 @@ class Parser(BaseParser):
 
     output = {}
 
-
-    output['multitask_loss'] = multitask_outputs['parse']['loss']
-
+    output['multitask_loss'] = multitask_outputs['parents']['loss']
 
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])
