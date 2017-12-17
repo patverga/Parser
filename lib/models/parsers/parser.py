@@ -88,7 +88,9 @@ class Parser(BaseParser):
         top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                      attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                      self.info_func, reuse)
-        attn_weights_by_layer[tf.get_variable_scope().name] = attn_weights
+        # attn_weights_by_layer[tf.get_variable_scope().name] = attn_weights
+        attn_weights_by_layer[i] = attn_weights
+
     # if normalization is done in layer_preprocess, then it shuold also be done
     # on the output, since the output can grow very large, being the sum of
     # a whole stack of unnormalized layer outputs.
@@ -126,7 +128,7 @@ class Parser(BaseParser):
       # arc_logits_gated = tf.add(arc_logits, gate)
       arc_output = self.output(arc_logits, targets[:,:,1])
       # arc_output = self.output_svd(arc_logits_gated, targets[:,:,1])
-      gate_output = self.output_gate(gate, targets[:,:,1])
+      # gate_output = self.output_gate(gate, targets[:,:,1])
 
       # 'probabilities': tf.reshape(probabilities2D, original_shape),
       # 'predictions': tf.reshape(predictions1D, flat_shape),
@@ -149,7 +151,31 @@ class Parser(BaseParser):
       rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions2)
       rel_output = self.output(rel_logits, targets[:,:,2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
-    
+
+    # todo: here: have attention outputs (all the heads), and apply different losses to different heads
+    # examples:
+    # - labels
+    # - grandparents
+    # - siblings (could be left-nearest, right-nearest, or all!)
+    # - children
+    # - actual edges
+    # - root
+
+    # attn_weights_by_layer[i] = num_heads x seq_len x seq_len for transformer layer i
+    # todo pass this in at command line
+    attn_multitask_layer = 0
+    attn_weights = attn_weights_by_layer[attn_multitask_layer]
+
+    multitask_targets = {}
+    multitask_outputs = {}
+
+    # normal parse edges
+    multitask_targets['parse'] = targets[:,:,1]
+
+    for head_logits, (name, targets) in zip(attn_weights, multitask_targets.iteritems()):
+      multitask_outputs[name] = self.output(head_logits, targets)
+
+
     output = {}
     output['probabilities'] = tf.tuple([probabilities, #arc_output['probabilities'],
                                         rel_output['probabilities']])
@@ -179,9 +205,11 @@ class Parser(BaseParser):
     # output['2cycle_loss'] = arc_output['2cycle_loss']
     # output['roots_loss'] = arc_output['roots_loss']
     # output['svd_loss'] = arc_output['svd_loss']
-    output['2cycle_loss'] = gate_output['2cycle_loss']
-    output['roots_loss'] = gate_output['roots_loss']
-    output['svd_loss'] = gate_output['svd_loss']
+    output['2cycle_loss'] = arc_output['2cycle_loss']
+    output['roots_loss'] = arc_output['roots_loss']
+    output['svd_loss'] = arc_output['svd_loss']
+
+    output['multitask_loss'] = multitask_outputs['parse']
 
     output['attn_weights'] = attn_weights_by_layer
     return output
