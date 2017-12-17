@@ -1387,7 +1387,7 @@ class NN(Configurable):
     # Set the probability of depending on the root zero
     parse_probs[roots, roots] = 0
     # Get new potential heads and their probabilities
-    new_heads = np.argmax(parse_probs[roots][:, tokens], axis=1) + 1
+    new_heads = np.argmax(parse_probs[roots][:, tokens], axis=1)
     new_head_probs = parse_probs[roots, new_heads] / root_probs
     # Select the most probable root
     new_root = roots[np.argmin(new_head_probs)]
