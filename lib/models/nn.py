@@ -1004,11 +1004,11 @@ class NN(Configurable):
     # probabilities2D = tf.nn.softmax(logits2D)
 
     divisors = tf.expand_dims(tf.reduce_sum(targets3D, axis=1), -1)
-    divisors += 1 - self.tokens_to_keep3D
+    divisors += 1 - mask
     targets = targets3D / divisors
 
-    targets = tf.Print(targets, [targets], "targets", summarize=1000)
-    targets = tf.Print(targets, [divisors], "divisors", summarize=1000)
+    # targets = tf.Print(targets, [targets], "targets", summarize=1000)
+    # targets = tf.Print(targets, [divisors], "divisors", summarize=1000)
 
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logits3D, labels=targets)
 
