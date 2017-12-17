@@ -196,7 +196,7 @@ class Network(Configurable):
             train_cycle2_loss /= n_train_iters
             train_svd_loss /= n_train_iters
             train_rel_loss /= n_train_iters
-            train_mul_loss /= n_train_iters
+            # train_mul_loss /= n_train_iters
             train_accuracy = 100 * n_train_correct / n_train_tokens
             train_time = n_train_sents / train_time
             print('%6d) Train loss: %.4f    Train acc: %5.2f%%    Train rate: %6.1f sents/sec\n\tValid loss: %.4f    Valid acc: %5.2f%%    Valid rate: %6.1f sents/sec' % (total_train_iters, train_loss, train_accuracy, train_time, valid_loss, valid_accuracy, valid_time))
