@@ -966,8 +966,8 @@ class NN(Configurable):
     sq = self.tokens_to_keep3D # tf.squeeze(self.tokens_to_keep3D, -1)
     actual_toks_to_keep_3D = sq * tf.transpose(sq, [0, 2, 1])
 
-    cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], 'cross ent', summarize=4)
-    cross_entropy = tf.Print(cross_entropy, [tf.shape(actual_toks_to_keep_3D), actual_toks_to_keep_3D], 'toks_to_keep', summarize=400)
+    # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], 'cross ent', summarize=4)
+    # cross_entropy = tf.Print(cross_entropy, [tf.shape(actual_toks_to_keep_3D), actual_toks_to_keep_3D], 'toks_to_keep', summarize=400)
 
 
     # correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
