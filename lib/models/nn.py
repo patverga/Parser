@@ -1012,7 +1012,9 @@ class NN(Configurable):
 
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logits3D, labels=targets)
 
-    # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], 'cross ent', summarize=4)
+    cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], 'cross ent', summarize=4)
+    cross_entropy = tf.Print(cross_entropy, [tf.shape(self.tokens_to_keep3D)], 'toks to keep', summarize=4)
+
     # cross_entropy = tf.Print(cross_entropy, [tf.shape(actual_toks_to_keep_3D), tf.reduce_sum(actual_toks_to_keep_3D, 1), tf.reduce_sum(actual_toks_to_keep_3D, 2)], 'toks_to_keep', summarize=400)
 
 
