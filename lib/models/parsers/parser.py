@@ -231,7 +231,7 @@ class Parser(BaseParser):
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.reshape(tf.stack([i1, tf.nn.relu(parents)], axis=-1), [-1, 2])
     grandparents = tf.reshape(tf.gather_nd(targets, idx), [batch_size, bucket_size])
-    grandparents = grandparents * self.tokens_to_keep3D # + (1 - self.tokens_to_keep3D) * -1
+    # grandparents = grandparents * tf.cast(self.tokens_to_keep3D, tf.int32) # + (1 - self.tokens_to_keep3D) * -1
     multitask_targets['grandparents'] = grandparents
 
 
@@ -247,8 +247,10 @@ class Parser(BaseParser):
     # multitask_outputs['parents'] = self.output_2d(attn_weights[attn_idx], multitask_targets['parents'], mask); attn_idx += 1
     # multitask_outputs['children'] = self.output_2d(attn_weights[attn_idx], multitask_targets['children'], mask); attn_idx += 1
 
-    multitask_losses = {'parents': multitask_outputs['parents']['loss'], 'children': multitask_outputs['children']['loss']}
-    multitask_loss_sum = multitask_outputs['parents']['loss'] + multitask_outputs['children']['loss']
+    multitask_losses = {'parents': multitask_outputs['parents']['loss'],
+                        'children': multitask_outputs['children']['loss'],
+                        'grandparents': multitask_outputs['grandparents']['loss']}
+    multitask_loss_sum = multitask_outputs['parents']['loss'] + multitask_outputs['children']['loss']+ multitask_outputs['grandparents']['loss']
 
     output = {}
 
