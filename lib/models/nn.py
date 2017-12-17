@@ -1003,7 +1003,7 @@ class NN(Configurable):
     # predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     # probabilities2D = tf.nn.softmax(logits2D)
 
-    divisors = tf.expand_dims(tf.reduce_sum(targets3D, axis=1), -1)
+    divisors = tf.expand_dims(tf.reduce_sum(targets3D, axis=2), -1)
     divisors = tf.where(tf.not_equal(divisors, 0), divisors, tf.ones_like(divisors))
     targets = targets3D / divisors
 
