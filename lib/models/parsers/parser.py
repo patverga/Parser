@@ -216,16 +216,24 @@ class Parser(BaseParser):
     roots_mask = 1. - tf.expand_dims(tf.eye(bucket_size), 0)
 
     # normal parse edges
-    multitask_targets['parents'] = adj
-    multitask_targets['children'] = tf.transpose(adj, [0, 2, 1]) * roots_mask
+    # multitask_targets['parents'] = adj
+    # multitask_targets['children'] = tf.transpose(adj, [0, 2, 1]) * roots_mask
 
+    # batch x seq_len x 1
+    parents = targets[:, :, 1]
+    multitask_targets['parents'] = parents
 
-    # attn_weights = tf.Print(attn_weights, [tf.shape(attn_weights), tf.shape(targets[:, :, 1])])
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.reshape(tf.stack([i1, tf.nn.relu(targets)], axis=-1), [-1, 2])
+    grandparents = tf.reshape(tf.gather_nd(targets, idx), [batch_size, bucket_size])
+    grandparents = grandparents * self.tokens_to_keep3D + (1. - self.tokens_to_keep3D) * -1
+
+    attn_weights = tf.Print(attn_weights, [grandparents], summarize=1000)
 
     # for head_logits, (name, targets) in zip(attn_weights, multitask_targets.iteritems()):
     attn_idx = 0
-    # multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
-    multitask_outputs['parents'] = self.output_2d(attn_weights[attn_idx], multitask_targets['parents'], mask); attn_idx += 1
+    multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
+    # multitask_outputs['parents'] = self.output_2d(attn_weights[attn_idx], multitask_targets['parents'], mask); attn_idx += 1
     multitask_outputs['children'] = self.output_2d(attn_weights[attn_idx], multitask_targets['children'], mask); attn_idx += 1
 
     multitask_losses = {'parents': multitask_outputs['parents']['loss'], 'children': multitask_outputs['children']['loss']}
