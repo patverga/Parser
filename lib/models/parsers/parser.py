@@ -205,7 +205,7 @@ class Parser(BaseParser):
     # normal parse edges
     multitask_targets['parse'] = targets[:, :, 1]
 
-    for head_logits, (name, targets) in zip(attn_weights, multitask_targets.iteritems()):
+    for head_logits, (name, targets) in zip(attn_weights.values(), multitask_targets.iteritems()):
       multitask_outputs[name] = self.output_svd(head_logits, targets)
 
     output = {}
