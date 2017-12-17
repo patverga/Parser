@@ -104,7 +104,7 @@ class Parser(BaseParser):
                 top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                              attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                              self.info_func, reuse)
-                attn_weights_by_layer[i] = attn_weights
+                attn_weights_by_layer[i] = tf.transpose(attn_weights, [1, 0, 2, 3])
 
             # if normalization is done in layer_preprocess, then it should also be done
             # on the output, since the output can grow very large, being the sum of
@@ -205,7 +205,7 @@ class Parser(BaseParser):
     # normal parse edges
     multitask_targets['parse'] = targets[:, :, 1]
 
-    attn_weights = tf.Print(attn_weights, [tf.shape(attn_weights), tf.shape(targets[:, :, 1])])
+    # attn_weights = tf.Print(attn_weights, [tf.shape(attn_weights), tf.shape(targets[:, :, 1])])
 
     # for head_logits, (name, targets) in zip(attn_weights, multitask_targets.iteritems()):
     multitask_outputs['parse'] = self.output_svd(attn_weights[0], multitask_targets['parse'])
