@@ -227,13 +227,13 @@ class Parser(BaseParser):
     parents = targets[:, :, 1]
     multitask_targets['children'] = tf.transpose(adj, [0, 2, 1]) * roots_mask
 
-    attn_weights = tf.Print(attn_weights, [tf.shape(parents)], "parents shape", summarize=1000)
+    targets = tf.Print(targets, [tf.shape(parents)], "parents shape", summarize=1000)
 
 
     # create grandparents targets
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
     idx = tf.reshape(tf.stack([i1, tf.nn.relu(parents)], axis=-1), [-1, 2])
-    attn_weights = tf.Print(attn_weights, [tf.shape(idx)], "idx", summarize=1000)
+    targets = tf.Print(targets, [tf.shape(idx)], "idx", summarize=1000)
 
     grandparents = tf.reshape(tf.gather_nd(targets, idx), [batch_size, bucket_size])
     # grandparents = grandparents * tf.cast(self.tokens_to_keep3D, tf.int32) # + (1 - self.tokens_to_keep3D) * -1
