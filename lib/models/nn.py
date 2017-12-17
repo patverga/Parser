@@ -1007,6 +1007,7 @@ class NN(Configurable):
     divisors += 1 - mask
     targets = targets3D / divisors
 
+    targets = tf.Print(targets, [mask], "mask", summarize=10000)
 
     targets = tf.Print(targets, [tf.reduce_sum(targets3D, axis=1)], "tf.reduce_sum(targets3D, axis=1)", summarize=10000)
 
