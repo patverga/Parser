@@ -1010,7 +1010,6 @@ class NN(Configurable):
     targets = tf.Print(targets, [targets], "targets", summarize=1000)
     targets = tf.Print(targets, [divisors], "divisors", summarize=1000)
 
-
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits=logits3D, labels=targets)
 
     # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], 'cross ent', summarize=4)
@@ -1020,7 +1019,7 @@ class NN(Configurable):
     # correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
     # n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     # accuracy = n_correct / self.n_tokens
-    loss = tf.reduce_sum(cross_entropy * mask) / self.n_tokens # * self.tokens_to_keep3D) / self.n_tokens
+    loss = tf.reduce_sum(cross_entropy * self.tokens_to_keep3D) / self.n_tokens # * self.tokens_to_keep3D) / self.n_tokens
 
     output = {
       # 'probabilities': tf.reshape(probabilities2D, original_shape),
