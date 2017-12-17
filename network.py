@@ -205,7 +205,7 @@ class Network(Configurable):
             multitask_losses_str = ''
             for n, l in multitask_losses.iteritems():
               multitask_losses[n] = l/n_train_iters
-              multitask_losses_str += '\t%s loss: %d' % (n, l/n_train_iters)
+              multitask_losses_str += '\t%s loss: %f' % (n, l/n_train_iters)
             print(multitask_losses_str)
             sys.stdout.flush()
             train_time = 0
