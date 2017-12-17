@@ -249,7 +249,7 @@ class Parser(BaseParser):
     # multitask_loss_sum = multitask_outputs['parents']['loss'] + \
                          # multitask_outputs['children']['loss'] + \
                          # multitask_outputs['grandparents']['loss']
-    multitask_loss_sum = multitask_outputs['grandparents']['loss']
+    multitask_loss_sum = multitask_outputs['grandparents']['loss'] + multitask_outputs['parents']['loss']
 
     output = {}
 
