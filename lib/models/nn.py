@@ -961,7 +961,7 @@ class NN(Configurable):
 
     # predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
     # probabilities2D = tf.nn.softmax(logits2D)
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits3D, labels=targets3D)
+    cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits3D, labels=targets3D)
 
     # correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
     # n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
