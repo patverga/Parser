@@ -235,26 +235,21 @@ class Parser(BaseParser):
     # create siblings targets
 
 
-    # attn_weights = tf.Print(attn_weights, [grandparents], summarize=1000)
-
-    # for head_logits, (name, targets) in zip(attn_weights, multitask_targets.iteritems()):
     attn_idx = 0
     multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
     multitask_outputs['grandparents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['grandparents']); attn_idx += 1
-    multitask_outputs['children'] = self.output_multi(attn_weights[attn_idx], multitask_targets['children'], tf.transpose(self.tokens_to_keep3D, [0, 2, 1])); attn_idx += 1
-
-
-    # multitask_outputs['parents'] = self.output_2d(attn_weights[attn_idx], multitask_targets['parents'], mask); attn_idx += 1
-    # multitask_outputs['children'] = self.output_2d(attn_weights[attn_idx], multitask_targets['children'], mask); attn_idx += 1
+    multitask_outputs['children'] = self.output_multi(attn_weights[attn_idx], multitask_targets['children']); attn_idx += 1
 
     multitask_losses = {'parents': multitask_outputs['parents']['loss'],
                         'children': multitask_outputs['children']['loss'],
                         'grandparents': multitask_outputs['grandparents']['loss']}
-    multitask_loss_sum = multitask_outputs['parents']['loss'] + multitask_outputs['children']['loss']+ multitask_outputs['grandparents']['loss']
+    multitask_loss_sum = multitask_outputs['parents']['loss'] # + \
+                         # multitask_outputs['children']['loss'] + \
+                         # multitask_outputs['grandparents']['loss']
 
     output = {}
 
-    output['multitask_loss'] = multitask_loss_sum
+    # output['multitask_loss'] = multitask_loss_sum
     output['multitask_losses'] = multitask_losses
 
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
@@ -266,7 +261,7 @@ class Parser(BaseParser):
     output['n_correct'] = tf.reduce_sum(output['correct'])
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
-    output['loss'] = arc_output['loss'] + rel_output['loss'] + output['multitask_loss']
+    output['loss'] = arc_output['loss'] + rel_output['loss'] + multitask_loss_sum
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 
