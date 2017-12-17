@@ -203,14 +203,21 @@ class Parser(BaseParser):
     multitask_outputs = {}
 
     # normal parse edges
-    multitask_targets['parse'] = targets[:, :, 1]
+    multitask_targets['parents'] = targets[:, :, 1]
+    multitask_targets['children'] = tf.transpose(targets[:, :, 1] )
 
     # attn_weights = tf.Print(attn_weights, [tf.shape(attn_weights), tf.shape(targets[:, :, 1])])
 
     # for head_logits, (name, targets) in zip(attn_weights, multitask_targets.iteritems()):
-    multitask_outputs['parse'] = self.output_svd(attn_weights[0], multitask_targets['parse'])
+    attn_idx = 0
+    multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
 
     output = {}
+
+
+    output['multitask_loss'] = multitask_outputs['parse']['loss']
+
+
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])
     output['predictions'] = tf.stack([arc_output['predictions'],
@@ -220,7 +227,7 @@ class Parser(BaseParser):
     output['n_correct'] = tf.reduce_sum(output['correct'])
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
-    output['loss'] = arc_output['loss'] + rel_output['loss']
+    output['loss'] = arc_output['loss'] + rel_output['loss'] + output['multitask_loss']
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 
@@ -242,7 +249,6 @@ class Parser(BaseParser):
     output['len_2_cycles'] = arc_output['len_2_cycles']
     output['cycles'] = arc_output['n_cycles'] + arc_output['len_2_cycles']
 
-    output['multitask_loss'] = multitask_outputs['parse']['loss']
 
     #### OLD: TRANSFORMER ####
     # top_recur = nn.add_timing_signal_1d(top_recur)
