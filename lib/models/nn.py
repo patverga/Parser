@@ -963,7 +963,8 @@ class NN(Configurable):
     # probabilities2D = tf.nn.softmax(logits2D)
     cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits3D, labels=targets3D)
 
-    actual_toks_to_keep_3D = self.tokens_to_keep3D * tf.transpose(self.tokens_to_keep3D[0, 2, 1])
+    sq = self.tokens_to_keep3D # tf.squeeze(self.tokens_to_keep3D, -1)
+    actual_toks_to_keep_3D = sq * tf.transpose(sq, [0, 2, 1])
 
     cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], 'cross ent', summarize=4)
     cross_entropy = tf.Print(cross_entropy, [tf.shape(actual_toks_to_keep_3D), actual_toks_to_keep_3D], 'toks_to_keep', summarize=400)
