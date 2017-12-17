@@ -224,7 +224,7 @@ class Parser(BaseParser):
     multitask_targets['parents'] = parents
 
     i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
-    idx = tf.reshape(tf.stack([i1, tf.nn.relu(targets)], axis=-1), [-1, 2])
+    idx = tf.reshape(tf.stack([i1, tf.nn.relu(parents)], axis=-1), [-1, 2])
     grandparents = tf.reshape(tf.gather_nd(targets, idx), [batch_size, bucket_size])
     grandparents = grandparents * self.tokens_to_keep3D + (1. - self.tokens_to_keep3D) * -1
 
