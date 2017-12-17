@@ -385,7 +385,7 @@ class Network(Configurable):
                            train_output['svd_loss'],
                            train_output['log_loss'],
                            train_output['rel_loss']]
-    ops['train_op_multitask'] = [train_op,
+    ops['train_op_svd_multitask'] = [train_op,
                                  train_output['loss'],
                                  train_output['n_correct'],
                                  train_output['n_tokens'],
