@@ -57,8 +57,6 @@ class Dataset(Configurable):
         buff = [[]]
         while True:
           line = f.readline()
-          while line and line[0] == '#':
-            line = f.readline()
           while line:
             line = line.strip().split()
             if line:
@@ -70,8 +68,6 @@ class Dataset(Configurable):
               else:
                 break
             line = f.readline()
-            while line and line[0] == '#':
-              line = f.readline()
           if not line:
             f.seek(0)
           else:
@@ -135,12 +131,16 @@ class Dataset(Configurable):
   #=============================================================
   def rebucket(self):
     """"""
+
+    print("rebucket")
     
     buff = self._file_iterator.next()
     len_cntr = Counter()
     
     for sent in buff:
+      print("len_cntr[%d] += 1" % len(sent))
       len_cntr[len(sent)] += 1
+    print("resetting: self.n_bkts=%d, len_cntr: " % (self.n_bkts), len_cntr)
     self.reset(KMeans(self.n_bkts, len_cntr).splits)
     
     for sent in buff:
