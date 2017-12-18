@@ -75,7 +75,7 @@ for lr in ${lrs[@]}; do
                                                                 --epsilon $epsilon \
                                                                 --multitask_layers \"$parents_layer;$grandparents_layer\" \
                                                                 --multitask_penalties \"parents:$parents_penalty;grandparents:$grandparents_penalty\"
-                                                                --svd_tree True \
+                                                                --svd_tree False \
                                                                 --mask_pairs True \
                                                                 --mask_roots True \
                                                                 --ensure_tree False \
