@@ -154,8 +154,8 @@ class KMeans(object):
     size = 0
     idx = 0
     for lidx, length in enumerate(self._lengths):
-      size += self[idx] * self._len_cntr[length]
-      if length == self[idx]:
+      size += self._splits[idx] * self._len_cntr[length]
+      if length == self._splits[idx]:
         idx += 1
     return size
 
@@ -220,7 +220,7 @@ class KMeans(object):
     """"""
 
     idx = 0
-    self._counts = [0 for _ in self]
+    self._counts = [0 for _ in self._splits]
     self._lidxs = []
     for lidx, length in enumerate(self._lengths):
       self._counts[idx] += self._len_cntr[length]
