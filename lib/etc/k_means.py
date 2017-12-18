@@ -43,6 +43,8 @@ class KMeans(object):
     self._split2len_idx = {}
     self._len2split_idx = {}
     self._split_cntr = Counter()
+    self.counts = []
+    self.lidxs = []
 
     print("running k means")
     
@@ -78,19 +80,20 @@ class KMeans(object):
       i += 1
     
     # Reindex everything
-    split_idx = 0
-    split = self._splits[split_idx]
-    for len_idx, length in enumerate(self._lengths):
-      count = self._len_cntr[length]
-      self._split_cntr[split] += count
-      if length == split:
-        self._split2len_idx[split] = len_idx
-        split_idx += 1
-        if split_idx < len(self._splits):
-          split = self._splits[split_idx]
-          self._split_cntr[split] = 0
-      elif length > split:
-        raise IndexError()
+    # split_idx = 0
+    # split = self._splits[split_idx]
+    # for len_idx, length in enumerate(self._lengths):
+    #   count = self._len_cntr[length]
+    #   self._split_cntr[split] += count
+    #   if length == split:
+    #     self._split2len_idx[split] = len_idx
+    #     split_idx += 1
+    #     if split_idx < len(self._splits):
+    #       split = self._splits[split_idx]
+    #       self._split_cntr[split] = 0
+    #   elif length > split:
+    #     raise IndexError()
+    self.reindex()
     
     # Iterate
     old_splits = None
@@ -106,42 +109,85 @@ class KMeans(object):
     return
   
   #=============================================================
+  # def recenter(self):
+  #   """"""
+  #
+  #   for split_idx in xrange(len(self._splits)):
+  #     split = self._splits[split_idx]
+  #     len_idx = self._split2len_idx[split]
+  #     if split == self._splits[-1]:
+  #       continue
+  #     right_split = self._splits[split_idx + 1]
+  #
+  #     # Try shifting the centroid to the left
+  #     if len_idx > 0 and self._lengths[len_idx-1] not in self._split_cntr:
+  #       new_split = self._lengths[len_idx - 1]
+  #       left_delta = self._len_cntr[split]*(right_split-new_split) - self._split_cntr[split]*(split-new_split)
+  #       if left_delta < 0:
+  #         self._splits[split_idx] = new_split
+  #         self._split2len_idx[new_split] = len_idx-1
+  #         del self._split2len_idx[split]
+  #         self._split_cntr[split] -= self._len_cntr[split]
+  #         self._split_cntr[right_split] += self._len_cntr[split]
+  #         self._split_cntr[new_split] = self._split_cntr[split]
+  #         del self._split_cntr[split]
+  #
+  #     # Try shifting the centroid to the right
+  #     elif len_idx < len(self._lengths)-2 and self._lengths[len_idx+1] not in self._split_cntr:
+  #       new_split = self._lengths[len_idx + 1]
+  #       right_delta = self._split_cntr[split]*(new_split-split) - self._len_cntr[split]*(new_split-split)
+  #       if right_delta <= 0:
+  #         self._splits[split_idx] = new_split
+  #         self._split2len_idx[new_split] = len_idx+1
+  #         del self._split2len_idx[split]
+  #         self._split_cntr[split] += self._len_cntr[split]
+  #         self._split_cntr[right_split] -= self._len_cntr[split]
+  #         self._split_cntr[new_split] = self._split_cntr[split]
+  #         del self._split_cntr[split]
+  #   return
+
+  # =============================================================
+  def size(self):
+    """"""
+
+    size = 0
+    idx = 0
+    for lidx, length in enumerate(self._lengths):
+      size += self[idx] * self._len_cntr[length]
+      if length == self[idx]:
+        idx += 1
+    return size
+
   def recenter(self):
     """"""
-    
-    for split_idx in xrange(len(self._splits)):
-      split = self._splits[split_idx]
-      len_idx = self._split2len_idx[split]
-      if split == self._splits[-1]:
-        continue
-      right_split = self._splits[split_idx + 1]
-      
-      # Try shifting the centroid to the left
-      if len_idx > 0 and self._lengths[len_idx-1] not in self._split_cntr:
-        new_split = self._lengths[len_idx - 1]
-        left_delta = self._len_cntr[split]*(right_split-new_split) - self._split_cntr[split]*(split-new_split)
-        if left_delta < 0:
-          self._splits[split_idx] = new_split
-          self._split2len_idx[new_split] = len_idx-1
-          del self._split2len_idx[split]
-          self._split_cntr[split] -= self._len_cntr[split]
-          self._split_cntr[right_split] += self._len_cntr[split]
-          self._split_cntr[new_split] = self._split_cntr[split]
-          del self._split_cntr[split]
-      
-      # Try shifting the centroid to the right
-      elif len_idx < len(self._lengths)-2 and self._lengths[len_idx+1] not in self._split_cntr:
-        new_split = self._lengths[len_idx + 1]
-        right_delta = self._split_cntr[split]*(new_split-split) - self._len_cntr[split]*(new_split-split)
-        if right_delta <= 0:
-          self._splits[split_idx] = new_split
-          self._split2len_idx[new_split] = len_idx+1
-          del self._split2len_idx[split]
-          self._split_cntr[split] += self._len_cntr[split]
-          self._split_cntr[right_split] -= self._len_cntr[split]
-          self._split_cntr[new_split] = self._split_cntr[split]
-          del self._split_cntr[split]
-    return 
+
+    for idx in xrange(len(self._splits)):
+      split = self._splits[idx]
+      lidx = self.lidxs[idx]
+      old_size = self.size()
+      count = self._len_cntr[self._lengths[lidx]]
+
+      if lidx > 0 and self._lengths[lidx - 1] not in self:
+        self[idx] = self._lengths[lidx - 1]
+        new_size = self.size()
+        if old_size > new_size:
+          self.lidxs[idx] = lidx - 1
+          self.counts[idx] -= count
+          self.counts[idx - 1] += count
+          continue
+        else:
+          self[idx] = self._lengths[lidx]
+
+      if lidx < len(self._lengths) - 1 and self._lengths[lidx + 1] not in self:
+        self[idx] = self._lengths[lidx + 1]
+        new_size = self.size()
+        if old_size > new_size:
+          self.lidxs[idx] = lidx + 1
+          self.counts[idx] -= count
+          self.counts[idx + 1] += count
+        else:
+          self[idx] = self._lengths[lidx]
+    return
   
   #=============================================================
   def get_mass(self):
@@ -160,14 +206,27 @@ class KMeans(object):
     return mass
   
   #=============================================================
+  # def reindex(self):
+  #   """"""
+  #
+  #   self._len2split_idx = {}
+  #   last_split = -1
+  #   for split_idx, split in enumerate(self._splits):
+  #     self._len2split_idx.update(dict(zip(range(last_split+1, split), [split_idx]*(split-(last_split+1)))))
+  #   return
+
   def reindex(self):
     """"""
-    
-    self._len2split_idx = {}
-    last_split = -1
-    for split_idx, split in enumerate(self._splits):
-      self._len2split_idx.update(dict(zip(range(last_split+1, split), [split_idx]*(split-(last_split+1)))))
-    return 
+
+    idx = 0
+    self._counts = [0 for _ in self]
+    self._lidxs = []
+    for lidx, length in enumerate(self._lengths):
+      self.counts[idx] += self._len_cntr[length]
+      if length == self[idx]:
+        self.lidxs.append(lidx)
+        idx += 1
+    return
   
   #=============================================================
   def __len__(self):
