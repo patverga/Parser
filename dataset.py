@@ -99,23 +99,24 @@ class Dataset(Configurable):
     
     words, tags, rels = self.vocabs
     for i, sent in enumerate(buff):
-      for j, token in enumerate(sent):
-        if self.conll:
-          word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
-          if rel == 'root':
-            head = j
-          else:
-            head = int(head) - 1
-          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
-        elif self.conll2012:
-          # todo actually load predicted pos tags and parses
-          word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[5], token[rels.conll_idx]
-          # if rel == 'root':
-          #   head = j
-          # else:
-          #   head = int(head) - 1
-          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
-      # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
+      if not self.conll2012 or (self.conll2012 and len(sent) > 1):
+        for j, token in enumerate(sent):
+          if self.conll:
+            word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
+            if rel == 'root':
+              head = j
+            else:
+              head = int(head) - 1
+            buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
+          elif self.conll2012:
+            # todo actually load predicted pos tags and parses
+            word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[5], token[rels.conll_idx]
+            # if rel == 'root':
+            #   head = j
+            # else:
+            #   head = int(head) - 1
+            buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
+        # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
   
   #=============================================================
