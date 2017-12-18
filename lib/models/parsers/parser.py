@@ -21,7 +21,10 @@ class Parser(BaseParser):
   #=============================================================
   def __call__(self, dataset, moving_params=None):
     """"""
-    
+
+    self.multi_penalties = {k: v for k, v in map(lambda s: s.split(':'), self.multitask_penalties.split(';'))}
+    self.multi_layers = {k: set(v.split(',')) for k, v in map(lambda s: s.split(':'), self.multitask_layers.split(';'))}
+
     vocabs = dataset.vocabs
     inputs = dataset.inputs
     targets = dataset.targets
@@ -54,6 +57,8 @@ class Parser(BaseParser):
 
     print("cnn2d_layers: ", self.cnn2d_layers)
     print("cnn_dim_2d: ", self.cnn_dim_2d)
+
+    print("multitask penalties: ", self.multi_penalties)
 
     attn_dropout = 0.67
     prepost_dropout = 0.67
@@ -196,8 +201,8 @@ class Parser(BaseParser):
 
     # attn_weights_by_layer[i] = num_heads x seq_len x seq_len for transformer layer i
     # todo pass this in at command line
-    attn_multitask_layer = self.n_recur-1
-    attn_weights = attn_weights_by_layer[attn_multitask_layer]
+    # attn_multitask_layer = self.n_recur-1
+    # attn_weights = attn_weights_by_layer[attn_multitask_layer]
 
     multitask_targets = {}
     multitask_outputs = {}
@@ -237,19 +242,29 @@ class Parser(BaseParser):
     #   return tf.unsorted_segment_sum(tf.ones_like(e), e, n)
     #
     # count_all = tf.map_fn(count_all_fnc, t)
-
-    attn_idx = 0
-    multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
-    multitask_outputs['grandparents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['grandparents']); attn_idx += 1
-    multitask_outputs['children'] = self.output_multi(attn_weights[attn_idx], multitask_targets['children']); attn_idx += 1
-
-    multitask_losses = {'parents': multitask_outputs['parents']['loss'],
-                        'children': multitask_outputs['children']['loss'],
-                        'grandparents': multitask_outputs['grandparents']['loss']}
-    # multitask_loss_sum = multitask_outputs['parents']['loss'] + \
-                         # multitask_outputs['children']['loss'] + \
-                         # multitask_outputs['grandparents']['loss']
-    multitask_loss_sum = multitask_outputs['grandparents']['loss'] + multitask_outputs['parents']['loss']
+    multitask_losses = {}
+    multitask_loss_sum = 0
+    for l, attn_weights in attn_weights_by_layer.iteritems():
+      attn_idx = 0
+      if 'parents' in self.multi_layers.keys() and l in self.multi_layers['parents']:
+        multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
+        multitask_losses['parents%s' % l] = outputs['loss']
+        multitask_loss_sum += outputs['loss']
+      if 'grandparents' in self.multi_layers.keys() and l in self.multi_layers['grandparents']:
+        outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['grandparents']); attn_idx += 1
+        multitask_losses['grandparents%s' % l] = outputs['loss']
+        multitask_loss_sum += outputs['loss']
+      if 'children' in l in self.multi_layers.keys() and l in self.multi_layers['children']:
+        outputs = self.output_multi(attn_weights[attn_idx], multitask_targets['children']); attn_idx += 1
+        multitask_losses['children%s' % l] = outputs['loss']
+        multitask_loss_sum += outputs['loss']
+    # multitask_losses = {'parents': multitask_outputs['parents']['loss'],
+    #                     'children': multitask_outputs['children']['loss'],
+    #                     'grandparents': multitask_outputs['grandparents']['loss']}
+    # # multitask_loss_sum = multitask_outputs['parents']['loss'] + \
+    #                      # multitask_outputs['children']['loss'] + \
+    #                      # multitask_outputs['grandparents']['loss']
+    # multitask_loss_sum = self.multi_penalties['grandparents'] * multitask_outputs['grandparents']['loss'] + self.multi_penalties['parents'] * multitask_outputs['parents']['loss']
 
     output = {}
 

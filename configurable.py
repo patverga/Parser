@@ -450,3 +450,13 @@ class Configurable(object):
   def cnn_residual(self):
     return self._config.getboolean('Training', 'cnn_residual')
   argparser.add_argument('--cnn_residual')
+
+  @property
+  def multitask_penalties(self):
+    return self._config.get('Training', 'multitask_penalties')
+  argparser.add_argument('--multitask_penalties')
+
+  @property
+  def multitask_layers(self):
+    return self._config.get('Training', 'multitask_layers')
+  argparser.add_argument('--multitask_layers')
