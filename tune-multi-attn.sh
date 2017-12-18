@@ -23,7 +23,7 @@ warmup_steps="8000"
 batch_sizes="5000"
 
 trans_layers="4" # 3
-cnn_dims="1048" # 768
+cnn_dims="1024" # 768
 num_heads="8" #4 8"
 head_sizes="64 128"
 relu_hidden_sizes="256"
@@ -58,7 +58,6 @@ for lr in ${lrs[@]}; do
                                                             for rep in `seq $reps`; do
                                                                 fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$parents_penalty-$grandparents_penalty-$parents_layer-$grandparents_layer"
                                                                 commands+=("srun --gres=gpu:1 --partition=titanx-short --time=04:00:00 python network.py \
-                                                                --config_file config/myconf.cfg \
                                                                 --save_dir $OUT_LOG/scores-$fname_append \
                                                                 --save_every 500 \
                                                                 --train_iters 100000 \
