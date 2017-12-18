@@ -59,6 +59,8 @@ class Parser(BaseParser):
     print("cnn_dim_2d: ", self.cnn_dim_2d)
 
     print("multitask penalties: ", self.multi_penalties)
+    print("multitask layers: ", self.multi_layers)
+
 
     attn_dropout = 0.67
     prepost_dropout = 0.67
@@ -254,7 +256,7 @@ class Parser(BaseParser):
         outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['grandparents']); attn_idx += 1
         multitask_losses['grandparents%s' % l] = outputs['loss']
         multitask_loss_sum += outputs['loss']
-      if 'children' in l in self.multi_layers.keys() and l in self.multi_layers['children']:
+      if 'children' in self.multi_layers.keys() and l in self.multi_layers['children']:
         outputs = self.output_multi(attn_weights[attn_idx], multitask_targets['children']); attn_idx += 1
         multitask_losses['children%s' % l] = outputs['loss']
         multitask_loss_sum += outputs['loss']
