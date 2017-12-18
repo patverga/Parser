@@ -168,7 +168,7 @@ class KMeans(object):
       count = self._len_cntr[self._lengths[lidx]]
 
       if lidx > 0 and self._lengths[lidx - 1] not in self:
-        self[idx] = self._lengths[lidx - 1]
+        self._splits[idx] = self._lengths[lidx - 1]
         new_size = self.size()
         if old_size > new_size:
           self.lidxs[idx] = lidx - 1
@@ -176,17 +176,17 @@ class KMeans(object):
           self.counts[idx - 1] += count
           continue
         else:
-          self[idx] = self._lengths[lidx]
+          self._splits[idx] = self._lengths[lidx]
 
       if lidx < len(self._lengths) - 1 and self._lengths[lidx + 1] not in self:
-        self[idx] = self._lengths[lidx + 1]
+        self._splits[idx] = self._lengths[lidx + 1]
         new_size = self.size()
         if old_size > new_size:
           self.lidxs[idx] = lidx + 1
           self.counts[idx] -= count
           self.counts[idx + 1] += count
         else:
-          self[idx] = self._lengths[lidx]
+          self._splits[idx] = self._lengths[lidx]
     return
   
   #=============================================================
