@@ -163,7 +163,7 @@ class KMeans(object):
 
     for idx in xrange(len(self._splits)):
       split = self._splits[idx]
-      lidx = self.lidxs[idx]
+      lidx = self._lidxs[idx]
       old_size = self.size()
       count = self._len_cntr[self._lengths[lidx]]
 
@@ -171,9 +171,9 @@ class KMeans(object):
         self._splits[idx] = self._lengths[lidx - 1]
         new_size = self.size()
         if old_size > new_size:
-          self.lidxs[idx] = lidx - 1
-          self.counts[idx] -= count
-          self.counts[idx - 1] += count
+          self._lidxs[idx] = lidx - 1
+          self._counts[idx] -= count
+          self._counts[idx - 1] += count
           continue
         else:
           self._splits[idx] = self._lengths[lidx]
@@ -182,9 +182,9 @@ class KMeans(object):
         self._splits[idx] = self._lengths[lidx + 1]
         new_size = self.size()
         if old_size > new_size:
-          self.lidxs[idx] = lidx + 1
-          self.counts[idx] -= count
-          self.counts[idx + 1] += count
+          self._lidxs[idx] = lidx + 1
+          self._counts[idx] -= count
+          self._counts[idx + 1] += count
         else:
           self._splits[idx] = self._lengths[lidx]
     return
@@ -222,9 +222,9 @@ class KMeans(object):
     self._counts = [0 for _ in self]
     self._lidxs = []
     for lidx, length in enumerate(self._lengths):
-      self.counts[idx] += self._len_cntr[length]
+      self._counts[idx] += self._len_cntr[length]
       if length == self._splits[idx]:
-        self.lidxs.append(lidx)
+        self._lidxs.append(lidx)
         idx += 1
     return
   
