@@ -249,7 +249,7 @@ class Parser(BaseParser):
     for l, attn_weights in attn_weights_by_layer.iteritems():
       attn_idx = 0
       if 'parents' in self.multi_layers.keys() and l in self.multi_layers['parents']:
-        multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
+        outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
         loss = self.multi_penalties['parents'] * outputs['loss']
         multitask_losses['parents%s' % l] = loss
         multitask_loss_sum += loss
