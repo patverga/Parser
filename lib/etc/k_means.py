@@ -43,6 +43,8 @@ class KMeans(object):
     self._split2len_idx = {}
     self._len2split_idx = {}
     self._split_cntr = Counter()
+
+    print("running k means")
     
     # Initialize the splits evenly
     lengths = []
@@ -51,15 +53,27 @@ class KMeans(object):
     lengths.sort()
     self._splits = [np.max(split) for split in np.array_split(lengths, self._k)]
     
-    i = len(self._splits)-1
+    # i = len(self._splits)-1
+    # while i > 0:
+    #   while self._splits[i-1] >= self._splits[i] or self._splits[i-1] not in self._len_cntr:
+    #     self._splits[i-1] -= 1
+    #   i -= 1
+    #
+    # i = 1
+    # while i < len(self._splits)-1:
+    #   while self._splits[i] <= self._splits[i-1] or self._splits[i] not in self._len_cntr:
+    #     self._splits[i] += 1
+    #   i += 1
+
+    i = len(self._splits) - 1
     while i > 0:
-      while self._splits[i-1] >= self._splits[i] or self._splits[i-1] not in self._len_cntr:
-        self._splits[i-1] -= 1
+      while self._splits[i] >= self._lengths[0] and (self._splits[i] <= self._splits[i-1] or self._splits[i] not in self._len_cntr):
+        self._splits[i - 1] -= 1
       i -= 1
-    
+
     i = 1
-    while i < len(self._splits)-1:
-      while self._splits[i] <= self._splits[i-1] or self._splits[i] not in self._len_cntr:
+    while i < len(self._splits) - 1:
+      while self._splits[i] < self._lengths[-1] and (self._splits[i] <= self._splits[i-1] or self._splits[i] not in self._len_cntr):
         self._splits[i] += 1
       i += 1
     

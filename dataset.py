@@ -109,7 +109,7 @@ class Dataset(Configurable):
           buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
         elif self.conll2012:
           # todo actually load predicted pos tags and parses
-          word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx], token[tags.conll_idx], token[5], token[rels.conll_idx]
+          word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[5], token[rels.conll_idx]
           # if rel == 'root':
           #   head = j
           # else:
@@ -131,15 +131,11 @@ class Dataset(Configurable):
   def rebucket(self):
     """"""
 
-    print("rebucket")
-    
     buff = self._file_iterator.next()
     len_cntr = Counter()
     
     for sent in buff:
-      print("len_cntr[%d] += 1" % len(sent))
       len_cntr[len(sent)] += 1
-    print("resetting: self.n_bkts=%d, len_cntr: " % (self.n_bkts), len_cntr)
     self.reset(KMeans(self.n_bkts, len_cntr).splits)
     
     for sent in buff:

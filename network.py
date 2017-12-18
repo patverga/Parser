@@ -64,7 +64,7 @@ class Network(Configurable):
                      (self.rel_file, 7, 'Rels')]
     elif self.conll2012:
       vocab_files = [(self.word_file, 3, 'Words'),
-                     (self.tag_file, 4, 'Tags'),
+                     (self.tag_file, [4, 4], 'Tags'),
                      (self.rel_file, 6, 'Rels')]
     for i, (vocab_file, index, name) in enumerate(vocab_files):
       vocab = Vocab(vocab_file, index, self._config,
