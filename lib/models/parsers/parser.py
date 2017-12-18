@@ -207,7 +207,7 @@ class Parser(BaseParser):
     # attn_weights = attn_weights_by_layer[attn_multitask_layer]
 
     multitask_targets = {}
-    multitask_outputs = {}
+    # multitask_outputs = {}
 
     mask = self.tokens_to_keep3D * tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
 

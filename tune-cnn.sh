@@ -87,10 +87,9 @@ for lr in ${lrs[@]}; do
                                                                             --pairs_penalty $pairs_penalty \
                                                                             --roots_penalty $roots_penalty \
                                                                             --svd_penalty $svd_penalty \
-                                                                            --svd_tree True \
                                                                             --mask_pairs True \
                                                                             --mask_roots True \
-                                                                            --ensure_tree False \
+                                                                            --ensure_tree True \
                                                                             --save False \
                                                                             --cnn_dim_2d $cnn_dim_2d \
                                                                             --cnn2d_layers $cnn2d_layer \
