@@ -71,7 +71,7 @@ class KMeans(object):
     i = len(self._splits) - 1
     while i > 0:
       while self._splits[i] >= self._lengths[0] and (self._splits[i] <= self._splits[i-1] or self._splits[i] not in self._len_cntr):
-        self._splits[i - 1] -= 1
+        self._splits[i] -= 1
       i -= 1
 
     i = 1
