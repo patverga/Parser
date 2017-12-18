@@ -162,7 +162,7 @@ class KMeans(object):
   def recenter(self):
     """"""
 
-    for idx in xrange(len(self._splits)):
+    for idx in xrange(len(self._splits)-1):
       split = self._splits[idx]
       lidx = self._lidxs[idx]
       old_size = self.size()
