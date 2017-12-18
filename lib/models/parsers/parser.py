@@ -251,15 +251,15 @@ class Parser(BaseParser):
       if 'parents' in self.multi_layers.keys() and l in self.multi_layers['parents']:
         multitask_outputs['parents'] = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
         multitask_losses['parents%s' % l] = outputs['loss']
-        multitask_loss_sum += outputs['loss']
+        multitask_loss_sum += self.multi_penalties['parents'] * outputs['loss']
       if 'grandparents' in self.multi_layers.keys() and l in self.multi_layers['grandparents']:
         outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['grandparents']); attn_idx += 1
         multitask_losses['grandparents%s' % l] = outputs['loss']
-        multitask_loss_sum += outputs['loss']
+        multitask_loss_sum += self.multi_penalties['grandparents'] * outputs['loss']
       if 'children' in self.multi_layers.keys() and l in self.multi_layers['children']:
         outputs = self.output_multi(attn_weights[attn_idx], multitask_targets['children']); attn_idx += 1
         multitask_losses['children%s' % l] = outputs['loss']
-        multitask_loss_sum += outputs['loss']
+        multitask_loss_sum += self.multi_penalties['children'] * outputs['loss']
     # multitask_losses = {'parents': multitask_outputs['parents']['loss'],
     #                     'children': multitask_outputs['children']['loss'],
     #                     'grandparents': multitask_outputs['grandparents']['loss']}
