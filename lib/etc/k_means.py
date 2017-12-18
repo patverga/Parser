@@ -219,8 +219,8 @@ class KMeans(object):
     """"""
 
     idx = 0
-    self._counts = [0 for _ in self]
-    self._lidxs = []
+    self.counts = [0 for _ in self]
+    self.lidxs = []
     for lidx, length in enumerate(self._lengths):
       self.counts[idx] += self._len_cntr[length]
       if length == self[idx]:
