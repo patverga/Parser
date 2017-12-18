@@ -305,8 +305,8 @@ class Parser(BaseParser):
     output['svd_loss'] = arc_output['svd_loss']
     output['n_cycles'] = arc_output['n_cycles']
     output['len_2_cycles'] = arc_output['len_2_cycles']
-    output['cycles'] = (arc_output['n_cycles'] > 1) or (arc_output['len_2_cycles'] > 1)
-
+    # output['cycles'] = arc_output['n_cycles'] + arc_output['len_2_cycles']
+gi
 
     #### OLD: TRANSFORMER ####
     # top_recur = nn.add_timing_signal_1d(top_recur)

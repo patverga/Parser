@@ -407,7 +407,7 @@ class Network(Configurable):
                        valid_output['n_correct'],
                        valid_output['n_tokens'],
                        valid_output['predictions'],
-                       valid_output['cycles']]
+                       valid_output['n_cycles']]
     ops['test_op'] = [valid_output['probabilities'],
                       valid_output['n_cycles'],
                       valid_output['len_2_cycles'],
