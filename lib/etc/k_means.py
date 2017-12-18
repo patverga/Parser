@@ -49,10 +49,11 @@ class KMeans(object):
     print("running k means")
     
     # Initialize the splits evenly
-    lengths = []
-    for length, count in self._len_cntr.items():
-      lengths.extend([length]*count)
-    lengths.sort()
+    # lengths = []
+    # for length, count in self._len_cntr.items():
+    #   lengths.extend([length]*count)
+    # lengths.sort()
+    lengths = sorted([l for length, count in self._len_cntr.items() for l in [length] * count])
     self._splits = [np.max(split) for split in np.array_split(lengths, self._k)]
     
     # i = len(self._splits)-1
