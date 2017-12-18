@@ -219,11 +219,11 @@ class KMeans(object):
     """"""
 
     idx = 0
-    self.counts = [0 for _ in self]
-    self.lidxs = []
+    self._counts = [0 for _ in self]
+    self._lidxs = []
     for lidx, length in enumerate(self._lengths):
       self.counts[idx] += self._len_cntr[length]
-      if length == self[idx]:
+      if length == self._splits[idx]:
         self.lidxs.append(lidx)
         idx += 1
     return
