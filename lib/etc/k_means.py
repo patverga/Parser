@@ -43,8 +43,8 @@ class KMeans(object):
     self._split2len_idx = {}
     self._len2split_idx = {}
     self._split_cntr = Counter()
-    self.counts = []
-    self.lidxs = []
+    self._counts = []
+    self._lidxs = []
 
     print("running k means")
     
