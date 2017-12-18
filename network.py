@@ -176,7 +176,7 @@ class Network(Configurable):
                 inputs = feed_dict[self._validset.inputs]
                 targets = feed_dict[self._validset.targets]
                 start_time = time.time()
-                loss, n_correct, n_tokens, predictions, cycles = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
+                loss, n_correct, n_tokens, predictions = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
                 valid_time += time.time() - start_time
                 valid_loss += loss
                 n_valid_sents += len(targets)
