@@ -63,8 +63,10 @@ class Dataset(Configurable):
               buff[-1].append(line)
             else:
               if len(buff) < self.lines_per_buffer:
-                if buff[-1]:
+                if len(buff[-1]) > 1:
                   buff.append([])
+                else:
+                  buff[-1] = []
               else:
                 break
             line = f.readline()
@@ -85,8 +87,10 @@ class Dataset(Configurable):
           if line:
             buff[-1].append(line)
           else:
-            if buff[-1]:
+            if len(buff[-1]) > 1:
               buff.append([])
+            else:
+              buff[-1] = []
         if buff[-1] == []:
           buff.pop()
         buff = self._process_buff(buff)
