@@ -147,11 +147,11 @@ class Vocab(Configurable):
           elif self.conll2012 and len(line) > 1:
             if hasattr(self.conll_idx, '__iter__'):
               for idx in self.conll_idx:
-                print("adding ", line[idx])
+                # print("adding ", line[idx])
                 self.add(counts, line[idx])
             else:
               self.add(counts, line[self.conll_idx])
-              print("adding ", line[idx])
+              # print("adding ", line[self.conll_idx])
           else:
             print('The training file is misformatted at line %d (had %d columns, expected %d)' % (line_num+1, len(line), 13))
             # raise ValueError('The training file is misformatted at line %d' % (line_num+1))
