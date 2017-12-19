@@ -120,7 +120,7 @@ class Dataset(Configurable):
             head = j
           else:
             head = int(head) - 1
-          print(word, tag1, tag2, head, rel)
+          # print(word, tag1, tag2, head, rel)
           buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
         # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
