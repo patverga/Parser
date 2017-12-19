@@ -195,11 +195,9 @@ class Parser(BaseParser):
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
 
     # diverse attentions loss
-
-    # this is masking
     attn_diversity_loss = tf.constant(0.)
     for l, attn_weights in attn_weights_by_layer.iteritems():
-      sampled_attn_indices = tf.random_shuffle(tf.range(self.num_heads, dtype=tf.int64))[:2]
+      sampled_attn_indices = tf.random_shuffle(tf.range(self.num_heads, dtype=tf.int32))[:2]
       idx1 = sampled_attn_indices[0]
       idx2 = sampled_attn_indices[1]
       mse = 1.0 - tf.losses.mean_squared_error(attn_weights[idx1], attn_weights[idx2])
