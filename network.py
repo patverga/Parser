@@ -137,6 +137,7 @@ class Network(Configurable):
       train_cycle2_loss = 0
       train_svd_loss = 0
       train_rel_loss = 0
+      train_attn_loss = 0
       n_train_sents = 0
       n_train_correct = 0
       n_train_tokens = 0
@@ -150,7 +151,7 @@ class Network(Configurable):
           train_inputs = feed_dict[self._trainset.inputs]
           train_targets = feed_dict[self._trainset.targets]
           start_time = time.time()
-          _, loss, n_correct, n_tokens, roots_loss, cycle2_loss, svd_loss, log_loss, rel_loss = sess.run(self.ops['train_op_svd'], feed_dict=feed_dict)
+          _, loss, n_correct, n_tokens, roots_loss, cycle2_loss, svd_loss, log_loss, rel_loss, attn_loss = sess.run(self.ops['train_op_svd'], feed_dict=feed_dict)
           train_time += time.time() - start_time
           train_loss += loss
           train_log_loss += log_loss
@@ -158,6 +159,7 @@ class Network(Configurable):
           train_cycle2_loss += cycle2_loss
           train_svd_loss += svd_loss
           train_rel_loss += rel_loss
+          train_attn_loss += attn_loss
           n_train_sents += len(train_targets)
           n_train_correct += n_correct
           n_train_tokens += n_tokens
@@ -195,10 +197,11 @@ class Network(Configurable):
             train_cycle2_loss /= n_train_iters
             train_svd_loss /= n_train_iters
             train_rel_loss /= n_train_iters
+            train_attn_loss /= n_train_iters
             train_accuracy = 100 * n_train_correct / n_train_tokens
             train_time = n_train_sents / train_time
             print('%6d) Train loss: %.4f    Train acc: %5.2f%%    Train rate: %6.1f sents/sec\n\tValid loss: %.4f    Valid acc: %5.2f%%    Valid rate: %6.1f sents/sec' % (total_train_iters, train_loss, train_accuracy, train_time, valid_loss, valid_accuracy, valid_time))
-            print('\tlog loss: %f\trel loss: %f\troots loss: %f\t2cycle loss: %f\tsvd loss: %f' % (train_log_loss, train_rel_loss, train_roots_loss, train_cycle2_loss, train_svd_loss))
+            print('\tlog loss: %f\trel loss: %f\tattn loss: %f\troots loss: %f\t2cycle loss: %f\tsvd loss: %f' % (train_log_loss, train_rel_loss, train_attn_loss, train_roots_loss, train_cycle2_loss, train_svd_loss))
             sys.stdout.flush()
             train_time = 0
             train_loss = 0
@@ -384,7 +387,8 @@ class Network(Configurable):
                            train_output['2cycle_loss'],
                            train_output['svd_loss'],
                            train_output['log_loss'],
-                           train_output['rel_loss']]
+                           train_output['rel_loss'],
+                           train_output['attn_loss']]
     ops['valid_op'] = [valid_output['loss'],
                        valid_output['n_correct'],
                        valid_output['n_tokens'],

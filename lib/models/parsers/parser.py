@@ -63,6 +63,8 @@ class Parser(BaseParser):
     #   relu_dropout = 1.0
     #   self.recur_keep_prob = 1.0
 
+    attn_weights_by_layer = {}
+
     assert (self.cnn_layers != 0 and self.n_recur != 0) or self.num_blocks == 1, "num_blocks should be 1 if cnn_layers or n_recur is 0"
     assert self.dist_model == 'bilstm' or self.dist_model == 'transformer', 'Model must be either "transformer" or "bilstm"'
 
@@ -100,9 +102,10 @@ class Parser(BaseParser):
             top_recur = nn.add_timing_signal_1d(top_recur)
             for i in range(self.n_recur):
               with tf.variable_scope('layer%d' % i, reuse=reuse):
-                top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
+                top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                              attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                              self.info_func, reuse)
+                attn_weights_by_layer[i] = tf.transpose(attn_weights, [1, 0, 2, 3])
             # if normalization is done in layer_preprocess, then it should also be done
             # on the output, since the output can grow very large, being the sum of
             # a whole stack of unnormalized layer outputs.
@@ -191,6 +194,17 @@ class Parser(BaseParser):
       rel_output = self.output(rel_logits, targets[:, :, 2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
 
+    # diverse attentions loss
+
+    # this is masking
+    attn_diversity_loss = tf.constant(0.)
+    for l, attn_weights in attn_weights_by_layer.iteritems():
+      sampled_attn_indices = tf.random_shuffle(tf.range(self.num_heads, dtype=tf.int64))[:2]
+      idx1 = sampled_attn_indices[0]
+      idx2 = sampled_attn_indices[1]
+      mse = 1.0 - tf.losses.mean_squared_error(attn_weights[idx1], attn_weights[idx2])
+      attn_diversity_loss += tf.reduce_sum(mse * self.tokens_to_keep3D) / self.n_tokens
+
     output = {}
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])
@@ -201,7 +215,8 @@ class Parser(BaseParser):
     output['n_correct'] = tf.reduce_sum(output['correct'])
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
-    output['loss'] = arc_output['loss'] + rel_output['loss']
+    output['loss'] = arc_output['loss'] + rel_output['loss'] + attn_diversity_loss
+    output['attn_loss'] = attn_diversity_loss
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 

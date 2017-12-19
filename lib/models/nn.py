@@ -255,8 +255,8 @@ def dot_product_attention(q, k, v,
       logits += bias
     weights = tf.nn.softmax(logits, name="attention_weights")
     # dropping out the attention links for each of the heads
-    weights = tf.nn.dropout(weights, dropout_rate)
-    return tf.matmul(weights, v)
+    weights_drop = tf.nn.dropout(weights, dropout_rate)
+    return tf.matmul(weights_drop, v), weights
 
 
 def compute_qkv(antecedent, total_key_depth, total_value_depth):
@@ -381,13 +381,13 @@ def multihead_attention(antecedent,
     v = split_heads(v, num_heads)
     key_depth_per_head = total_key_depth // num_heads
     q *= key_depth_per_head**-0.5
-    x = dot_product_attention(q, k, v, bias, dropout_rate)
+    x, attn_weights = dot_product_attention(q, k, v, bias, dropout_rate)
     x = combine_heads(x)
     params = tf.get_variable("final_proj", [1, 1, total_key_depth, output_depth])
     x = tf.expand_dims(x, 1)
     x = tf.nn.conv2d(x, params, [1, 1, 1, 1], "SAME")
     x = tf.squeeze(x, 1)
-    return x
+    return x, attn_weights
 
 
 def conv_hidden_relu(inputs,
@@ -559,7 +559,7 @@ class NN(Configurable):
 
     with tf.variable_scope("self_attention"):
       x = layer_norm(inputs, reuse)
-      y = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout)
+      y, attn_weights = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout)
       x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
     with tf.variable_scope("ffnn"):
@@ -567,7 +567,7 @@ class NN(Configurable):
       y = conv_hidden_relu(x, relu_hidden_size, hidden_size, relu_dropout, nonlinearity)
       x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
-    return x
+    return x, attn_weights
   
   #=============================================================
   def soft_attn(self, top_recur):
