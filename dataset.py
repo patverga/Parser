@@ -104,7 +104,7 @@ class Dataset(Configurable):
     words, tags, rels = self.vocabs
     for i, sent in enumerate(buff):
       # if not self.conll2012 or (self.conll2012 and len(list(sent)) > 1):
-      print(sent, len(sent))
+      # print(sent, len(sent))
       for j, token in enumerate(sent):
         if self.conll:
           word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
