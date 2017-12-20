@@ -101,7 +101,7 @@ class Dataset(Configurable):
   def _process_buff(self, buff):
     """"""
     
-    words, tags, rels = self.vocabs
+    words, tags, rels, srls = self.vocabs
     for i, sent in enumerate(buff):
       # if not self.conll2012 or (self.conll2012 and len(list(sent)) > 1):
       # print(sent, len(sent))
@@ -120,7 +120,10 @@ class Dataset(Configurable):
           else:
             head = int(head) - 1
           # print(word, tag1, tag2, head, rel)
-          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
+          # for s in srls.conll_idx:
+          srl_fields = [token[idx] if idx < len(token) and idx != len(token)-1 else 'O' for idx in srls.conll_idx]
+          srl_tags = [srls[s] for s in srl_fields]
+          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel] + srl_tags
         # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
   

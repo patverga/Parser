@@ -94,6 +94,10 @@ class Configurable(object):
     return self._config.get('OS', 'rel_file')
   argparser.add_argument('--rel_file')
   @property
+  def srl_file(self):
+    return self._config.get('OS', 'srl_file')
+  argparser.add_argument('--srl_file')
+  @property
   def embed_file(self):
     return self._config.get('OS', 'embed_file')
   argparser.add_argument('--embed_file')

@@ -147,8 +147,9 @@ class Vocab(Configurable):
           elif self.conll2012 and len(line) > 1:
             if hasattr(self.conll_idx, '__iter__'):
               for idx in self.conll_idx:
-                # print("adding ", line[idx])
-                self.add(counts, line[idx])
+                if idx < len(line) and (self.name != 'SRLs' or idx != len(line)-1):
+                  # print("adding ", line[idx])
+                  self.add(counts, line[idx])
             else:
               self.add(counts, line[self.conll_idx])
               # print("adding ", line[self.conll_idx])
