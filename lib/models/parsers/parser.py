@@ -196,6 +196,7 @@ class Parser(BaseParser):
 
     # diverse attentions loss
     attn_diversity_loss = tf.constant(0.)
+    # at each layer, sample two attention heads and compute MSE
     for l, attn_weights in attn_weights_by_layer.iteritems():
       sampled_attn_indices = tf.random_shuffle(tf.range(self.num_heads, dtype=tf.int32))[:2]
       idx1 = sampled_attn_indices[0]
