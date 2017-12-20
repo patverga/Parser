@@ -123,7 +123,7 @@ class Dataset(Configurable):
           # for s in srls.conll_idx:
           srl_fields = [token[idx] if idx < len(token) and idx != len(token)-1 else 'O' for idx in srls.conll_idx]
           srl_tags = [srls[s] for s in srl_fields]
-          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel] + srl_tags
+          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
         # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff
   
