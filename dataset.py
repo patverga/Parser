@@ -184,6 +184,9 @@ class Dataset(Configurable):
       data = self[bkt_idx].data[bkt_mb]
       sents = self[bkt_idx].sents[bkt_mb]
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
+
+      np.set_printoptions(threshold=np.nan)
+
       # if sample_srl is true, want to grab n samples of srl labels
       # that aren't all O
       # first, figure out which rows aren't all O.
