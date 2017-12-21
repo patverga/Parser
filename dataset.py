@@ -212,13 +212,19 @@ class Dataset(Configurable):
       # np.random.choice(idxs, num_samples, replace=False)
       # first 6 are non-srl
       # todo don't hardcode 3, look up O
-      non_O_counts = np.sum(srl_data_subset > srl_o_idx, axis=1)
+      # want dim to be batch_size (one count of srls for each batch elem)
+      non_O_counts = np.sum(srl_data_subset > srl_o_idx, axis=1)[:,0]
 
       # get the indices
       non_O_indices = np.where(non_O_counts > 0)
 
+      print("non_O_counts", non_O_counts)
+      print("non_O_counts_per_batch", non_O_counts[:, 0])
+
       print("non_O_counts shape", non_O_counts.shape)
       # print("non_O_indices shape", non_O_indices[0].shape)
+
+
 
 
       # print("srl_data_subset", srl_data_subset)
