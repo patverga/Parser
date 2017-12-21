@@ -218,7 +218,7 @@ class Dataset(Configurable):
       non_O_indices = np.where(non_O_counts > 0)
 
       print("non_O_counts shape", non_O_counts.shape)
-      print("non_O_indices shape", non_O_indices.shape)
+      # print("non_O_indices shape", non_O_indices[0].shape)
 
 
       # print("srl_data_subset", srl_data_subset)
