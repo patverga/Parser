@@ -1010,12 +1010,12 @@ class NN(Configurable):
     # now we have k sets of targets for the k frames
     srl_targets = targets[:,:,7:]
 
-    trigger_indices = tf.where(tf.equal(srl_targets, trigger_label_idx))
+    trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
     actual_targets = tf.gather_nd(srl_targets, trigger_indices[:, :2])
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
-    i3 = tf.tile(tf.expand_dims(tf.range(bucket_size, dtype=tf.int64), 0), [tf.shape(trigger_indices)[1], 1])
+    i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[1], 1])
     idx = tf.stack([i1, i2, i3], axis=-1)
 
     targets3D = tf.scatter_nd(idx, actual_targets, [batch_size, bucket_size, bucket_size])
