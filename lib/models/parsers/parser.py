@@ -191,6 +191,11 @@ class Parser(BaseParser):
       rel_output = self.output(rel_logits, targets[:, :, 2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
 
+    # predict SRL
+    # Have a bunch of cols of labels, some of which are empty
+    # need to sample from non-empty ones
+    rel_output = tf.Print(rel_output, [tf.reduce_any(targets[:, :, 3:] != 3, axis=1)], "targets", summarize=500)
+
     output = {}
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])
