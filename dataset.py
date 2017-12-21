@@ -194,7 +194,16 @@ class Dataset(Configurable):
       # np.random.choice(idxs, num_samples, replace=False)
       # todo don't hardcode 3, look up O
       non_O_counts = np.sum(np.where(data[:,:maxlen] != 3), axis=1)
-      print("non-O: ", np.sum(np.where(data[:,:maxlen] != 3), axis=1))
+
+      # get the indices
+      non_O_indices = np.where(non_O_counts > 0)
+
+      # if np.sum(np.greater(non_O_counts)):
+      #   # sample any of them
+      # else:
+      #   # sample only from
+      print("non-O: ", non_O_counts)
+      print("non-O indices: ", non_O_indices)
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
         self.targets: data[:,:maxlen,target_idxs]
