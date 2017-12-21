@@ -1018,6 +1018,8 @@ class NN(Configurable):
     i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[1], 1])
 
     i1 = tf.Print(i1, [tf.shape(i1), tf.shape(i2), tf.shape(i3)])
+    i1 = tf.Print(i1, [tf.shape(i1), tf.shape(i2), tf.shape(i3)])
+
 
     idx = tf.stack([i1, i2, i3], axis=-1)
 
