@@ -212,6 +212,8 @@ class Dataset(Configurable):
       # get the indices
       non_O_indices = np.where(non_O_counts > 0)
 
+      print("srl_data_subset", srl_data_subset)
+
       print("non O counts", non_O_counts)
       print("non O indices", non_O_indices)
 
