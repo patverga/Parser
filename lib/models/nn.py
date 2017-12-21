@@ -1010,7 +1010,7 @@ class NN(Configurable):
     # now we have k sets of targets for the k frames
     srl_targets = targets[:,:,7:]
 
-    trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)))
+    trigger_indices = tf.where(tf.equal(srl_targets, trigger_label_idx))
     actual_targets = tf.gather_nd(srl_targets, trigger_indices[:, :2])
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
