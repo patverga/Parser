@@ -1015,7 +1015,7 @@ class NN(Configurable):
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
-    i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[1], 1])
+    i3 = tf.tile(tf.expand_dims(tf.range(bucket_size, dtype=tf.int32), 0), [tf.shape(trigger_indices)[1], 1])
     idx = tf.stack([i1, i2, i3], axis=-1)
 
     targets3D = tf.scatter_nd(idx, actual_targets, [batch_size, bucket_size, bucket_size])
