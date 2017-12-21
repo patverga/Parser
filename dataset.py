@@ -187,6 +187,10 @@ class Dataset(Configurable):
 
       np.set_printoptions(threshold=np.nan)
 
+      print("data shape", data.shape)
+      print("max len", maxlen)
+      print("data shape no first 6", data[:,6:maxlen].shape)
+
       # if sample_srl is true, want to grab n samples of srl labels
       # that aren't all O
       # first, figure out which rows aren't all O.
@@ -195,6 +199,7 @@ class Dataset(Configurable):
       # also need to deal with case where non-O < num-samples desired
       # (this is a sub-case of there being none non-O)
       # np.random.choice(idxs, num_samples, replace=False)
+      # first 6 are non-srl
       # todo don't hardcode 3, look up O
       non_O_counts = np.sum(data[:,:maxlen] != 3, axis=0)
 
@@ -205,8 +210,8 @@ class Dataset(Configurable):
       #   # sample any of them
       # else:
       #   # sample only from
-      print("non-O: ", non_O_counts)
-      print("non-O indices: ", non_O_indices)
+      # print("non-O: ", non_O_counts)
+      # print("non-O indices: ", non_O_indices)
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
         self.targets: data[:,:maxlen,target_idxs]
