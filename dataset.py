@@ -188,9 +188,14 @@ class Dataset(Configurable):
       np.set_printoptions(threshold=np.nan)
 
       num_non_srl_targs = 6
+      srl_o_idx = 3
+
+      # shape: batch x seq_len x num_targets
+      srl_data_subset = data[:, :maxlen, num_non_srl_targs+1:]
+
       print("data shape", data.shape)
       print("max len", maxlen)
-      print("data shape no first 6", data[:,:maxlen,num_non_srl_targs+1:].shape)
+      print("data shape no first 6", srl_data_subset.shape)
 
       # if sample_srl is true, want to grab n samples of srl labels
       # that aren't all O
@@ -202,10 +207,13 @@ class Dataset(Configurable):
       # np.random.choice(idxs, num_samples, replace=False)
       # first 6 are non-srl
       # todo don't hardcode 3, look up O
-      non_O_counts = np.sum(data[:,:maxlen] != 3, axis=0)
+      non_O_counts = np.sum(srl_data_subset != srl_o_idx, axis=2)
 
       # get the indices
       non_O_indices = np.where(non_O_counts > 0)
+
+      print("non O counts", non_O_counts)
+      print("non O indices", non_O_indices)
 
       # if np.sum(np.greater(non_O_counts)):
       #   # sample any of them
