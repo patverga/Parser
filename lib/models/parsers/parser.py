@@ -196,6 +196,17 @@ class Parser(BaseParser):
     # need to sample from non-empty ones
     # rel_output = tf.Print(rel_output, [tf.reduce_any(targets[:, :, 3:] != 3, axis=1)], "targets", summarize=500)
     # arc_output['loss'] = tf.Print(arc_output['loss'], [tf.shape(targets), tf.reduce_any(tf.not_equal(targets, 3), axis=1)], "targets", summarize=500)
+    with tf.variable_scope('SRL-MLP', reuse=reuse):
+      trigger_role_mlp = self.MLP(top_recur, self.trigger_mlp_size + self.role_mlp_size, n_splits=1)
+      trigger_mlp, role_mlp = trigger_role_mlp[:,:,:self.trigger_mlp_size], trigger_role_mlp[:,:,self.trigger_mlp_size:]
+
+    with tf.variable_scope('SRL-Arcs', reuse=reuse):
+      srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, len(vocabs[3]))
+      srl_output = self.output_srl(srl_logits, targets, vocabs[3]['U-V'])
+
+    # todo weight?
+    srl_loss = srl_output['loss']
+
 
     output = {}
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
@@ -207,7 +218,7 @@ class Parser(BaseParser):
     output['n_correct'] = tf.reduce_sum(output['correct'])
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
-    output['loss'] = arc_output['loss'] + rel_output['loss']
+    output['loss'] = arc_output['loss'] + rel_output['loss'] + srl_loss
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 
@@ -227,6 +238,8 @@ class Parser(BaseParser):
     output['svd_loss'] = arc_output['svd_loss']
     output['n_cycles'] = arc_output['n_cycles']
     output['len_2_cycles'] = arc_output['len_2_cycles']
+
+    output['srl_loss'] = srl_loss
 
     #### OLD: TRANSFORMER ####
     # top_recur = nn.add_timing_signal_1d(top_recur)

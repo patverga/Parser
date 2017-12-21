@@ -155,4 +155,6 @@ class BaseParser(NN):
     return (0, 1, 2)
   @property
   def target_idxs(self):
+    # need to add target indices here?
+    # up to max len?
     return (3, 4, 5)

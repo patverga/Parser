@@ -908,6 +908,45 @@ class NN(Configurable):
     weighted_bilin = tf.matmul(bilin, tf.expand_dims(probs, 3))
     
     return weighted_bilin, bilin
+
+  # =============================================================
+  def bilinear_classifier_nary(self, inputs1, inputs2, n_classes, add_bias1=True, add_bias2=True):
+    """"""
+
+    input_shape = tf.shape(inputs1)
+    batch_size = input_shape[0]
+    bucket_size = input_shape[1]
+    input_size = inputs1.get_shape().as_list()[-1]
+    input_shape_to_set = [tf.Dimension(None), tf.Dimension(None), input_size + 1]
+    output_shape = tf.stack([batch_size, bucket_size, n_classes, bucket_size])
+    # if len(probs.get_shape().as_list()) == 2:
+    #   probs = tf.to_float(tf.one_hot(tf.to_int64(probs), bucket_size, 1, 0))
+    # else:
+    #   probs = tf.stop_gradient(probs)
+
+    if self.moving_params is None:
+      keep_prob = self.mlp_keep_prob
+    else:
+      keep_prob = 1
+    if isinstance(keep_prob, tf.Tensor) or keep_prob < 1:
+      noise_shape = tf.stack([batch_size, 1, input_size])
+      inputs1 = tf.nn.dropout(inputs1, keep_prob, noise_shape=noise_shape)
+      inputs2 = tf.nn.dropout(inputs2, keep_prob, noise_shape=noise_shape)
+
+    inputs1 = tf.concat(axis=2, values=[inputs1, tf.ones(tf.stack([batch_size, bucket_size, 1]))])
+    inputs1.set_shape(input_shape_to_set)
+    inputs2 = tf.concat(axis=2, values=[inputs2, tf.ones(tf.stack([batch_size, bucket_size, 1]))])
+    inputs2.set_shape(input_shape_to_set)
+
+    bilin = linalg.bilinear(inputs1, inputs2,
+                            n_classes,
+                            add_bias1=add_bias1,
+                            add_bias2=add_bias2,
+                            initializer=tf.zeros_initializer(),
+                            moving_params=self.moving_params)
+    # weighted_bilin = tf.matmul(bilin, tf.expand_dims(probs, 3))
+
+    return bilin
   
   #=============================================================
   def output(self, logits3D, targets3D):
@@ -939,6 +978,64 @@ class NN(Configurable):
       'n_correct': n_correct,
       'n_tokens': self.n_tokens,
       'accuracy': accuracy,
+      'loss': loss
+    }
+
+    return output
+
+  #=============================================================
+  def output_srl(self, logits, targets, trigger_label_idx):
+    """"""
+
+    # logits are batch x seq_len x num_classes x seq_len
+    # targets are batch x seq_len x num_targets
+
+    # transpose to batch x seq_len x seq_len x num_classes
+    logits_transposed = tf.transpose(logits, [0, 1, 3, 2])
+
+    original_shape = tf.shape(logits)
+    original_shape = tf.shape(logits)
+    batch_size = original_shape[0]
+    bucket_size = original_shape[1]
+    flat_shape = tf.stack([batch_size, bucket_size])
+
+    # flatten logits along last dimension: batch x seq_len x seq_len*num_classes
+    # logits_flattened = tf.reshape(logits_transposed, [batch_size, bucket_size, -1])
+
+    # need to turn targets into this 2d representation.
+    # have: labels for each token for each trigger (<= sentence len) and trigger_label_idx
+    # need: batch_size x seq_len x seq_len labels: the actual labels for each trigger, and all O otherwise
+    # todo don't hardcode 7
+
+    # now we have k sets of targets for the k frames
+    srl_targets = targets[:,:,7:]
+
+    trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)))
+    actual_targets = tf.gather_nd(srl_targets, trigger_indices[:, :2])
+
+    i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
+    i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
+    i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[1], 1])
+    idx = tf.stack([i1, i2, i3], axis=-1)
+
+    targets3D = tf.scatter_nd(idx, actual_targets, [batch_size, bucket_size, bucket_size])
+
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D)
+    loss = tf.reduce_mean(cross_entropy)
+
+    # logits2D = tf.reshape(logits, tf.stack([batch_size*bucket_size, -1]))
+    # targets1D = tf.reshape(targets, [-1])
+    # tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
+    #
+    # predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
+    # probabilities2D = tf.nn.softmax(logits2D)
+    # cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
+    #
+    # correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
+    # n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
+    # accuracy = n_correct / self.n_tokens
+
+    output = {
       'loss': loss
     }
 

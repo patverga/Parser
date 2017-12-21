@@ -221,6 +221,16 @@ class Configurable(object):
   def info_mlp_size(self):
     return self._config.getint('Sizes', 'info_mlp_size')
   argparser.add_argument('--info_mlp_size')
+
+  @property
+  def trigger_mlp_size(self):
+    return self._config.getint('Sizes', 'trigger_mlp_size')
+  argparser.add_argument('--trigger_mlp_size')
+
+  @property
+  def role_mlp_size(self):
+    return self._config.getint('Sizes', 'role_mlp_size')
+  argparser.add_argument('--role_mlp_size')
   
   #=============================================================
   # [Functions]
