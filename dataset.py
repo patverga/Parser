@@ -197,6 +197,11 @@ class Dataset(Configurable):
       print("max len", maxlen)
       print("data shape no first 6", srl_data_subset.shape)
 
+      srl_vocab = self.vocabs[3]
+      print("srl vocab 0", srl_vocab[0])
+      print("srl vocab 3", srl_vocab[3])
+
+
       # if sample_srl is true, want to grab n samples of srl labels
       # that aren't all O
       # first, figure out which rows aren't all O.
@@ -207,7 +212,7 @@ class Dataset(Configurable):
       # np.random.choice(idxs, num_samples, replace=False)
       # first 6 are non-srl
       # todo don't hardcode 3, look up O
-      non_O_counts = np.sum(srl_data_subset != srl_o_idx, axis=2)
+      non_O_counts = np.sum(srl_data_subset > srl_o_idx, axis=2)
 
       # get the indices
       non_O_indices = np.where(non_O_counts > 0)
