@@ -185,19 +185,19 @@ class Dataset(Configurable):
       sents = self[bkt_idx].sents[bkt_mb]
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
 
-      np.set_printoptions(threshold=np.nan)
+      # np.set_printoptions(threshold=np.nan)
 
       # todo don't hardcode 3, look up O
       # srl_vocab = self.vocabs[3]
-      num_non_srl_targs = 6
-      srl_o_idx = 3
+      # num_non_srl_targs = 6
+      # srl_o_idx = 3
 
       # shape: batch x seq_len x num_targets
-      srl_data_subset = data[:, :maxlen, num_non_srl_targs+1:]
+      # srl_data_subset = data[:, :maxlen, num_non_srl_targs+1:]
 
-      print("data shape", data.shape)
-      print("max len", maxlen)
-      print("data shape no first 6", srl_data_subset.shape)
+      # print("data shape", data.shape)
+      # print("max len", maxlen)
+      # print("data shape no first 6", srl_data_subset.shape)
 
       # if sample_srl is true, want to grab n samples of srl labels
       # that aren't all O
@@ -209,15 +209,15 @@ class Dataset(Configurable):
       # np.random.choice(idxs, num_samples, replace=False)
       # first 6 are non-srl
       # want dim to be batch_size (one count of srls for each batch elem)
-      non_O_counts = np.sum(srl_data_subset > srl_o_idx, axis=1)
-
-      # get the indices
-      non_O_indices = np.where(non_O_counts > 0)
-
-      print("non_O_counts", non_O_counts)
-      print("non_O_counts_per_batch", non_O_counts[:, 0])
-
-      print("non_O_counts shape", non_O_counts.shape)
+      # non_O_counts = np.sum(srl_data_subset > srl_o_idx, axis=1)
+      #
+      # # get the indices
+      # non_O_indices = np.where(non_O_counts > 0)
+      #
+      # print("non_O_counts", non_O_counts)
+      # print("non_O_counts_per_batch", non_O_counts[:, 0])
+      #
+      # print("non_O_counts shape", non_O_counts.shape)
       # print("non_O_indices shape", non_O_indices[0].shape)
 
 
@@ -236,7 +236,7 @@ class Dataset(Configurable):
       # print("non-O indices: ", non_O_indices)
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
-        self.targets: data[:,:maxlen,target_idxs]
+        self.targets: data[:,:maxlen,min(target_idxs):]
       })
       yield feed_dict, sents
   
