@@ -193,7 +193,7 @@ class Dataset(Configurable):
       # (this is a sub-case of there being none non-O)
       # np.random.choice(idxs, num_samples, replace=False)
       # todo don't hardcode 3, look up O
-      non_O_counts = np.sum(np.where(data[:,:maxlen] != 3), axis=1)
+      non_O_counts = np.sum(np.where(data[:,:maxlen] != 3), axis=0)
 
       # get the indices
       non_O_indices = np.where(non_O_counts > 0)
