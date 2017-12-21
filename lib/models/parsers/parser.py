@@ -194,7 +194,9 @@ class Parser(BaseParser):
     # predict SRL
     # Have a bunch of cols of labels, some of which are empty
     # need to sample from non-empty ones
-    rel_output = tf.Print(rel_output, [tf.reduce_any(targets[:, :, 3:] != 3, axis=1)], "targets", summarize=500)
+    # rel_output = tf.Print(rel_output, [tf.reduce_any(targets[:, :, 3:] != 3, axis=1)], "targets", summarize=500)
+    rel_output = tf.Print(rel_output, [targets[:, :, 3:]], "targets", summarize=500)
+
 
     output = {}
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
