@@ -187,9 +187,10 @@ class Dataset(Configurable):
 
       np.set_printoptions(threshold=np.nan)
 
+      num_non_srl_targs = 6
       print("data shape", data.shape)
       print("max len", maxlen)
-      print("data shape no first 6", data[:,6:maxlen].shape)
+      print("data shape no first 6", data[:,:maxlen,num_non_srl_targs+1:].shape)
 
       # if sample_srl is true, want to grab n samples of srl labels
       # that aren't all O
