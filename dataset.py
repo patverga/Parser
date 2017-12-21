@@ -184,7 +184,15 @@ class Dataset(Configurable):
       data = self[bkt_idx].data[bkt_mb]
       sents = self[bkt_idx].sents[bkt_mb]
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
-      print("data batch: ", data[:,:maxlen])
+      # if sample_srl is true, want to grab n samples of srl labels
+      # that aren't all O
+      # first, figure out which rows aren't all O.
+      # it's possible that none of them are, in which case just grab the all-O.
+      # otherwise, sample from the ones that are not all O
+      # also need to deal with case where non-O < num-samples desired
+      # (this is a sub-case of there being none non-O)
+      # np.random.choice(idxs, num_samples, replace=False)
+      print("non-O: ", np.sum(np.where(data[:,:maxlen] != 3), axis=2))
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
         self.targets: data[:,:maxlen,target_idxs]
