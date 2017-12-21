@@ -81,6 +81,7 @@ class Bucket(Configurable):
       shape = (len(self._data), self.size, len(self._data[-1][-1]))
       data = np.zeros(shape, dtype=np.int32)
       for i, datum in enumerate(self._data):
+        print("datum", datum)
         datum = np.array(datum)
         data[i, 0:len(datum)] = datum
       self._data = data
