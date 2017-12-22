@@ -72,6 +72,8 @@ class Network(Configurable):
                      (self.tag_file, [5, 4], 'Tags'), # auto, gold
                      (self.rel_file, 7, 'Rels'),
                      (self.srl_file, range(15, 50), 'SRLs'),]
+
+    print("Loading vocabs")
     for i, (vocab_file, index, name) in enumerate(vocab_files):
       vocab = Vocab(vocab_file, index, self._config,
                     name=name,
@@ -79,7 +81,8 @@ class Network(Configurable):
                     use_pretrained=(not i),
                     global_step=self.global_step)
       self._vocabs.append(vocab)
-    
+
+    print("Loading data")
     self._trainset = Dataset(self.train_file, self._vocabs, model, self._config, name='Trainset')
     self._validset = Dataset(self.valid_file, self._vocabs, model, self._config, name='Validset')
     self._testset = Dataset(self.test_file, self._vocabs, model, self._config, name='Testset')
@@ -125,7 +128,7 @@ class Network(Configurable):
   # assumes the sess has already been initialized
   def train(self, sess):
     """"""
-
+    print("Training")
     save_path = os.path.join(self.save_dir, self.name.lower() + '-pretrained')
     saver = tf.train.Saver(self.save_vars, max_to_keep=1)
     
