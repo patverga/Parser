@@ -355,7 +355,8 @@ class Network(Configurable):
           fields = (word_str,) + tuple(srl_strs)
           # print(fields)
           owpl_str = '\t'.join(fields)
-          f.write(owpl_str)
+          print(owpl_str, file=f)
+          # f.write(owpl_str, "\n")
         f.write('\n')
 
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
