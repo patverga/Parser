@@ -1011,7 +1011,7 @@ class NN(Configurable):
     srl_targets = targets[:,:,6:]
 
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
-    actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), trigger_indices[:, 1])
+    actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), trigger_indices[:,[0,2]])
 
     actual_targets = tf.Print(actual_targets, [tf.shape(actual_targets)], "actual targets")
     actual_targets = tf.Print(actual_targets, [tf.shape(srl_targets)], "srl targets")
