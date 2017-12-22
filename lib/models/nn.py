@@ -1011,13 +1011,7 @@ class NN(Configurable):
     srl_targets = targets[:,:,6:]
 
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
-    actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), trigger_indices[:,[0,2]])
-
-    actual_targets = tf.Print(actual_targets, [tf.shape(actual_targets)], "actual targets")
-    actual_targets = tf.Print(actual_targets, [tf.shape(srl_targets)], "srl targets")
-    actual_targets = tf.Print(actual_targets, [tf.shape(trigger_indices)], "trigger indices")
-
-
+    actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), tf.stack([trigger_indices[:,0],trigger_indices[:,2]], -1))
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
@@ -1025,7 +1019,7 @@ class NN(Configurable):
     idx = tf.stack([i1, i2, i3], axis=-1)
 
     targets3D = tf.scatter_nd(idx, actual_targets, [batch_size, bucket_size, bucket_size])
-
+    
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D)
     loss = tf.reduce_mean(cross_entropy)
 
