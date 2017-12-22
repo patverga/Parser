@@ -340,7 +340,7 @@ class Network(Configurable):
 
     # save SRL output
     with open(os.path.join(self.save_dir, 'srl_preds.tsv'), 'w') as f:
-      trigger_label = self.vocabs[3]['U-V']
+      trigger_label = self._vocabs[3]['U-V']
       for bkt_idx, idx in dataset._metabucket.data:
         # for each word, if trigger print word, otherwise -
         # then all the SRL labels
@@ -348,7 +348,7 @@ class Network(Configurable):
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
         srl_preds = preds[9:]
-        print(srl_preds)
+        print("srl_preds", srl_preds)
         # for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
         #   # if trigger_label in pred
         #   parse = (
