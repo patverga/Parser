@@ -1015,6 +1015,8 @@ class NN(Configurable):
 
     actual_targets = tf.Print(actual_targets, [tf.shape(actual_targets)], "actual targets")
     actual_targets = tf.Print(actual_targets, [tf.shape(srl_targets)], "srl targets")
+    actual_targets = tf.Print(actual_targets, [tf.shape(trigger_indices)], "trigger indices")
+
 
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
