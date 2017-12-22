@@ -333,10 +333,37 @@ class Network(Configurable):
             str(pred[5]) if pred[5] != -1 else str(datum[4]),
             self.rels[pred[6]] if pred[6] != -1 else self.rels[datum[5]],
             str(pred[7]) if pred[7] != -1 else '_',
-            self.rels[pred[8]] if pred[8] != -1 else '_',
+            self.rels[pred[8]] if pred[8] != -1 else '_'
           )
           f.write('%s\t%s\t_\t%s\t%s\t_\t%s\t%s\t%s\t%s\n' % tup)
         f.write('\n')
+
+    # save SRL output
+    with open(os.path.join(self.save_dir, 'srl_preds.tsv'), 'w') as f:
+      trigger_label = self.vocabs[3]['U-V']
+      for bkt_idx, idx in dataset._metabucket.data:
+        # for each word, if trigger print word, otherwise -
+        # then all the SRL labels
+        data = dataset._metabucket[bkt_idx].data[idx]
+        preds = all_predictions[bkt_idx][idx]
+        words = all_sents[bkt_idx][idx]
+        srl_preds = preds[9:]
+        print(srl_preds)
+        # for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
+        #   # if trigger_label in pred
+        #   parse = (
+        #     i + 1,
+        #     word,
+        #     self.tags[pred[3]] if pred[3] != -1 else self.tags[datum[2]],
+        #     self.tags[pred[4]] if pred[4] != -1 else self.tags[datum[3]],
+        #     str(pred[5]) if pred[5] != -1 else str(datum[4]),
+        #     self.rels[pred[6]] if pred[6] != -1 else self.rels[datum[5]],
+        #     str(pred[7]) if pred[7] != -1 else '_',
+        #     self.rels[pred[8]] if pred[8] != -1 else '_',
+        #   )
+        #   f.write('%s\t%s\t_\t%s\t%s\t_\t%s\t%s\t%s\t%s\n' % tup)
+        # f.write('\n')
+
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
       f.write(s)
