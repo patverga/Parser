@@ -347,7 +347,7 @@ class Network(Configurable):
         data = dataset._metabucket[bkt_idx].data[idx]
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
-        srl_preds = preds[9:]
+        srl_preds = preds[:,9:]
         print("preds", preds)
         print("srl_preds", srl_preds)
         # for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
