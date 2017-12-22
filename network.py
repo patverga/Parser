@@ -348,8 +348,8 @@ class Network(Configurable):
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
         srl_preds = preds[:,9:]
-        print("srl_preds", srl_preds)
-        for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
+        # print("srl_preds", srl_preds)
+        for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if trigger_label in pred else '-'
           srl_strs = map(lambda p: self._vocabs[3][p], pred)
           fields = (word_str,) + tuple(srl_strs)
