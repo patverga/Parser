@@ -75,7 +75,7 @@ class BaseParser(NN):
     non_tree_preds = []
     if np.all(n_cycles == -1):
         n_cycles = len_2_cycles = [-1] * len(mb_inputs)
-    for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles):
+    for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
       parse_preds, rel_preds, argmax_time, roots_lt, roots_gt = self.prob_argmax(parse_probs, rel_probs, tokens_to_keep, n_cycle, len_2_cycle)
@@ -87,14 +87,17 @@ class BaseParser(NN):
       if roots_lt or roots_gt or len_2_cycle or n_cycle:
         non_trees_total += 1.
         non_tree_preds.append((parse_probs, targets, length, int(len_2_cycle), int(n_cycle)))
-      sent = -np.ones( (length, targets.shape[-1]+6), dtype=int)
+      num_srls = targets.shape[-1]
+      sent = -np.ones( (length, 2*num_srls+6), dtype=int)
       tokens = np.arange(length)
+      print(srl_pred)
       sent[:,0] = tokens
       sent[:,1:4] = inputs[tokens]
       sent[:,4] = targets[tokens,0]
       sent[:,5] = parse_preds[tokens]
       sent[:,6] = rel_preds[tokens]
-      sent[:,7:] = targets[tokens, 1:]
+      sent[:,7:7+num_srls] = targets[tokens, 1:]
+      sent[:,7+num_srls:] = srl_pred[tokens]
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
