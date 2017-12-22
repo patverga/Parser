@@ -1008,7 +1008,7 @@ class NN(Configurable):
     # todo don't hardcode 7
 
     # now we have k sets of targets for the k frames
-    srl_targets = targets[:,:,7:]
+    srl_targets = targets[:,:,6:]
 
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
     actual_targets = tf.gather_nd(srl_targets, trigger_indices[:, :2])

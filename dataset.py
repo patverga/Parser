@@ -236,7 +236,7 @@ class Dataset(Configurable):
       # print("non-O indices: ", non_O_indices)
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
-        self.targets: data[:,:maxlen,min(target_idxs):]
+        self.targets: data[:,:maxlen,min(target_idxs):maxlen+min(target_idxs)]
       })
       yield feed_dict, sents
   
