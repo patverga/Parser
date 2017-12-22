@@ -348,6 +348,7 @@ class Network(Configurable):
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
         srl_preds = preds[9:]
+        print("preds", preds)
         print("srl_preds", srl_preds)
         # for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
         #   # if trigger_label in pred
