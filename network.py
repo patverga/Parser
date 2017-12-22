@@ -128,7 +128,7 @@ class Network(Configurable):
   
   #=============================================================
   # assumes the sess has already been initialized
-  def train(self, sess):
+  def train(self, sess, profile):
     """"""
     print("Training")
     sys.stdout.flush()
@@ -163,6 +163,12 @@ class Network(Configurable):
           train_inputs = feed_dict[self._trainset.inputs]
           train_targets = feed_dict[self._trainset.targets]
           start_time = time.time()
+
+          if profile:
+            pctx.trace_next_step()
+            # Dump the profile to '/tmp/train_dir' after the step.
+            pctx.dump_next_step()
+
           _, loss, n_correct, n_tokens, roots_loss, cycle2_loss, svd_loss, log_loss, rel_loss, srl_loss = sess.run(self.ops['train_op_srl'], feed_dict=feed_dict)
           train_time += time.time() - start_time
           train_loss += loss
@@ -508,7 +514,7 @@ if __name__ == '__main__':
         else:
           os.system('echo Loading: >> %s/HEAD' % network.save_dir)
           os.system('git rev-parse HEAD >> %s/HEAD' % network.save_dir)
-        network.train(sess)
+        network.train(sess, profile)
       elif args.matrix:
         saver = tf.train.Saver(var_list=network.save_vars)
         saver.restore(sess, tf.train.latest_checkpoint(network.save_dir, latest_filename=network.name.lower()))
