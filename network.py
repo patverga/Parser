@@ -351,7 +351,9 @@ class Network(Configurable):
         print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
           word_str = word if trigger_label in pred else '-'
-          fields = [word_str] + map(lambda p: self._vocabs[3][p], srl_preds)
+          srl_strs = map(lambda p: self._vocabs[3][p], srl_preds)
+          fields = [word_str] + srl_strs
+          print(fields)
           owpl_str = '\t'.join(fields)
           f.write(owpl_str)
         f.write('\n')
