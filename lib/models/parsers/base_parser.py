@@ -94,7 +94,7 @@ class BaseParser(NN):
       sent[:,4] = targets[tokens,0]
       sent[:,5] = parse_preds[tokens]
       sent[:,6] = rel_preds[tokens]
-      sent[:,7:] = targets[tokens, 1:]
+      sent[:,7:] = targets[tokens, 1:3]
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
