@@ -276,12 +276,12 @@ class Network(Configurable):
       filename = self.valid_file
       minibatches = self.valid_minibatches
       dataset = self._validset
-      op = self.ops['test_op'][:3]
+      op = self.ops['test_op'][:5]
     else:
       filename = self.test_file
       minibatches = self.test_minibatches
       dataset = self._testset
-      op = self.ops['test_op'][3:]
+      op = self.ops['test_op'][5:]
     
     all_predictions = [[]]
     all_sents = [[]]
@@ -298,9 +298,9 @@ class Network(Configurable):
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
       forward_start = time.time()
-      probs, n_cycles, len_2_cycles = sess.run(op, feed_dict=feed_dict)
+      probs, n_cycles, len_2_cycles, srl_probs, srl_preds = sess.run(op, feed_dict=feed_dict)
       forward_total_time += time.time() - forward_start
-      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles)
+      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles, srl_probs, srl_preds)
       total_time += parse_time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
@@ -423,9 +423,13 @@ class Network(Configurable):
     ops['test_op'] = [valid_output['probabilities'],
                       valid_output['n_cycles'],
                       valid_output['len_2_cycles'],
+                      valid_output['srl_probs'],
+                      valid_output['srl_preds'],
                       test_output['probabilities'],
                       test_output['n_cycles'],
-                      test_output['len_2_cycles']
+                      test_output['len_2_cycles'],
+                      test_output['srl_probs'],
+                      test_output['srl_preds'],
                       ]
     ops['optimizer'] = optimizer
     

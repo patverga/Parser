@@ -240,6 +240,8 @@ class Parser(BaseParser):
     output['len_2_cycles'] = arc_output['len_2_cycles']
 
     output['srl_loss'] = srl_loss
+    output['srl_preds'] = srl_output['predictions']
+    output['srl_probs'] = srl_output['probabilities']
 
     #### OLD: TRANSFORMER ####
     # top_recur = nn.add_timing_signal_1d(top_recur)

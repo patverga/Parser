@@ -1035,8 +1035,13 @@ class NN(Configurable):
     # n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     # accuracy = n_correct / self.n_tokens
 
+    probabilities = tf.nn.softmax(logits)
+    predictions = tf.argmax(logits, axis=-1)
+
     output = {
-      'loss': loss
+      'loss': loss,
+      'probabilities': probabilities,
+      'predictions': predictions
     }
 
     return output
