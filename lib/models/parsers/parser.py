@@ -205,7 +205,7 @@ class Parser(BaseParser):
       srl_output = self.output_srl(srl_logits, targets, vocabs[3]['U-V'])
 
     # todo weight?
-    srl_loss = tf.constant(0.) #srl_output['loss']
+    srl_loss = srl_output['loss']
 
 
     output = {}
