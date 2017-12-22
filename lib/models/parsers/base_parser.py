@@ -90,7 +90,9 @@ class BaseParser(NN):
       num_srls = targets.shape[-1]
       sent = -np.ones( (length, 2*num_srls+6), dtype=int)
       tokens = np.arange(length)
-      print(srl_pred)
+      print("srl pred shape", srl_pred.shape)
+      print("srl pred", srl_pred)
+      print("srl pred[tokens]", srl_pred[tokens])
       sent[:,0] = tokens
       sent[:,1:4] = inputs[tokens]
       sent[:,4] = targets[tokens,0]
