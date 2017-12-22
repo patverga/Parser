@@ -1018,7 +1018,7 @@ class NN(Configurable):
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
-    i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[1], 1])
+    i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[0], 1])
 
     i1 = tf.Print(i1, [tf.shape(i1), tf.shape(i2), tf.shape(i3)])
     i1 = tf.Print(i1, [tf.shape(i1), tf.shape(i2), tf.shape(i3)])
