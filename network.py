@@ -353,7 +353,7 @@ class Network(Configurable):
           word_str = word if trigger_label in pred else '-'
           srl_strs = map(lambda p: self._vocabs[3][p], pred)
           fields = (word_str,) + tuple(srl_strs)
-          print(fields)
+          # print(fields)
           owpl_str = '\t'.join(fields)
           f.write(owpl_str)
         f.write('\n')
