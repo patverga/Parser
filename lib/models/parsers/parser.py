@@ -200,9 +200,9 @@ class Parser(BaseParser):
       trigger_role_mlp = self.MLP(top_recur, self.trigger_mlp_size + self.role_mlp_size, n_splits=1)
       trigger_mlp, role_mlp = trigger_role_mlp[:,:,:self.trigger_mlp_size], trigger_role_mlp[:,:,self.trigger_mlp_size:]
 
-    # with tf.variable_scope('SRL-Arcs', reuse=reuse):
-    #   srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, len(vocabs[3]))
-    #   srl_output = self.output_srl(srl_logits, targets, vocabs[3]['U-V'])
+    with tf.variable_scope('SRL-Arcs', reuse=reuse):
+      srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, len(vocabs[3]))
+      srl_output = self.output_srl(srl_logits, targets, vocabs[3]['U-V'])
 
     # todo weight?
     srl_loss = tf.constant(0.) #srl_output['loss']
