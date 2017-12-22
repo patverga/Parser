@@ -1013,17 +1013,11 @@ class NN(Configurable):
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
     actual_targets = tf.gather_nd(srl_targets, trigger_indices[:, :2])
 
-    trigger_indices = tf.Print(trigger_indices, [tf.shape(trigger_indices)])
-
+    actual_targets = tf.Print(actual_targets, [tf.shape(actual_targets)])
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
     i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[0], 1])
-
-    i1 = tf.Print(i1, [tf.shape(i1), tf.shape(i2), tf.shape(i3)])
-    i1 = tf.Print(i1, [tf.shape(i1), tf.shape(i2), tf.shape(i3)])
-
-
     idx = tf.stack([i1, i2, i3], axis=-1)
 
     targets3D = tf.scatter_nd(idx, actual_targets, [batch_size, bucket_size, bucket_size])
