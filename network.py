@@ -34,6 +34,11 @@ from lib import rnn_cells
 from configurable import Configurable
 from vocab import Vocab
 from dataset import Dataset
+import contextlib
+
+@contextlib.contextmanager
+def dummy_context_mgr():
+    yield None
 
 #***************************************************************
 class Network(Configurable):
@@ -451,12 +456,15 @@ if __name__ == '__main__':
   argparser.add_argument('--load', action='store_true')
   argparser.add_argument('--model', default='Parser')
   argparser.add_argument('--matrix', action='store_true')
+  argparser.add_argument('--profile', action='store_true')
   
   args, extra_args = argparser.parse_known_args()
   cargs = {k: v for (k, v) in vars(Configurable.argparser.parse_args(extra_args)).iteritems() if v is not None}
   
   print('*** '+args.model+' ***')
   model = getattr(models, args.model)
+
+  profile = args.profile
   
   # if 'save_dir' in cargs and os.path.isdir(cargs['save_dir']) and not (args.test or args.matrix or args.load):
   #   raw_input('Save directory already exists. Press <Enter> to overwrite or <Ctrl-C> to exit.')
@@ -470,40 +478,50 @@ if __name__ == '__main__':
 
   config_proto = tf.ConfigProto()
   config_proto.gpu_options.per_process_gpu_memory_fraction = network.per_process_gpu_memory_fraction
-  with tf.Session(config=config_proto) as sess:
-    sess.run(tf.global_variables_initializer())
-    if not (args.test or args.matrix):
-      if args.load:
-        os.system('echo Training: > %s/HEAD' % network.save_dir)
+
+  # Create options to profile the time and memory information.
+  if profile:
+    builder = tf.profiler.ProfileOptionBuilder
+    opts = builder(builder.time_and_memory()).order_by('micros').build()
+  # Create a profiling context, set constructor argument `trace_steps`,
+  # `dump_steps` to empty for explicit control.
+  with tf.contrib.tfprof.ProfileContext('/tmp/train_dir',
+                                        trace_steps=[],
+                                        dump_steps=[]) if profile else dummy_context_mgr() as pctx:
+    with tf.Session(config=config_proto) as sess:
+      sess.run(tf.global_variables_initializer())
+      if not (args.test or args.matrix):
+        if args.load:
+          os.system('echo Training: > %s/HEAD' % network.save_dir)
+          os.system('git rev-parse HEAD >> %s/HEAD' % network.save_dir)
+          saver = tf.train.Saver(var_list=network.save_vars)
+          saver.restore(sess, tf.train.latest_checkpoint(network.save_dir, latest_filename=network.name.lower()))
+          if os.path.isfile(os.path.join(network.save_dir, 'history.pkl')):
+            with open(os.path.join(network.save_dir, 'history.pkl')) as f:
+              network.history = pkl.load(f)
+        else:
+          os.system('echo Loading: >> %s/HEAD' % network.save_dir)
+          os.system('git rev-parse HEAD >> %s/HEAD' % network.save_dir)
+        network.train(sess)
+      elif args.matrix:
+        saver = tf.train.Saver(var_list=network.save_vars)
+        saver.restore(sess, tf.train.latest_checkpoint(network.save_dir, latest_filename=network.name.lower()))
+        # TODO make this save pcolor plots of all matrices to a directory in save_dir
+        #with tf.variable_scope('RNN0/BiRNN_FW/LSTMCell/Linear', reuse=True):
+        #  pkl.dump(sess.run(tf.get_variable('Weights')), open('mat0.pkl', 'w'))
+        #with tf.variable_scope('RNN1/BiRNN_FW/LSTMCell/Linear', reuse=True):
+        #  pkl.dump(sess.run(tf.get_variable('Weights')), open('mat1.pkl', 'w'))
+        #with tf.variable_scope('RNN2/BiRNN_FW/LSTMCell/Linear', reuse=True):
+        #  pkl.dump(sess.run(tf.get_variable('Weights')), open('mat2.pkl', 'w'))
+        #with tf.variable_scope('MLP/Linear', reuse=True):
+        #  pkl.dump(sess.run(tf.get_variable('Weights')), open('mat3.pkl', 'w'))
+        network.savefigs(sess)
+      else:
+        os.system('echo Testing: >> %s/HEAD' % network.save_dir)
         os.system('git rev-parse HEAD >> %s/HEAD' % network.save_dir)
         saver = tf.train.Saver(var_list=network.save_vars)
         saver.restore(sess, tf.train.latest_checkpoint(network.save_dir, latest_filename=network.name.lower()))
-        if os.path.isfile(os.path.join(network.save_dir, 'history.pkl')):
-          with open(os.path.join(network.save_dir, 'history.pkl')) as f:
-            network.history = pkl.load(f)
-      else:
-        os.system('echo Loading: >> %s/HEAD' % network.save_dir)
-        os.system('git rev-parse HEAD >> %s/HEAD' % network.save_dir)
-      network.train(sess)
-    elif args.matrix:
-      saver = tf.train.Saver(var_list=network.save_vars)
-      saver.restore(sess, tf.train.latest_checkpoint(network.save_dir, latest_filename=network.name.lower()))
-      # TODO make this save pcolor plots of all matrices to a directory in save_dir
-      #with tf.variable_scope('RNN0/BiRNN_FW/LSTMCell/Linear', reuse=True):
-      #  pkl.dump(sess.run(tf.get_variable('Weights')), open('mat0.pkl', 'w'))
-      #with tf.variable_scope('RNN1/BiRNN_FW/LSTMCell/Linear', reuse=True):
-      #  pkl.dump(sess.run(tf.get_variable('Weights')), open('mat1.pkl', 'w'))
-      #with tf.variable_scope('RNN2/BiRNN_FW/LSTMCell/Linear', reuse=True):
-      #  pkl.dump(sess.run(tf.get_variable('Weights')), open('mat2.pkl', 'w'))
-      #with tf.variable_scope('MLP/Linear', reuse=True):
-      #  pkl.dump(sess.run(tf.get_variable('Weights')), open('mat3.pkl', 'w'))
-      network.savefigs(sess)
-    else:
-      os.system('echo Testing: >> %s/HEAD' % network.save_dir)
-      os.system('git rev-parse HEAD >> %s/HEAD' % network.save_dir)
-      saver = tf.train.Saver(var_list=network.save_vars)
-      saver.restore(sess, tf.train.latest_checkpoint(network.save_dir, latest_filename=network.name.lower()))
-      network.test(sess, validate=True)
-      start_time = time.time()
-      network.test(sess, validate=False)
-      print('Parsing took %f seconds' % (time.time() - start_time))
+        network.test(sess, validate=True)
+        start_time = time.time()
+        network.test(sess, validate=False)
+        print('Parsing took %f seconds' % (time.time() - start_time))

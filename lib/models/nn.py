@@ -1019,7 +1019,7 @@ class NN(Configurable):
     idx = tf.stack([i1, i2, i3], axis=-1)
 
     targets3D = tf.scatter_nd(idx, actual_targets, [batch_size, bucket_size, bucket_size])
-    
+
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D)
     loss = tf.reduce_mean(cross_entropy)
 
