@@ -348,22 +348,13 @@ class Network(Configurable):
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
         srl_preds = preds[:,9:]
-        print("preds", preds)
         print("srl_preds", srl_preds)
-        # for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
-        #   # if trigger_label in pred
-        #   parse = (
-        #     i + 1,
-        #     word,
-        #     self.tags[pred[3]] if pred[3] != -1 else self.tags[datum[2]],
-        #     self.tags[pred[4]] if pred[4] != -1 else self.tags[datum[3]],
-        #     str(pred[5]) if pred[5] != -1 else str(datum[4]),
-        #     self.rels[pred[6]] if pred[6] != -1 else self.rels[datum[5]],
-        #     str(pred[7]) if pred[7] != -1 else '_',
-        #     self.rels[pred[8]] if pred[8] != -1 else '_',
-        #   )
-        #   f.write('%s\t%s\t_\t%s\t%s\t_\t%s\t%s\t%s\t%s\n' % tup)
-        # f.write('\n')
+        for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
+          word_str = word if trigger_label in pred else '-'
+          fields = [word_str] + map(lambda p: self._vocabs[3][p], srl_preds)
+          owpl_str = '\t'.join(fields)
+          f.write(owpl_str)
+        f.write('\n')
 
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
