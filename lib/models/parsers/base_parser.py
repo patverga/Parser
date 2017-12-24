@@ -88,7 +88,7 @@ class BaseParser(NN):
         non_trees_total += 1.
         non_tree_preds.append((parse_probs, targets, length, int(len_2_cycle), int(n_cycle)))
       num_srls = targets.shape[-1]-6
-      sent = -np.ones( (length, 2*num_srls+6), dtype=int)
+      sent = -np.ones( (length, 2*num_srls+7+5), dtype=int)
       tokens = np.arange(length)
       print("srl pred shape", srl_pred.shape)
       print("srl pred", srl_pred)
