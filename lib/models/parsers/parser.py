@@ -218,7 +218,7 @@ class Parser(BaseParser):
     output['n_correct'] = tf.reduce_sum(output['correct'])
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
-    output['loss'] = arc_output['loss'] + rel_output['loss'] + srl_loss
+    output['loss'] = srl_loss #arc_output['loss'] + rel_output['loss'] + srl_loss
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 
