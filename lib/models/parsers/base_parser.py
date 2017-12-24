@@ -106,7 +106,10 @@ class BaseParser(NN):
       sent[:,5] = parse_preds[tokens] # 6
       sent[:,6] = rel_preds[tokens] # 7
       sent[:,7:7+num_srls+2] = targets[tokens, 1:] # 5 + num_srls
-      sent[:,7+num_srls+2:] = srl_pred[tokens, num_srls]
+      s_pred = srl_pred[tokens, num_srls]
+      if len(s_pred.shape) == 1:
+        s_pred = np.expand_dims(s_pred, -1)
+      sent[:,7+num_srls+2:] = s_pred
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
