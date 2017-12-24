@@ -87,18 +87,24 @@ class BaseParser(NN):
       if roots_lt or roots_gt or len_2_cycle or n_cycle:
         non_trees_total += 1.
         non_tree_preds.append((parse_probs, targets, length, int(len_2_cycle), int(n_cycle)))
+
+      # targets has 6 non-srl things, then srls, variable length
       num_srls = targets.shape[-1]-6
+      # sent will contain 7 things non-srl, including one thing from targets
       sent = -np.ones( (length, 2*num_srls+7+5), dtype=int)
       tokens = np.arange(length)
       print("srl pred shape", srl_pred.shape)
       print("srl pred", srl_pred)
       print("srl pred[tokens]", srl_pred[tokens])
-      sent[:,0] = tokens
-      sent[:,1:4] = inputs[tokens]
-      sent[:,4] = targets[tokens,0]
-      sent[:,5] = parse_preds[tokens]
-      sent[:,6] = rel_preds[tokens]
-      sent[:,7:7+num_srls+5] = targets[tokens, 1:]
+      print("num_srls", num_srls)
+      print("targets shape", targets.shape)
+      print("targets", targets)
+      sent[:,0] = tokens # 1
+      sent[:,1:4] = inputs[tokens] # 2,3,4
+      sent[:,4] = targets[tokens, 0] # 5
+      sent[:,5] = parse_preds[tokens] # 6
+      sent[:,6] = rel_preds[tokens] # 7
+      sent[:,7:7+num_srls+5] = targets[tokens, 1:] # 5 + num_srls
       sent[:,6+num_srls:] = srl_pred[tokens]
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
