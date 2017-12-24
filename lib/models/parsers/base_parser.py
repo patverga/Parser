@@ -87,7 +87,7 @@ class BaseParser(NN):
       if roots_lt or roots_gt or len_2_cycle or n_cycle:
         non_trees_total += 1.
         non_tree_preds.append((parse_probs, targets, length, int(len_2_cycle), int(n_cycle)))
-      num_srls = targets.shape[-1]
+      num_srls = targets.shape[-1]-6
       sent = -np.ones( (length, 2*num_srls+6), dtype=int)
       tokens = np.arange(length)
       print("srl pred shape", srl_pred.shape)
@@ -98,8 +98,8 @@ class BaseParser(NN):
       sent[:,4] = targets[tokens,0]
       sent[:,5] = parse_preds[tokens]
       sent[:,6] = rel_preds[tokens]
-      sent[:,7:7+num_srls] = targets[tokens, 1:]
-      sent[:,7+num_srls:] = srl_pred[tokens]
+      sent[:,7:7+num_srls+5] = targets[tokens, 1:]
+      sent[:,6+num_srls:] = srl_pred[tokens]
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
