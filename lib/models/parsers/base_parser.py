@@ -99,13 +99,14 @@ class BaseParser(NN):
       print("num_srls", num_srls)
       print("targets shape", targets.shape)
       print("targets", targets)
+      print("tokens", tokens)
       sent[:,0] = tokens # 1
       sent[:,1:4] = inputs[tokens] # 2,3,4
       sent[:,4] = targets[tokens, 0] # 5
       sent[:,5] = parse_preds[tokens] # 6
       sent[:,6] = rel_preds[tokens] # 7
       sent[:,7:7+num_srls+5] = targets[tokens, 1:] # 5 + num_srls
-      sent[:,6+num_srls:] = srl_pred[tokens]
+      sent[:,6+num_srls:] = srl_pred[tokens,num_srls]
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
