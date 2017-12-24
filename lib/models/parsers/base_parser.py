@@ -93,13 +93,13 @@ class BaseParser(NN):
       # sent will contain 7 things non-srl, including one thing from targets
       sent = -np.ones( (length, 2*num_srls+7+2), dtype=int)
       tokens = np.arange(length)
-      print("srl pred shape", srl_pred.shape)
-      print("srl pred", srl_pred)
-      print("srl pred[tokens]", srl_pred[tokens])
-      print("num_srls", num_srls)
-      print("targets shape", targets.shape)
-      print("targets", targets)
-      print("tokens", tokens)
+      # print("srl pred shape", srl_pred.shape)
+      # print("srl pred", srl_pred)
+      # print("srl pred[tokens]", srl_pred[tokens])
+      # print("num_srls", num_srls)
+      # print("targets shape", targets.shape)
+      # print("targets", targets)
+      # print("tokens", tokens)
       sent[:,0] = tokens # 1
       sent[:,1:4] = inputs[tokens] # 2,3,4
       sent[:,4] = targets[tokens, 0] # 5
