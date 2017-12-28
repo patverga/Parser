@@ -61,7 +61,7 @@ class BaseParser(NN):
     return
   
   #=============================================================
-  def validate(self, mb_inputs, mb_targets, mb_probs, n_cycles, len_2_cycles, srl_probs, srl_preds):
+  def validate(self, mb_inputs, mb_targets, mb_probs, n_cycles, len_2_cycles, srl_probs, srl_preds, trigger_idx):
     """"""
     
     sents = []
@@ -87,12 +87,18 @@ class BaseParser(NN):
       if roots_lt or roots_gt or len_2_cycle or n_cycle:
         non_trees_total += 1.
         non_tree_preds.append((parse_probs, targets, length, int(len_2_cycle), int(n_cycle)))
-
       # targets has 3 non-srl things, then srls, variable length
       num_srls = targets.shape[-1]-3
       # sent will contain 7 things non-srl, including one thing from targets
       sent = -np.ones( (length, 2*num_srls+7+2), dtype=int)
       tokens = np.arange(length)
+
+
+      print("srl targets", targets[tokens, 1:])
+      print("srl triggers", np.sum(np.where(targets[tokens, 1:] == trigger_idx)))
+
+
+
       # print("srl pred shape", srl_pred.shape)
       # print("srl pred", srl_pred)
       # print("srl pred[tokens]", srl_pred[tokens])
