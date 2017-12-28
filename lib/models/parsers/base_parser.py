@@ -91,6 +91,9 @@ class BaseParser(NN):
       non_srl_targets_len = 3
       tokens = np.arange(length)
       num_srls = np.sum(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
+      print("num srls", num_srls)
+      print("where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
+
 
       # num_srls = targets.shape[-1]-non_srl_targets_len
       # sent will contain 7 things non-srl, including one thing from targets
@@ -113,7 +116,8 @@ class BaseParser(NN):
       sent[:,6] = rel_preds[tokens] # 7
       sent[:,7] = targets[tokens, 1] # 8
       sent[:,8] = targets[tokens, 2] # 9
-      print(sent[:,9:9+num_srls], targets[tokens, non_srl_targets_len:num_srls+non_srl_targets_len])
+      print(sent[:,9:9+num_srls])
+      print(targets[tokens, non_srl_targets_len:num_srls+non_srl_targets_len])
       sent[:,9:9+num_srls] = targets[tokens, non_srl_targets_len:num_srls+non_srl_targets_len] # num_srls
       s_pred = srl_pred[tokens, :num_srls]
       if len(s_pred.shape) == 1:
