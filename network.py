@@ -373,7 +373,14 @@ class Network(Configurable):
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if self.trigger_idx in pred else '-'
-          srl_strs = map(self.convert_bilou, pred)
+          # srl_strs = map(self.convert_bilou, pred)
+          srl_strs = []
+          in_parens = False
+          for p in pred:
+            s, in_parens = self.convert_bilou(pred, in_parens)
+            srl_strs.append(s)
+          if in_parens:
+            print(srl_strs)
           num_srl_strs = len(srl_strs)
           fields = (word_str,) + tuple(srl_strs[int(num_srl_strs/2):])
           # print(fields)
