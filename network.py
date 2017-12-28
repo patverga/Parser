@@ -269,7 +269,7 @@ class Network(Configurable):
     self.test(sess, validate=True)
     return
 
-  def convert_bilou(self, idx):
+  def convert_bilou(self, idx, in_parens):
     bilou_str = self._vocabs[3][idx]
     bilou = bilou_str[0]
     label_type = bilou_str[2:]
@@ -279,13 +279,15 @@ class Network(Configurable):
     elif bilou == 'U':
       props_str = '(' + label_type + '*)'
     elif bilou == 'B':
+      in_parens = True
       props_str = '(' + label_type + '*'
     elif bilou == 'L':
+      in_parens = False
       props_str = '*)'
     if not props_str:
       print("string: %s" % bilou_str)
       props_str = '*'
-    return props_str
+    return props_str, in_parens
 
     
   #=============================================================
@@ -392,7 +394,14 @@ class Network(Configurable):
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if self.trigger_idx in pred else '-'
-          srl_strs = map(self.convert_bilou, pred)
+          srl_strs = []
+          in_parens = False
+          for p in pred:
+            s, in_parens = self.convert_bilou(pred, in_parens)
+            srl_strs.append(s)
+          if in_parens:
+            print(srl_strs)
+          # srl_strs = map(self.convert_bilou, pred)
           num_srl_strs = len(srl_strs)
           fields = (word_str,) + tuple(srl_strs[:int(num_srl_strs/2)])
           # print(fields)
