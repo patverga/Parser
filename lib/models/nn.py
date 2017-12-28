@@ -1027,12 +1027,14 @@ class NN(Configurable):
     idx = tf.stack([i1, i2, i3], axis=-1)
 
     targets3D = tf.scatter_nd(idx, actual_targets, [batch_size, bucket_size, bucket_size])
+
+    targets3D = tf.Print(targets3D, [targets3D], "targets3D", summarize=500)
+
     targ_empty_indices = tf.where(tf.equal(targets3D, 0))
-    targets_mask3D = tf.scatter_nd(targ_empty_indices, tf.fill(tf.shape(targ_empty_indices), 3.), [batch_size, bucket_size, bucket_size])
+    targets_mask3D = tf.scatter_nd(targ_empty_indices, tf.fill(tf.shape(targ_empty_indices), 3.), shape=tf.stack([batch_size, bucket_size, bucket_size]))
 
     targets3D_masked = targets3D + targets_mask3D
 
-    targets3D = tf.Print(targets3D, [targets3D], "targets3D", summarize=500)
 
     targets3D_masked = tf.Print(targets3D_masked, [targets3D_masked], "targets3D_masked", summarize=500)
 
