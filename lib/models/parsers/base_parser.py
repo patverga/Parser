@@ -92,7 +92,7 @@ class BaseParser(NN):
       tokens = np.arange(length)
       num_srls = len(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
       # print("num srls", num_srls)
-      # print("where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
+      print("where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
       # print("len", len(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx)))
 
 
