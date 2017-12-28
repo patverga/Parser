@@ -1040,10 +1040,15 @@ class NN(Configurable):
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D_masked)
 
+    cross_entropy = tf.Print(cross_entropy, [tf.shape(self.tokens_to_keep3D)], "tokens to keep", summarize=500)
+
+
+    cross_entropy *= cross_entropy
+
     # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], "cross_entropy shape", summarize=500)
 
 
-    loss = tf.reduce_mean(cross_entropy)
+    loss = tf.reduce_sum(cross_entropy) / self.n_tokens
 
     # logits2D = tf.reshape(logits, tf.stack([batch_size*bucket_size, -1]))
     # targets1D = tf.reshape(targets, [-1])
