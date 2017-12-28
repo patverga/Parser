@@ -273,7 +273,7 @@ class Network(Configurable):
     bilou_str = self._vocabs[3][idx]
     bilou = bilou_str[0]
     label_type = bilou_str[2:]
-    props_str = '*'
+    props_str = '' # '*'
     if bilou == 'O' or bilou == 'I':
       props_str = '*'
     elif bilou == 'U':
@@ -282,7 +282,9 @@ class Network(Configurable):
       props_str = '(' + label_type + '*'
     elif bilou == 'L':
       props_str = '*)'
-    assert props_str, "string: %s" % bilou_str
+    if not props_str:
+      print("string: %s" % bilou_str)
+      props_str = '*'
     return props_str
     
   #=============================================================
