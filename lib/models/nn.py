@@ -990,6 +990,9 @@ class NN(Configurable):
     # logits are batch x seq_len x num_classes x seq_len
     # targets are batch x seq_len x num_targets
 
+    # todo pass this in
+    o_label_idx = 3
+
     # transpose to batch x seq_len x seq_len x num_classes
     logits_transposed = tf.transpose(logits, [0, 1, 3, 2])
 
@@ -1024,11 +1027,16 @@ class NN(Configurable):
     idx = tf.stack([i1, i2, i3], axis=-1)
 
     targets3D = tf.scatter_nd(idx, actual_targets, [batch_size, bucket_size, bucket_size])
+    targ_empty_indices = tf.where(tf.equal(targets3D, 0))
+    targets_mask3D = tf.scatter_nd(targ_empty_indices, tf.constant(o_label_idx, shape=tf.shape(targ_empty_indices)), [batch_size, bucket_size, bucket_size])
+
+    targets3D_masked = targets3D + targets_mask3D
 
     targets3D = tf.Print(targets3D, [targets3D], "targets3D", summarize=500)
 
+    targets3D_masked = tf.Print(targets3D_masked, [targets3D_masked], "targets3D_masked", summarize=500)
 
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D)
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D_masked)
 
     cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], "cross_entropy shape", summarize=500)
 
