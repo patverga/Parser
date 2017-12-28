@@ -352,7 +352,30 @@ class Network(Configurable):
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if trigger_label in pred else '-'
           srl_strs = map(lambda p: self._vocabs[3][p], pred)
-          fields = (word_str,) + tuple(srl_strs)
+          num_srl_strs = len(srl_strs)
+          fields = (word_str,) + tuple(srl_strs[num_srl_strs/2:])
+          # print(fields)
+          owpl_str = '\t'.join(fields)
+          print(owpl_str, file=f)
+          # f.write(owpl_str, "\n")
+        f.write('\n')
+
+    # save SRL output
+    with open(os.path.join(self.save_dir, 'srl_golds.tsv'), 'w') as f:
+      trigger_label = self._vocabs[3]['U-V']
+      for bkt_idx, idx in dataset._metabucket.data:
+        # for each word, if trigger print word, otherwise -
+        # then all the SRL labels
+        data = dataset._metabucket[bkt_idx].data[idx]
+        preds = all_predictions[bkt_idx][idx]
+        words = all_sents[bkt_idx][idx]
+        srl_preds = preds[:,9:]
+        # print("srl_preds", srl_preds)
+        for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
+          word_str = word if trigger_label in pred else '-'
+          srl_strs = map(lambda p: self._vocabs[3][p], pred)
+          num_srl_strs = len(srl_strs)
+          fields = (word_str,) + tuple(srl_strs[:num_srl_strs/2])
           # print(fields)
           owpl_str = '\t'.join(fields)
           print(owpl_str, file=f)
