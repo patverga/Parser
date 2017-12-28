@@ -286,6 +286,7 @@ class Network(Configurable):
       print("string: %s" % bilou_str)
       props_str = '*'
     return props_str
+
     
   #=============================================================
   # TODO make this work if lines_per_buff isn't set to 0
