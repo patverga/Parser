@@ -268,6 +268,20 @@ class Network(Configurable):
       pass
     self.test(sess, validate=True)
     return
+
+  def convert_bilou(self, idx):
+    bilou_str = self._vocabs[3][idx]
+    bilou = bilou_str[0]
+    label_type = bilou_str[2:]
+    if bilou == 'O' or bilou == 'I':
+      props_str = '*'
+    elif bilou_str == 'U':
+      props_str = '(' + label_type + '*)'
+    elif bilou_str == 'B':
+      props_str = '(' + label_type + '*'
+    elif bilou_str == 'L':
+      props_str = '*)'
+    return props_str
     
   #=============================================================
   # TODO make this work if lines_per_buff isn't set to 0
@@ -352,7 +366,7 @@ class Network(Configurable):
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if self.trigger_idx in pred else '-'
-          srl_strs = map(lambda p: self._vocabs[3][p], pred)
+          srl_strs = map(self.convert_bilou, pred)
           num_srl_strs = len(srl_strs)
           fields = (word_str,) + tuple(srl_strs[int(num_srl_strs/2):])
           # print(fields)
@@ -374,7 +388,7 @@ class Network(Configurable):
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if self.trigger_idx in pred else '-'
-          srl_strs = map(lambda p: self._vocabs[3][p], pred)
+          srl_strs = map(self.convert_bilou, pred)
           num_srl_strs = len(srl_strs)
           fields = (word_str,) + tuple(srl_strs[:int(num_srl_strs/2)])
           # print(fields)
