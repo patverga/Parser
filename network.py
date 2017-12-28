@@ -276,11 +276,11 @@ class Network(Configurable):
     props_str = ''
     if bilou == 'O' or bilou == 'I':
       props_str = '*'
-    elif bilou_str == 'U':
+    elif bilou == 'U':
       props_str = '(' + label_type + '*)'
-    elif bilou_str == 'B':
+    elif bilou == 'B':
       props_str = '(' + label_type + '*'
-    elif bilou_str == 'L':
+    elif bilou == 'L':
       props_str = '*)'
     assert props_str, "string: %s" % bilou_str
     return props_str
