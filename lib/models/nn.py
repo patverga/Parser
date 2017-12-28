@@ -1018,7 +1018,7 @@ class NN(Configurable):
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
     actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), tf.stack([trigger_indices[:,0],trigger_indices[:,2]], -1))
 
-    # trigger_indices = tf.Print(trigger_indices, [trigger_indices], "trigger_indices", summarize=500)
+    trigger_indices = tf.Print(trigger_indices, [tf.shape(trigger_indices), trigger_indices], "trigger_indices", summarize=500)
 
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
