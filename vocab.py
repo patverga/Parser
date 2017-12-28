@@ -103,7 +103,7 @@ class Vocab(Configurable):
     idx2str = self.init_idx2str()
     cur_idx = Vocab.START_IDX
     for word, count in self.sorted_vocab(counts):
-      if (count >= self.min_occur_count) and word not in str2idx:
+      if (count >= self.min_occur_count or self.name == 'SRLs') and word not in str2idx:
         str2idx[word] = cur_idx
         idx2str[cur_idx] = word
         cur_idx += 1
@@ -132,9 +132,7 @@ class Vocab(Configurable):
     """"""
     
     counts = Counter()
-    # with open(self.train_file) as f:
-    with open(self.test_file) as f:
-
+    with open(self.train_file) as f:
       buff = []
       for line_num, line in enumerate(f):
         line = line.strip().split()
