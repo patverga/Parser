@@ -184,56 +184,6 @@ class Dataset(Configurable):
       data = self[bkt_idx].data[bkt_mb]
       sents = self[bkt_idx].sents[bkt_mb]
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
-
-      # np.set_printoptions(threshold=np.nan)
-
-      # todo don't hardcode 3, look up O
-      # srl_vocab = self.vocabs[3]
-      # num_non_srl_targs = 6
-      # srl_o_idx = 3
-
-      # shape: batch x seq_len x num_targets
-      # srl_data_subset = data[:, :maxlen, num_non_srl_targs+1:]
-
-      # print("data shape", data.shape)
-      # print("max len", maxlen)
-      # print("data shape no first 6", srl_data_subset.shape)
-
-      # if sample_srl is true, want to grab n samples of srl labels
-      # that aren't all O
-      # first, figure out which rows aren't all O.
-      # it's possible that none of them are, in which case just grab the all-O.
-      # otherwise, sample from the ones that are not all O
-      # also need to deal with case where non-O < num-samples desired
-      # (this is a sub-case of there being none non-O)
-      # np.random.choice(idxs, num_samples, replace=False)
-      # first 6 are non-srl
-      # want dim to be batch_size (one count of srls for each batch elem)
-      # non_O_counts = np.sum(srl_data_subset > srl_o_idx, axis=1)
-      #
-      # # get the indices
-      # non_O_indices = np.where(non_O_counts > 0)
-      #
-      # print("non_O_counts", non_O_counts)
-      # print("non_O_counts_per_batch", non_O_counts[:, 0])
-      #
-      # print("non_O_counts shape", non_O_counts.shape)
-      # print("non_O_indices shape", non_O_indices[0].shape)
-
-
-
-
-      # print("srl_data_subset", srl_data_subset)
-
-      # print("non O counts", non_O_counts)
-      # print("non O indices", non_O_indices)
-
-      # if np.sum(np.greater(non_O_counts)):
-      #   # sample any of them
-      # else:
-      #   # sample only from
-      # print("non-O: ", non_O_counts)
-      # print("non-O indices: ", non_O_indices)
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
         self.targets: data[:,:maxlen,min(target_idxs):maxlen+max(target_idxs)]
