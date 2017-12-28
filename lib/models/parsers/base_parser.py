@@ -116,7 +116,7 @@ class BaseParser(NN):
       sent[:,7] = targets[tokens, 1] # 8
       sent[:,8] = targets[tokens, 2] # 9
       sent[:,9:9+num_srls] = targets[tokens, non_srl_targets_len:num_srls+non_srl_targets_len] # num_srls
-      s_pred = srl_pred[tokens, num_srls]
+      s_pred = srl_pred[tokens, :num_srls]
       if len(s_pred.shape) == 1:
         s_pred = np.expand_dims(s_pred, -1)
       sent[:,9+num_srls:] = s_pred
