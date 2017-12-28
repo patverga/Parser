@@ -83,6 +83,8 @@ class Network(Configurable):
                     global_step=self.global_step)
       self._vocabs.append(vocab)
 
+    self.trigger_idx = self._vocabs[3]['U-V']
+
     print("Loading data")
     sys.stdout.flush()
     self._trainset = Dataset(self.train_file, self._vocabs, model, self._config, name='Trainset')
@@ -300,7 +302,7 @@ class Network(Configurable):
       forward_start = time.time()
       probs, n_cycles, len_2_cycles, srl_probs, srl_preds = sess.run(op, feed_dict=feed_dict)
       forward_total_time += time.time() - forward_start
-      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles, srl_probs, srl_preds)
+      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles, srl_probs, srl_preds, self.trigger_idx)
       total_time += parse_time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
@@ -340,7 +342,6 @@ class Network(Configurable):
 
     # save SRL output
     with open(os.path.join(self.save_dir, 'srl_preds.tsv'), 'w') as f:
-      trigger_label = self._vocabs[3]['U-V']
       for bkt_idx, idx in dataset._metabucket.data:
         # for each word, if trigger print word, otherwise -
         # then all the SRL labels
@@ -350,10 +351,10 @@ class Network(Configurable):
         srl_preds = preds[:,9:]
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
-          word_str = word if trigger_label in pred else '-'
+          word_str = word if self.trigger_idx in pred else '-'
           srl_strs = map(lambda p: self._vocabs[3][p], pred)
           num_srl_strs = len(srl_strs)
-          fields = (word_str,) + tuple(srl_strs[num_srl_strs/2:])
+          fields = (word_str,) + tuple(srl_strs[int(num_srl_strs/2):])
           # print(fields)
           owpl_str = '\t'.join(fields)
           print(owpl_str, file=f)
@@ -372,10 +373,10 @@ class Network(Configurable):
         srl_preds = preds[:,9:]
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
-          word_str = word if trigger_label in pred else '-'
+          word_str = word if self.trigger_idx in pred else '-'
           srl_strs = map(lambda p: self._vocabs[3][p], pred)
           num_srl_strs = len(srl_strs)
-          fields = (word_str,) + tuple(srl_strs[:num_srl_strs/2])
+          fields = (word_str,) + tuple(srl_strs[:int(num_srl_strs/2)])
           # print(fields)
           owpl_str = '\t'.join(fields)
           print(owpl_str, file=f)
