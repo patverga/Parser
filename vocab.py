@@ -132,7 +132,9 @@ class Vocab(Configurable):
     """"""
     
     counts = Counter()
-    with open(self.train_file) as f:
+    # with open(self.train_file) as f:
+    with open(self.test_file) as f:
+
       buff = []
       for line_num, line in enumerate(f):
         line = line.strip().split()
