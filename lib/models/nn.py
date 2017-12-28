@@ -1018,7 +1018,7 @@ class NN(Configurable):
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
     actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), tf.stack([trigger_indices[:,0],trigger_indices[:,2]], -1))
 
-    trigger_indices = tf.Print(trigger_indices, [tf.shape(trigger_indices), trigger_indices], "trigger_indices", summarize=500)
+    # trigger_indices = tf.Print(trigger_indices, [tf.shape(trigger_indices), trigger_indices], "trigger_indices", summarize=500)
 
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
@@ -1032,9 +1032,7 @@ class NN(Configurable):
 
     targ_empty_indices = tf.cast(tf.where(tf.equal(targets3D, 0)), tf.int32)
     targets_mask3D = tf.scatter_nd(targ_empty_indices, tf.fill([tf.shape(targ_empty_indices)[0]], 3), shape=tf.stack([batch_size, bucket_size, bucket_size]))
-
     targets3D_masked = targets3D + targets_mask3D
-
 
     # targets3D_masked = tf.Print(targets3D_masked, [targets3D_masked], "targets3D_masked", summarize=500)
 
@@ -1046,7 +1044,6 @@ class NN(Configurable):
     cross_entropy *= tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
 
     # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], "cross_entropy shape", summarize=500)
-
 
     loss = tf.reduce_sum(cross_entropy) / self.n_tokens
 
@@ -1062,8 +1059,8 @@ class NN(Configurable):
     # n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     # accuracy = n_correct / self.n_tokens
 
-    probabilities = tf.nn.softmax(logits)
-    predictions = tf.argmax(logits, axis=-1)
+    probabilities = tf.nn.softmax(logits_transposed)
+    predictions = tf.argmax(logits_transposed, axis=-1)
 
     output = {
       'loss': loss,
