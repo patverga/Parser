@@ -273,6 +273,7 @@ class Network(Configurable):
     bilou_str = self._vocabs[3][idx]
     bilou = bilou_str[0]
     label_type = bilou_str[2:]
+    props_str = ''
     if bilou == 'O' or bilou == 'I':
       props_str = '*'
     elif bilou_str == 'U':
@@ -281,6 +282,7 @@ class Network(Configurable):
       props_str = '(' + label_type + '*'
     elif bilou_str == 'L':
       props_str = '*)'
+    assert props_str
     return props_str
     
   #=============================================================
@@ -377,7 +379,6 @@ class Network(Configurable):
 
     # save SRL output
     with open(os.path.join(self.save_dir, 'srl_golds.tsv'), 'w') as f:
-      trigger_label = self._vocabs[3]['U-V']
       for bkt_idx, idx in dataset._metabucket.data:
         # for each word, if trigger print word, otherwise -
         # then all the SRL labels
