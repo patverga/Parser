@@ -88,15 +88,17 @@ class BaseParser(NN):
         non_trees_total += 1.
         non_tree_preds.append((parse_probs, targets, length, int(len_2_cycle), int(n_cycle)))
       # targets has 3 non-srl things, then srls, variable length
-      num_srls = targets.shape[-1]-3
-      # sent will contain 7 things non-srl, including one thing from targets
-      sent = -np.ones( (length, 2*num_srls+7+2), dtype=int)
+      non_srl_targets_len = 3
       tokens = np.arange(length)
+      num_srls = np.sum(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
+
+      # num_srls = targets.shape[-1]-non_srl_targets_len
+      # sent will contain 7 things non-srl, including one thing from targets
+      sent = -np.ones( (length, 2*num_srls+9), dtype=int)
 
 
-      print("srl targets", targets[tokens, 1:])
-      print("srl triggers", np.sum(np.where(targets[tokens, 1:] == trigger_idx)))
-
+      # print("srl targets", targets[tokens, 3:])
+      # print("srl triggers", np.sum(np.where(targets[tokens, 3:] == trigger_idx)))
 
 
       # print("srl pred shape", srl_pred.shape)
@@ -111,11 +113,11 @@ class BaseParser(NN):
       sent[:,4] = targets[tokens, 0] # 5
       sent[:,5] = parse_preds[tokens] # 6
       sent[:,6] = rel_preds[tokens] # 7
-      sent[:,7:7+num_srls+2] = targets[tokens, 1:] # 5 + num_srls
+      sent[:,7:7+num_srls+non_srl_targets_len-1] = targets[tokens, 1:] # 5 + num_srls
       s_pred = srl_pred[tokens, num_srls]
       if len(s_pred.shape) == 1:
         s_pred = np.expand_dims(s_pred, -1)
-      sent[:,7+num_srls+2:] = s_pred
+      sent[:,7+num_srls+non_srl_targets_len-1:] = s_pred
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
