@@ -282,7 +282,7 @@ class Network(Configurable):
       props_str = '(' + label_type + '*'
     elif bilou == 'L':
       props_str = '*)'
-    # assert props_str, "string: %s" % bilou_str
+    assert props_str, "string: %s" % bilou_str
     return props_str
     
   #=============================================================
