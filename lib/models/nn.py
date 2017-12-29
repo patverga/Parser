@@ -1047,6 +1047,9 @@ class NN(Configurable):
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D_masked)
     cross_entropy *= self.tokens_to_keep3D
     cross_entropy *= tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
+
+    outside_mask = tf.Print(outside_mask, [tf.shape(outside_mask), outside_mask], "outside_mask", summarize=1000)
+
     cross_entropy *= outside_mask
 
     loss = tf.reduce_sum(cross_entropy) / self.n_tokens
