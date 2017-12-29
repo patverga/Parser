@@ -382,8 +382,8 @@ class Network(Configurable):
           fields = (word_str,) + tuple(srl_strs[int(num_srl_strs/2):])
           # print(fields)
           owpl_str = '\t'.join(fields)
-          print(owpl_str, file=f)
-          # f.write(owpl_str, "\n")
+          # print(owpl_str, file=f)
+          f.write(owpl_str, "\n")
         f.write('\n')
 
     # save SRL output
@@ -410,8 +410,8 @@ class Network(Configurable):
           fields = (word_str,) + tuple(srl_strs[:int(num_srl_strs/2)])
           # print(fields)
           owpl_str = '\t'.join(fields)
-          print(owpl_str, file=f)
-          # f.write(owpl_str, "\n")
+          # print(owpl_str, file=f)
+          f.write(owpl_str, "\n")
         if np.any(unclosed_paren):
           print("unclosed paren")
           print(words)
