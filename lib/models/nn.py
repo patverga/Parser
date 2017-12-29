@@ -1013,51 +1013,39 @@ class NN(Configurable):
     # now we have k sets of targets for the k frames
     srl_targets = targets[:,:,6:]
 
-    # srl_targets = tf.Print(srl_targets, [srl_targets], "srl_targets", summarize=500)
-
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
     actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), tf.stack([trigger_indices[:,0],trigger_indices[:,2]], -1))
-
-    # trigger_indices = tf.Print(trigger_indices, [tf.shape(trigger_indices), trigger_indices], "trigger_indices", summarize=500)
-
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
     i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[0], 1])
-    idx = tf.stack([i1, i2, i3], axis=-1)
+    trigger_idx = tf.stack([i1, i2, i3], axis=-1)
 
-    targets3D = tf.scatter_nd(idx, actual_targets, [batch_size, bucket_size, bucket_size])
+    not_trigger_indices = tf.cast(tf.where(tf.not_equal(srl_targets, trigger_label_idx)), tf.int32)
+    i1 = tf.tile(tf.expand_dims(not_trigger_indices[:, 0], -1), [1, bucket_size])
+    i2 = tf.tile(tf.expand_dims(not_trigger_indices[:, 2], -1), [1, bucket_size])
+    i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(not_trigger_indices)[0], 1])
+    not_trigger_idx = tf.stack([i1, i2, i3], axis=-1)
+    num_not_triggers = tf.shape(not_trigger_idx)[0]
+    subsample_rate = 0.2
+    num_to_sample = tf.cast(subsample_rate * num_not_triggers, tf.int32)
+    sampled_indices = tf.random_shuffle(not_trigger_idx)[:num_to_sample]
 
-    # targets3D = tf.Print(targets3D, [targets3D], "targets3D", summarize=500)
+    targets3D = tf.scatter_nd(trigger_idx, actual_targets, [batch_size, bucket_size, bucket_size])
+
+    # todo right now this masks ALL outside. want to subsample and pass in the rate
+    outside_mask = 1 - tf.scatter_nd(sampled_indices, tf.fill([num_to_sample], 1), [batch_size, bucket_size, bucket_size])
 
     targ_empty_indices = tf.cast(tf.where(tf.equal(targets3D, 0)), tf.int32)
     targets_mask3D = tf.scatter_nd(targ_empty_indices, tf.fill([tf.shape(targ_empty_indices)[0]], 3), shape=tf.stack([batch_size, bucket_size, bucket_size]))
     targets3D_masked = targets3D + targets_mask3D
 
-    # targets3D_masked = tf.Print(targets3D_masked, [targets3D_masked], "targets3D_masked", summarize=500)
-
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D_masked)
-
-    # cross_entropy = tf.Print(cross_entropy, [tf.shape(self.tokens_to_keep3D)], "tokens to keep", summarize=500)
-
     cross_entropy *= self.tokens_to_keep3D
     cross_entropy *= tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
-
-    # cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy)], "cross_entropy shape", summarize=500)
+    cross_entropy *= outside_mask
 
     loss = tf.reduce_sum(cross_entropy) / self.n_tokens
-
-    # logits2D = tf.reshape(logits, tf.stack([batch_size*bucket_size, -1]))
-    # targets1D = tf.reshape(targets, [-1])
-    # tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
-    #
-    # predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
-    # probabilities2D = tf.nn.softmax(logits2D)
-    # cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
-    #
-    # correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
-    # n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
-    # accuracy = n_correct / self.n_tokens
 
     probabilities = tf.nn.softmax(logits_transposed)
     predictions = tf.argmax(logits_transposed, axis=-1)
