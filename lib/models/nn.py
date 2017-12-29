@@ -1032,13 +1032,11 @@ class NN(Configurable):
     sampled_indices = tf.random_shuffle(not_trigger_idx)[:num_to_sample]
 
     targets3D = tf.scatter_nd(trigger_idx, actual_targets, [batch_size, bucket_size, bucket_size])
-
-    targets3D = tf.Print(targets3D, [tf.shape(actual_targets)], "actual_targets", summarize=10)
-    targets3D = tf.Print(targets3D, [tf.shape(sampled_indices)], "sampled_indices", summarize=10)
-    targets3D = tf.Print(targets3D, [tf.shape(trigger_idx)], "trigger_idx", summarize=10)
-    targets3D = tf.Print(targets3D, [tf.shape(tf.fill([num_to_sample, bucket_size], 1))], "tf.fill([num_to_sample], 1)", summarize=10)
-
-
+    #
+    # targets3D = tf.Print(targets3D, [tf.shape(actual_targets)], "actual_targets", summarize=10)
+    # targets3D = tf.Print(targets3D, [tf.shape(sampled_indices)], "sampled_indices", summarize=10)
+    # targets3D = tf.Print(targets3D, [tf.shape(trigger_idx)], "trigger_idx", summarize=10)
+    # targets3D = tf.Print(targets3D, [tf.shape(tf.fill([num_to_sample, bucket_size], 1))], "tf.fill([num_to_sample], 1)", summarize=10)
 
     # todo right now this masks ALL outside. want to subsample and pass in the rate
     outside_mask = 1 - tf.scatter_nd(sampled_indices, tf.fill([num_to_sample, bucket_size], 1), [batch_size, bucket_size, bucket_size])
@@ -1050,7 +1048,7 @@ class NN(Configurable):
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D_masked)
     cross_entropy *= self.tokens_to_keep3D
     cross_entropy *= tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
-    # cross_entropy *= outside_mask
+    cross_entropy *= outside_mask
 
     loss = tf.reduce_sum(cross_entropy) / self.n_tokens
 
