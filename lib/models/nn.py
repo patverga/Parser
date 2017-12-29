@@ -1033,6 +1033,13 @@ class NN(Configurable):
 
     targets3D = tf.scatter_nd(trigger_idx, actual_targets, [batch_size, bucket_size, bucket_size])
 
+    targets3D = tf.Print(targets3D, [tf.shape(actual_targets)], "actual_targets", summarize=10)
+    targets3D = tf.Print(targets3D, [tf.shape(sampled_indices)], "sampled_indices", summarize=10)
+    targets3D = tf.Print(targets3D, [tf.shape(trigger_idx)], "trigger_idx", summarize=10)
+    targets3D = tf.Print(targets3D, [tf.fill([num_to_sample], 1)], "tf.fill([num_to_sample], 1)", summarize=10)
+
+
+
     # todo right now this masks ALL outside. want to subsample and pass in the rate
     outside_mask = 1 - tf.scatter_nd(sampled_indices, tf.fill([num_to_sample], 1), [batch_size, bucket_size, bucket_size])
 
