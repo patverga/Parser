@@ -383,7 +383,7 @@ class Network(Configurable):
           # print(fields)
           owpl_str = '\t'.join(fields)
           # print(owpl_str, file=f)
-          f.write(owpl_str, "\n")
+          f.write(owpl_str + "\n")
         f.write('\n')
 
     # save SRL output
@@ -411,7 +411,7 @@ class Network(Configurable):
           # print(fields)
           owpl_str = '\t'.join(fields)
           # print(owpl_str, file=f)
-          f.write(owpl_str, "\n")
+          f.write(owpl_str + "\n")
         if np.any(unclosed_paren):
           print("unclosed paren")
           print(words)
