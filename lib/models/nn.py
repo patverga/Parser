@@ -1056,6 +1056,8 @@ class NN(Configurable):
     om = tf.Print(om, [tf.shape(just_ones), just_ones], "just ones", summarize=1000)
     om = tf.Print(om, [tf.shape(sampled_indices), sampled_indices], "sampled indices", summarize=1000)
     om = tf.Print(om, [tf.shape(not_trigger_idx), not_trigger_idx], "not_trigger_idx", summarize=1000)
+    om = tf.Print(om, [tf.shape(not_trigger_indices), not_trigger_indices], "not_trigger_indices", summarize=1000)
+
 
 
 
