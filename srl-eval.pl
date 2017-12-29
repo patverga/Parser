@@ -1378,7 +1378,7 @@ sub load_SE_tagging {
     my ($i);
     for ($i=0; $i<$#SP; $i++) {
     #	$tags[$i] = sprintf("%8s*%-12s", $S->[$i], $E->[$i]);
-        printf("%8s ", $SP[$i]);
+        printf("%8s ", "p");
     }
     (!@SP) or die "phrase_set->load_SE_tagging: some phrases are unclosed!\n";
 }
