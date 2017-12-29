@@ -377,7 +377,7 @@ class Network(Configurable):
           srl_strs = []
           in_parens = False
           for p in pred:
-            s, in_parens = self.convert_bilou(pred, in_parens)
+            s, in_parens = self.convert_bilou(p, in_parens)
             srl_strs.append(s)
           if in_parens:
             print(srl_strs)
@@ -404,7 +404,7 @@ class Network(Configurable):
           srl_strs = []
           in_parens = False
           for p in pred:
-            s, in_parens = self.convert_bilou(pred, in_parens)
+            s, in_parens = self.convert_bilou(p, in_parens)
             srl_strs.append(s)
           if in_parens:
             print(srl_strs)
