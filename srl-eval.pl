@@ -1375,6 +1375,7 @@ sub load_SE_tagging {
 	}
 	$wid++;
     }
+    my ($i);
     for ($i=0; $i<$#SP; $i++) {
     #	$tags[$i] = sprintf("%8s*%-12s", $S->[$i], $E->[$i]);
         printf("%8s ", $SP[$i]);
