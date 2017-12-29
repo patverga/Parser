@@ -1375,8 +1375,11 @@ sub load_SE_tagging {
 	}
 	$wid++;
     }
-    if (@SP){
-        print "@SP\n";
+#    if (@SP){
+#        print "@SP\n";
+#    }
+    foreach (@SP) {
+      print "$_\n";
     }
     (!@SP) or die "phrase_set->load_SE_tagging: some phrases are unclosed!\n";
 }
