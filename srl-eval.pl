@@ -1375,11 +1375,9 @@ sub load_SE_tagging {
 	}
 	$wid++;
     }
-#    if (@SP){
-#        print "@SP\n";
-#    }
-    foreach (@SP) {
-      print "$_\n";
+    if (@SP){
+        print "@SP\n";
+        print join(" ", map { $_->to_string } @SP);
     }
     (!@SP) or die "phrase_set->load_SE_tagging: some phrases are unclosed!\n";
 }
