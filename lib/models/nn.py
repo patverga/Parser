@@ -1040,7 +1040,7 @@ class NN(Configurable):
     # todo right now this masks ALL outside. want to subsample and pass in the rate
     # outside_mask = 1.0 - tf.cast(tf.scatter_nd(sampled_indices, tf.fill([num_to_sample, bucket_size], 1.0), [batch_size, bucket_size, bucket_size]), tf.float32)
     just_ones = tf.fill([num_to_sample, bucket_size], 1.0)
-    outside_mask = tf.scatter_nd(sampled_indices, just_ones, [batch_size, bucket_size, bucket_size])
+    om = tf.scatter_nd(sampled_indices, just_ones, [batch_size, bucket_size, bucket_size])
 
 
     targ_empty_indices = tf.cast(tf.where(tf.equal(targets3D, 0)), tf.int32)
@@ -1051,13 +1051,15 @@ class NN(Configurable):
     cross_entropy *= self.tokens_to_keep3D
     cross_entropy *= tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
 
-    outside_mask = tf.Print(outside_mask, [tf.shape(cross_entropy), cross_entropy], "xent", summarize=1000)
-    outside_mask = tf.Print(outside_mask, [num_to_sample, tf.shape(outside_mask), outside_mask], "outside_mask", summarize=1000)
-    outside_mask = tf.Print(outside_mask, [tf.shape(just_ones), just_ones], "just ones", summarize=1000)
-    outside_mask = tf.Print(outside_mask, [tf.shape(sampled_indices), sampled_indices], "sampled indices", summarize=1000)
+    om = tf.Print(om, [tf.shape(cross_entropy), cross_entropy], "xent", summarize=1000)
+    om = tf.Print(om, [num_to_sample, tf.shape(om), om], "outside_mask", summarize=1000)
+    om = tf.Print(om, [tf.shape(just_ones), just_ones], "just ones", summarize=1000)
+    om = tf.Print(om, [tf.shape(sampled_indices), sampled_indices], "sampled indices", summarize=1000)
+    om = tf.Print(om, [tf.shape(not_trigger_idx), not_trigger_idx], "not_trigger_idx", summarize=1000)
 
 
-    cross_entropy *= outside_mask
+
+    cross_entropy = cross_entropy * om
 
     loss = tf.reduce_sum(cross_entropy) / self.n_tokens
 
