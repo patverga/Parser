@@ -389,8 +389,8 @@ class Network(Configurable):
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
         srl_preds = preds[:,9:]
-        unclosed_paren = [0]*srl_preds.shape[0]
-        print("srl preds shape", srl_preds.shape)
+        unclosed_paren = [0]*srl_preds.shape[1]
+        # print("srl preds shape", srl_preds.shape)
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if self.trigger_idx in pred else '-'
