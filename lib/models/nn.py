@@ -1021,9 +1021,12 @@ class NN(Configurable):
     i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[0], 1])
     trigger_idx = tf.stack([i1, i2, i3], axis=-1)
 
-    not_trigger_indices = tf.cast(tf.where(tf.not_equal(srl_targets, trigger_label_idx)), tf.int32)
+    # not_trigger_indices = tf.cast(tf.where(tf.not_equal(srl_targets, trigger_label_idx)), tf.int32)
+    eq = tf.cast(tf.equal(srl_targets, trigger_label_idx), tf.float32)
+    eq_s = tf.reduce_sum(eq, -1)
+    not_trigger_indices = tf.where(tf.equal(1.0 - eq_s, 1.0))
     i1 = tf.tile(tf.expand_dims(not_trigger_indices[:, 0], -1), [1, bucket_size])
-    i2 = tf.tile(tf.expand_dims(not_trigger_indices[:, 2], -1), [1, bucket_size])
+    i2 = tf.tile(tf.expand_dims(not_trigger_indices[:, 1], -1), [1, bucket_size])
     i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(not_trigger_indices)[0], 1])
     not_trigger_idx = tf.stack([i1, i2, i3], axis=-1)
     num_not_triggers = tf.shape(not_trigger_idx)[0]
@@ -1031,11 +1034,11 @@ class NN(Configurable):
     sampled_indices = tf.random_shuffle(not_trigger_idx)[:num_to_sample]
 
     targets3D = tf.scatter_nd(trigger_idx, actual_targets, [batch_size, bucket_size, bucket_size])
-    #
-    # targets3D = tf.Print(targets3D, [tf.shape(actual_targets)], "actual_targets", summarize=10)
-    # targets3D = tf.Print(targets3D, [tf.shape(sampled_indices)], "sampled_indices", summarize=10)
-    # targets3D = tf.Print(targets3D, [tf.shape(trigger_idx)], "trigger_idx", summarize=10)
-    # targets3D = tf.Print(targets3D, [tf.shape(tf.fill([num_to_sample, bucket_size], 1))], "tf.fill([num_to_sample], 1)", summarize=10)
+
+    targets3D = tf.Print(targets3D, [tf.shape(actual_targets)], "actual_targets", summarize=10)
+    targets3D = tf.Print(targets3D, [tf.shape(sampled_indices)], "sampled_indices", summarize=10)
+    targets3D = tf.Print(targets3D, [tf.shape(trigger_idx)], "trigger_idx", summarize=10)
+    targets3D = tf.Print(targets3D, [tf.shape(tf.fill([num_to_sample, bucket_size], 1))], "tf.fill([num_to_sample], 1)", summarize=10)
 
     # todo right now this masks ALL outside. want to subsample and pass in the rate
     # outside_mask = 1.0 - tf.cast(tf.scatter_nd(sampled_indices, tf.fill([num_to_sample, bucket_size], 1.0), [batch_size, bucket_size, bucket_size]), tf.float32)
