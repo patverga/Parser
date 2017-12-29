@@ -373,11 +373,11 @@ class Network(Configurable):
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if self.trigger_idx in pred else '-'
           srl_strs = map(self.convert_bilou, pred)
-          for i, s in enumerate(srl_strs):
+          for j, s in enumerate(srl_strs):
             if srl_strs[0] == "(":
-              unclosed_paren[i] += 1
+              unclosed_paren[j] += 1
             if srl_strs[-1] == ")":
-              unclosed_paren[i] -= 1
+              unclosed_paren[j] -= 1
           num_srl_strs = len(srl_strs)
           fields = (word_str,) + tuple(srl_strs[int(num_srl_strs/2):])
           # print(fields)
@@ -401,11 +401,11 @@ class Network(Configurable):
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if self.trigger_idx in pred else '-'
           srl_strs = map(self.convert_bilou, pred)
-          for i, s in enumerate(srl_strs):
+          for j, s in enumerate(srl_strs):
             if srl_strs[0] == "(":
-              unclosed_paren[i] += 1
+              unclosed_paren[j] += 1
             if srl_strs[-1] == ")":
-              unclosed_paren[i] -= 1
+              unclosed_paren[j] -= 1
           num_srl_strs = len(srl_strs)
           fields = (word_str,) + tuple(srl_strs[:int(num_srl_strs/2)])
           # print(fields)
