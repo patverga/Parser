@@ -417,6 +417,11 @@ class Configurable(object):
     return self._config.getboolean('Training', 'mask_pairs')
   argparser.add_argument('--mask_pairs')
 
+  @property
+  def subsample_trigger_rate(self):
+    return self._config.getfloat('Training', 'subsample_trigger_rate')
+  argparser.add_argument('--subsample_trigger_rate')
+
   #=============================================================
   # [Transformer]
   @property
