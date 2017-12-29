@@ -1036,7 +1036,7 @@ class NN(Configurable):
     targets3D = tf.Print(targets3D, [tf.shape(actual_targets)], "actual_targets", summarize=10)
     targets3D = tf.Print(targets3D, [tf.shape(sampled_indices)], "sampled_indices", summarize=10)
     targets3D = tf.Print(targets3D, [tf.shape(trigger_idx)], "trigger_idx", summarize=10)
-    targets3D = tf.Print(targets3D, [tf.fill([num_to_sample], 1)], "tf.fill([num_to_sample], 1)", summarize=10)
+    targets3D = tf.Print(targets3D, [tf.shape(tf.fill([num_to_sample], 1))], "tf.fill([num_to_sample], 1)", summarize=10)
 
 
 
