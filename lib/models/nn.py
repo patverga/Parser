@@ -1024,7 +1024,7 @@ class NN(Configurable):
     # not_trigger_indices = tf.cast(tf.where(tf.not_equal(srl_targets, trigger_label_idx)), tf.int32)
     eq = tf.cast(tf.equal(srl_targets, trigger_label_idx), tf.float32)
     eq_s = tf.reduce_sum(eq, -1)
-    not_trigger_indices = tf.where(tf.equal(1.0 - eq_s, 1.0))
+    not_trigger_indices = tf.cast(tf.where(tf.equal(1.0 - eq_s, 1.0)), tf.int32)
     i1 = tf.tile(tf.expand_dims(not_trigger_indices[:, 0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(not_trigger_indices[:, 1], -1), [1, bucket_size])
     i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(not_trigger_indices)[0], 1])
