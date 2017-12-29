@@ -1039,7 +1039,8 @@ class NN(Configurable):
 
     # todo right now this masks ALL outside. want to subsample and pass in the rate
     # outside_mask = 1.0 - tf.cast(tf.scatter_nd(sampled_indices, tf.fill([num_to_sample, bucket_size], 1.0), [batch_size, bucket_size, bucket_size]), tf.float32)
-    outside_mask = tf.scatter_nd(sampled_indices, tf.fill([num_to_sample, bucket_size], 1.0), [batch_size, bucket_size, bucket_size])
+    just_ones = tf.fill([num_to_sample, bucket_size], 1.0)
+    outside_mask = tf.scatter_nd(sampled_indices, just_ones, [batch_size, bucket_size, bucket_size])
 
 
     targ_empty_indices = tf.cast(tf.where(tf.equal(targets3D, 0)), tf.int32)
@@ -1052,6 +1053,8 @@ class NN(Configurable):
 
     outside_mask = tf.Print(outside_mask, [tf.shape(cross_entropy), cross_entropy], "xent", summarize=1000)
     outside_mask = tf.Print(outside_mask, [num_to_sample, tf.shape(outside_mask), outside_mask], "outside_mask", summarize=1000)
+    outside_mask = tf.Print(outside_mask, [tf.shape(just_ones), just_ones], "just ones", summarize=1000)
+
 
     cross_entropy *= outside_mask
 
