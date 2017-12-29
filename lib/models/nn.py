@@ -1028,7 +1028,7 @@ class NN(Configurable):
     not_trigger_idx = tf.stack([i1, i2, i3], axis=-1)
     num_not_triggers = tf.shape(not_trigger_idx)[0]
     subsample_rate = 0.2
-    num_to_sample = tf.cast(subsample_rate * num_not_triggers, tf.int32)
+    num_to_sample = tf.cast(subsample_rate * tf.cast(num_not_triggers, tf.float32), tf.int32)
     sampled_indices = tf.random_shuffle(not_trigger_idx)[:num_to_sample]
 
     targets3D = tf.scatter_nd(trigger_idx, actual_targets, [batch_size, bucket_size, bucket_size])
