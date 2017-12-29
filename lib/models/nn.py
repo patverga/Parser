@@ -1051,7 +1051,7 @@ class NN(Configurable):
     cross_entropy *= tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
 
     outside_mask = tf.Print(outside_mask, [tf.shape(cross_entropy), cross_entropy], "xent", summarize=1000)
-    outside_mask = tf.Print(outside_mask, [tf.shape(outside_mask), outside_mask], "outside_mask", summarize=1000)
+    outside_mask = tf.Print(outside_mask, [num_to_sample, tf.shape(outside_mask), outside_mask], "outside_mask", summarize=1000)
 
     cross_entropy *= outside_mask
 
