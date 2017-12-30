@@ -1022,6 +1022,10 @@ class NN(Configurable):
     trigger_idx = tf.stack([i1, i2, i3], axis=-1)
     targets3D = tf.scatter_nd(trigger_idx, actual_targets, [batch_size, bucket_size, bucket_size])
 
+    # batch x seq x seq: 0 where target, 1 otherwise
+    not_targets3D = 1 - tf.scatter_nd(trigger_idx, tf.ones_like(actual_targets), [batch_size, bucket_size, bucket_size])
+
+
     # get indices of words which aren't triggers
     eq = tf.cast(tf.equal(srl_targets, trigger_label_idx), tf.float32)
     eq_s = tf.reduce_sum(eq, -1)
@@ -1053,10 +1057,12 @@ class NN(Configurable):
     cross_entropy = tf.Print(cross_entropy, [targets3D], "targets3D", summarize=5000)
 
     cross_entropy = tf.Print(cross_entropy, [targets3D_masked], "targets3D_masked", summarize=5000)
+    cross_entropy = tf.Print(cross_entropy, [not_targets3D], "not_targets3D", summarize=5000)
+
     cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), targets3D_masked * tf.cast(om, tf.int32)], "targets3D_masked masked", summarize=5000)
     cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D_masked * tf.cast(om, tf.int32), tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D_masked masked gather", summarize=5000)
     cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D gather", summarize=5000)
-    cross_entropy = tf.Print(cross_entropy, [tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3))), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))], "targets3D_masked gather", summarize=5000)
+    cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))], "targets3D_masked gather", summarize=5000)
 
 
     cross_entropy = tf.Print(cross_entropy, [tf.reduce_sum(cross_entropy),cross_entropy], "cross entropy", summarize=1000)
