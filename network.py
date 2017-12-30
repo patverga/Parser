@@ -276,14 +276,14 @@ class Network(Configurable):
     label_str = self._vocabs[3][idx]
     label_parts = label_str.split('/')
     combined_str = ''
-    for label in label_parts:
+    for idx, label in enumerate(label_parts):
       bilou = label[0]
       label_type = label[2:]
       props_str = ''  # '*'
       if bilou == 'O' or bilou == 'I':
         props_str = ''
       elif bilou == 'U':
-        props_str = '(' + label_type + '*)'
+        props_str = '(' + label_type + '*)' if idx == len(label_parts)-1 else ""
       elif bilou == 'B':
         props_str = '(' + label_type # + '*'
       elif bilou == 'L':
