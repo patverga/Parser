@@ -242,6 +242,10 @@ class Parser(BaseParser):
     output['srl_loss'] = srl_loss
     output['srl_preds'] = srl_output['predictions']
     output['srl_probs'] = srl_output['probabilities']
+    output['srl_correct'] = srl_output['correct']
+    output['srl_count'] = srl_output['count']
+
+
 
     #### OLD: TRANSFORMER ####
     # top_recur = nn.add_timing_signal_1d(top_recur)

@@ -1066,10 +1066,19 @@ class NN(Configurable):
     probabilities = tf.nn.softmax(logits_transposed)
     predictions = tf.argmax(logits_transposed, axis=-1)
 
+    non_masked_indices = tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0))
+    non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
+
+    count = tf.count_nonzero(non_masked_targets)
+    correct = tf.reduce_sum(tf.cast(tf.equal(tf.gather_nd(predictions, non_masked_indices), non_masked_targets), tf.float32))
+
+
     output = {
       'loss': loss,
       'probabilities': probabilities,
-      'predictions': predictions
+      'predictions': predictions,
+      'count': count
+      'correct': correct
     }
 
     return output

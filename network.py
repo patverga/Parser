@@ -327,13 +327,15 @@ class Network(Configurable):
     cycles_2_total = 0.
     cycles_n_total = 0.
     not_tree_total = 0.
+    srl_correct_total = 0.
+    srl_count_total = 0.
     forward_total_time = 0.
     non_tree_preds_total = []
     for (feed_dict, sents) in minibatches():
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
       forward_start = time.time()
-      probs, n_cycles, len_2_cycles, srl_probs, srl_preds = sess.run(op, feed_dict=feed_dict)
+      probs, n_cycles, len_2_cycles, srl_probs, srl_preds, srl_correct, srl_count = sess.run(op, feed_dict=feed_dict)
       forward_total_time += time.time() - forward_start
       preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles, srl_probs, srl_preds, self.trigger_idx)
       total_time += parse_time
@@ -342,6 +344,8 @@ class Network(Configurable):
       cycles_2_total += cycles_2
       cycles_n_total += cycles_n
       not_tree_total += non_trees
+      srl_correct_total += srl_correct
+      srl_count_total += srl_count
       non_tree_preds_total.extend(non_tree_preds)
       all_predictions[-1].extend(preds)
       all_sents[-1].extend(sents)
@@ -442,6 +446,7 @@ class Network(Configurable):
     las = np.mean(correct["LAS"]) * 100
     uas = np.mean(correct["UAS"]) * 100
     print('UAS: %.2f    LAS: %.2f' % (uas, las))
+    print('SRL acc: %.2f' % ((srl_correct_total / srl_count_total)*100)
     return correct
   
   #=============================================================
@@ -520,11 +525,15 @@ class Network(Configurable):
                       valid_output['len_2_cycles'],
                       valid_output['srl_probs'],
                       valid_output['srl_preds'],
+                      test_output['srl_correct'],
+                      test_output['srl_count'],
                       test_output['probabilities'],
                       test_output['n_cycles'],
                       test_output['len_2_cycles'],
                       test_output['srl_probs'],
                       test_output['srl_preds'],
+                      test_output['srl_correct'],
+                      test_output['srl_count'],
                       ]
     ops['optimizer'] = optimizer
     
