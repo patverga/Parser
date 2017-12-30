@@ -1019,11 +1019,10 @@ class NN(Configurable):
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
 
     # get all the tags for each token (which is the trigger for a frame), structuring
-    # targets3D as follows:
+    # targets3D as follows (assuming t1 and t2 are triggers for f1 and f3, repsectively):
     # (t1) f1 f1 f1
     # (t2) f3 f3 f3
     actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), tf.stack([trigger_indices[:,0],trigger_indices[:,2]], -1))
-
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
     i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[0], 1])
@@ -1032,7 +1031,7 @@ class NN(Configurable):
 
     # batch x seq x seq: 0 where target, 1 otherwise
     not_targets3D = 1-tf.reduce_max(tf.scatter_nd(trigger_idx, tf.ones_like(actual_targets), [batch_size, bucket_size, bucket_size]), axis=-1)
-    not_trigger_indices = tf.cast(tf.where(tf.equal(not_targets3D, True)), tf.int32)
+    not_trigger_indices = tf.cast(tf.where(tf.equal(not_targets3D, 1)), tf.int32)
     num_not_triggers = tf.shape(not_trigger_indices)[0]
 
     # create a mask
@@ -1058,21 +1057,9 @@ class NN(Configurable):
 
     cross_entropy *= overall_mask
 
-    # cross_entropy = tf.Print(cross_entropy, [targets3D], "targets3D", summarize=5000)
-    #
-    # cross_entropy = tf.Print(cross_entropy, [targets3D_masked], "targets3D_masked", summarize=5000)
-    # cross_entropy = tf.Print(cross_entropy, [tf.shape(not_targets3D), not_targets3D], "not_targets3D", summarize=5000)
-    # cross_entropy = tf.Print(cross_entropy, [tf.shape(not_trigger_indices), not_trigger_indices], "not_targets3D", summarize=5000)
-    #
-    # cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), targets3D_masked * tf.cast(om, tf.int32)], "targets3D_masked masked", summarize=5000)
-    # cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D_masked * tf.cast(om, tf.int32), tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D_masked masked gather", summarize=5000)
-    # cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D gather", summarize=5000)
-    # cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))], "targets3D_masked gather", summarize=5000)
-    # cross_entropy = tf.Print(cross_entropy, [tf.reduce_sum(cross_entropy),cross_entropy], "cross entropy", summarize=1000)
-
     non_masked_indices = tf.where(tf.not_equal(targets3D_masked * tf.cast(overall_mask, tf.int32), 0))
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
-    count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32) + 1  # smoothing go avoid divide by 0
+    count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32) + 1  # smoothing to avoid divide by 0
     loss = tf.reduce_sum(cross_entropy) / count
 
     probabilities = tf.nn.softmax(logits_transposed)
