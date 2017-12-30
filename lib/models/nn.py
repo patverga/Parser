@@ -1062,7 +1062,7 @@ class NN(Configurable):
     # cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))], "targets3D_masked gather", summarize=5000)
     # cross_entropy = tf.Print(cross_entropy, [tf.reduce_sum(cross_entropy),cross_entropy], "cross entropy", summarize=1000)
 
-    non_masked_indices = tf.where(tf.not_equal(targets3D_masked * overall_mask, 0))
+    non_masked_indices = tf.where(tf.not_equal(targets3D_masked * tf.cast(overall_mask, tf.int32), 0))
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
     count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32) + 1  # smoothing go avoid divide by 0
     loss = tf.reduce_sum(cross_entropy) / count
