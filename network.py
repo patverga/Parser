@@ -276,7 +276,6 @@ class Network(Configurable):
     label_str = self._vocabs[3][idx]
     label_parts = label_str.split('/')
     combined_str = ''
-    print(label_parts)
     for label in label_parts:
       # bilou_str = self._vocabs[3][idx]
       bilou = label[0]
@@ -298,8 +297,9 @@ class Network(Configurable):
       combined_str += '*'
     elif combined_str[-1] == ")" and combined_str[0] != "(":
       combined_str = '*' + combined_str
-
-    print(combined_str)
+    if len(label_parts) > 1:
+      print(label_parts)
+      print(combined_str)
     return combined_str
 
     
