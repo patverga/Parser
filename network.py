@@ -522,7 +522,9 @@ class Network(Configurable):
                            train_output['svd_loss'],
                            train_output['log_loss'],
                            train_output['rel_loss'],
-                           train_output['srl_loss']]
+                           train_output['srl_loss'],
+                           train_output['srl_correct'],
+                           train_output['srl_count']]
     ops['valid_op'] = [valid_output['loss'],
                        valid_output['n_correct'],
                        valid_output['n_tokens'],
