@@ -1015,10 +1015,13 @@ class NN(Configurable):
     # (t2) f1 f2 f3
     srl_targets = targets[:,:,6:]
 
+    # get indices of trigger labels in srl_targets
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
+
+    # get
     actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), tf.stack([trigger_indices[:,0],trigger_indices[:,2]], -1))
 
-    actual_targets = tf.Print(actual_targets, [actual_targets[0]], "actual_targets", summarize=5000)
+    actual_targets = tf.Print(actual_targets, [tf.cond(tf.greater(tf.shape(actual_targets)[0], 0), lambda: actual_targets[0], lambda: actual_targets)], "actual_targets", summarize=5000)
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
