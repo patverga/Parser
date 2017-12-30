@@ -186,7 +186,9 @@ class Parser(BaseParser):
 
       with tf.variable_scope('Arcs', reuse=reuse):
         arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
-        arc_logits = tf.Print(arc_logits, [tf.shape(arc_logits)], summarize=10)
+
+        if len(tf.shape(arc_logits)) == 2:
+          arc_logits = tf.expand_dims(arc_logits, 0)
 
         arc_output = self.output_svd(arc_logits, targets[:,:,1])
         if moving_params is None:
