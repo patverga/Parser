@@ -1050,10 +1050,12 @@ class NN(Configurable):
     cross_entropy *= tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
     cross_entropy = cross_entropy * om
 
+    cross_entropy = tf.Print(cross_entropy, [targets3D], "targets3D", summarize=5000)
+
     cross_entropy = tf.Print(cross_entropy, [targets3D_masked], "targets3D_masked", summarize=5000)
     cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), targets3D_masked * tf.cast(om, tf.int32)], "targets3D_masked masked", summarize=5000)
     cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D_masked * tf.cast(om, tf.int32), tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D_masked masked gather", summarize=5000)
-    cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D_masked masked gather", summarize=5000)
+    cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D gather", summarize=5000)
 
     cross_entropy = tf.Print(cross_entropy, [tf.reduce_sum(cross_entropy),cross_entropy], "cross entropy", summarize=1000)
 
