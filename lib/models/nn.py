@@ -1024,7 +1024,7 @@ class NN(Configurable):
 
     # batch x seq x seq: 0 where target, 1 otherwise
     not_targets3D = 1-tf.reduce_max(tf.scatter_nd(trigger_idx, tf.ones_like(actual_targets), [batch_size, bucket_size, bucket_size]), axis=-1)
-    not_trigger_indices = tf.where(tf.equal(not_targets3D, True))
+    not_trigger_indices = tf.cast(tf.where(tf.equal(not_targets3D, True)), tf.int32)
     num_not_triggers = tf.shape(not_trigger_indices)[0]
 
     # get indices of words which aren't triggers
