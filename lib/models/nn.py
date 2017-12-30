@@ -1060,17 +1060,22 @@ class NN(Configurable):
     non_masked_indices = tf.where(tf.not_equal(targets3D_masked * tf.cast(overall_mask, tf.int32), 0))
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
     count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32) + 1  # smoothing to avoid divide by 0
-    loss = tf.reduce_sum(cross_entropy) / count
 
     probabilities = tf.nn.softmax(logits_transposed)
     predictions = tf.cast(tf.argmax(logits_transposed, axis=-1), tf.int32)
+    # gold_trigger_predictions
 
     correct = tf.reduce_sum(tf.cast(tf.equal(tf.gather_nd(predictions, non_masked_indices), non_masked_targets), tf.float32))
+
+    count = tf.Print(count, [count, correct])
+
+    loss = tf.reduce_sum(cross_entropy) / count
 
     output = {
       'loss': loss,
       'probabilities': probabilities,
       'predictions': tf.transpose(predictions, [0, 2, 1]),
+      # 'gold_trigger_predictions': tf.transpose(predictions, [0, 2, 1]),
       'count': count,
       'correct': correct
     }
@@ -1121,7 +1126,6 @@ class NN(Configurable):
     logits3D = tf.cond(tf.constant(self.mask_roots),
                        lambda: self.logits_mask_roots(logits3D, batch_size, bucket_size),
                        lambda: logits3D)
-
 
     mask = (1 - self.tokens_to_keep3D) * -(tf.abs(tf.reduce_min(logits3D)) + tf.abs(tf.reduce_max(logits3D)))
     logits3D_masked = logits3D + mask
