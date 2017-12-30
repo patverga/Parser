@@ -1050,7 +1050,11 @@ class NN(Configurable):
     cross_entropy *= tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
     cross_entropy = cross_entropy * om
 
-    loss = tf.reduce_sum(cross_entropy) / self.n_tokens
+    cross_entropy = tf.Print(cross_entropy, [targets3D_masked], "targets3D_masked", summarize=1000)
+    cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * om), targets3D_masked * om], "targets3D_masked masked", summarize=1000)
+    cross_entropy = tf.Print(cross_entropy, [tf.reduce_sum(cross_entropy),cross_entropy], "cross entropy", summarize=1000)
+
+    loss = tf.reduce_sum(cross_entropy) #/ self.n_tokens
 
     probabilities = tf.nn.softmax(logits_transposed)
     predictions = tf.argmax(logits_transposed, axis=-1)
