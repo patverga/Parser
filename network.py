@@ -291,13 +291,14 @@ class Network(Configurable):
       elif bilou == 'L':
         props_str = ')'
       combined_str += props_str
-    if combined_str[0] == "(" and combined_str[-1] != ")":
-      combined_str += '*'
-    if combined_str[-1] == ")" and combined_str[0] != "(":
-      combined_str = '*' + combined_str
     if not combined_str:
       # print("string: %s" % bilou_str)
       combined_str = '*'
+    elif combined_str[0] == "(" and combined_str[-1] != ")":
+      combined_str += '*'
+    elif combined_str[-1] == ")" and combined_str[0] != "(":
+      combined_str = '*' + combined_str
+
     print(combined_str)
     return combined_str
 
