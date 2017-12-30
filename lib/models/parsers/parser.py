@@ -25,7 +25,10 @@ class Parser(BaseParser):
     vocabs = dataset.vocabs
     inputs = dataset.inputs
     targets = dataset.targets
-    
+
+    # need to add batch dim for batch size 1
+    inputs = tf.Print(inputs, [tf.shape(inputs), tf.shape(targets)], summarize=10)
+
     reuse = (moving_params is not None)
     self.tokens_to_keep3D = tf.expand_dims(tf.to_float(tf.greater(inputs[:,:,0], vocabs[0].ROOT)), 2)
     self.sequence_lengths = tf.reshape(tf.reduce_sum(self.tokens_to_keep3D, [1, 2]), [-1,1])
