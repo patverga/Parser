@@ -269,23 +269,31 @@ class Network(Configurable):
     self.test(sess, validate=True)
     return
 
+  # todo need to split by '/'
+  # also need a bio version
+  # I-R-ARG0/L-ARG0
   def convert_bilou(self, idx):
-    bilou_str = self._vocabs[3][idx]
-    bilou = bilou_str[0]
-    label_type = bilou_str[2:]
-    props_str = '' # '*'
-    if bilou == 'O' or bilou == 'I':
-      props_str = '*'
-    elif bilou == 'U':
-      props_str = '(' + label_type + '*)'
-    elif bilou == 'B':
-      props_str = '(' + label_type + '*'
-    elif bilou == 'L':
-      props_str = '*)'
-    if not props_str:
-      print("string: %s" % bilou_str)
-      props_str = '*'
-    return props_str
+    label_str = self._vocabs[3][idx]
+    label_parts = label_str.split('/')
+    combined_str = ''
+    for label in label_parts:
+      # bilou_str = self._vocabs[3][idx]
+      bilou = label[0]
+      label_type = label[2:]
+      props_str = '' # '*'
+      if bilou == 'O' or bilou == 'I':
+        props_str = ''
+      elif bilou == 'U':
+        props_str = '(' + label_type + '*)'
+      elif bilou == 'B':
+        props_str = '(' + label_type + '*'
+      elif bilou == 'L':
+        props_str = '*)'
+      combined_str += props_str
+    if not combined_str:
+      # print("string: %s" % bilou_str)
+      combined_str = '*'
+    return combined_str
 
     
   #=============================================================
