@@ -1065,6 +1065,10 @@ class NN(Configurable):
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
     count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32)
 
+    cross_entropy = tf.Print(cross_entropy, [count], "count", summarize=1000)
+    cross_entropy = tf.Print(cross_entropy, [tf.reduce_sum(cross_entropy)], "tf.reduce_sum(cross_entropy)", summarize=1000)
+
+
     loss = tf.reduce_sum(cross_entropy) / count
 
     probabilities = tf.nn.softmax(logits_transposed)
