@@ -276,6 +276,7 @@ class Network(Configurable):
     label_str = self._vocabs[3][idx]
     label_parts = label_str.split('/')
     combined_str = ''
+    print(label_parts)
     for label in label_parts:
       # bilou_str = self._vocabs[3][idx]
       bilou = label[0]
@@ -286,13 +287,14 @@ class Network(Configurable):
       elif bilou == 'U':
         props_str = '(' + label_type + '*)'
       elif bilou == 'B':
-        props_str = '(' + label_type + '*'
+        props_str = '(' + label_type # + '*'
       elif bilou == 'L':
-        props_str = '*)'
+        props_str = ')'
       combined_str += props_str
     if not combined_str:
       # print("string: %s" % bilou_str)
       combined_str = '*'
+    print(combined_str)
     return combined_str
 
     
