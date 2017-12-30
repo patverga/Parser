@@ -1070,7 +1070,7 @@ class NN(Configurable):
     output = {
       'loss': loss,
       'probabilities': probabilities,
-      'predictions': predictions,
+      'predictions': tf.transpose(predictions, [0, 2, 1]),
       'count': count,
       'correct': correct
     }
