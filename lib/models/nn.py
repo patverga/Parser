@@ -1051,7 +1051,7 @@ class NN(Configurable):
     cross_entropy = cross_entropy * om
 
     cross_entropy = tf.Print(cross_entropy, [targets3D_masked], "targets3D_masked", summarize=1000)
-    cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * om), targets3D_masked * om], "targets3D_masked masked", summarize=1000)
+    cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), targets3D_masked * tf.cast(om, tf.int32)], "targets3D_masked masked", summarize=1000)
     cross_entropy = tf.Print(cross_entropy, [tf.reduce_sum(cross_entropy),cross_entropy], "cross entropy", summarize=1000)
 
     loss = tf.reduce_sum(cross_entropy) #/ self.n_tokens
