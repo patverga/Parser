@@ -1020,27 +1020,25 @@ class NN(Configurable):
     i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
     i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[0], 1])
     trigger_idx = tf.stack([i1, i2, i3], axis=-1)
+    targets3D = tf.scatter_nd(trigger_idx, actual_targets, [batch_size, bucket_size, bucket_size])
 
-    # not_trigger_indices = tf.cast(tf.where(tf.not_equal(srl_targets, trigger_label_idx)), tf.int32)
+    # get indices of words which aren't triggers
     eq = tf.cast(tf.equal(srl_targets, trigger_label_idx), tf.float32)
     eq_s = tf.reduce_sum(eq, -1)
     not_trigger_indices = tf.cast(tf.where(tf.equal(1.0 - eq_s, 1.0)), tf.int32)
+
+    # create a mask
     i1 = tf.tile(tf.expand_dims(not_trigger_indices[:, 0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(not_trigger_indices[:, 1], -1), [1, bucket_size])
     i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(not_trigger_indices)[0], 1])
     not_trigger_idx = tf.stack([i1, i2, i3], axis=-1)
     num_not_triggers = tf.shape(not_trigger_idx)[0]
+
+    # these are the ones we are going to MASK
+    # subsample_trigger_rate = 0.0 -> mask nothing; subsample_trigger_rate = 1.0 -> mask everything
     num_to_sample = tf.cast((1.0 - self.subsample_trigger_rate) * tf.cast(num_not_triggers, tf.float32), tf.int32)
     sampled_indices = tf.random_shuffle(not_trigger_idx)[:num_to_sample]
 
-    targets3D = tf.scatter_nd(trigger_idx, actual_targets, [batch_size, bucket_size, bucket_size])
-
-    # targets3D = tf.Print(targets3D, [tf.shape(actual_targets)], "actual_targets", summarize=10)
-    # targets3D = tf.Print(targets3D, [tf.shape(sampled_indices)], "sampled_indices", summarize=10)
-    # targets3D = tf.Print(targets3D, [tf.shape(trigger_idx)], "trigger_idx", summarize=10)
-    # targets3D = tf.Print(targets3D, [tf.shape(tf.fill([num_to_sample, bucket_size], 1))], "tf.fill([num_to_sample], 1)", summarize=10)
-
-    # todo right now this masks ALL outside. want to subsample and pass in the rate
     om = 1.0 - tf.scatter_nd(sampled_indices, tf.fill([num_to_sample, bucket_size], 1.0), [batch_size, bucket_size, bucket_size])
 
     targ_empty_indices = tf.cast(tf.where(tf.equal(targets3D, 0)), tf.int32)
@@ -1050,17 +1048,6 @@ class NN(Configurable):
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D_masked)
     cross_entropy *= self.tokens_to_keep3D
     cross_entropy *= tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
-
-    # om = tf.Print(om, [tf.shape(cross_entropy), cross_entropy], "xent", summarize=1000)
-    # om = tf.Print(om, [num_to_sample, tf.shape(om), om], "outside_mask", summarize=1000)
-    # om = tf.Print(om, [tf.shape(just_ones), just_ones], "just ones", summarize=1000)
-    # om = tf.Print(om, [tf.shape(sampled_indices), sampled_indices], "sampled indices", summarize=1000)
-    # om = tf.Print(om, [tf.shape(not_trigger_idx), not_trigger_idx], "not_trigger_idx", summarize=1000)
-    # om = tf.Print(om, [tf.shape(not_trigger_indices), not_trigger_indices], "not_trigger_indices", summarize=1000)
-
-
-
-
     cross_entropy = cross_entropy * om
 
     loss = tf.reduce_sum(cross_entropy) / self.n_tokens
