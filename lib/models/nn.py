@@ -1027,17 +1027,11 @@ class NN(Configurable):
     not_trigger_indices = tf.cast(tf.where(tf.equal(not_targets3D, True)), tf.int32)
     num_not_triggers = tf.shape(not_trigger_indices)[0]
 
-    # get indices of words which aren't triggers
-    # eq = tf.cast(tf.equal(srl_targets, trigger_label_idx), tf.float32)
-    # eq_s = tf.reduce_sum(eq, -1)
-    # not_trigger_indices = tf.cast(tf.where(tf.equal(1.0 - eq_s, 1.0)), tf.int32)
-
     # create a mask
     i1 = tf.tile(tf.expand_dims(not_trigger_indices[:, 0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(not_trigger_indices[:, 1], -1), [1, bucket_size])
-    i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(not_trigger_indices)[0], 1])
+    i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [num_not_triggers, 1])
     not_trigger_idx = tf.stack([i1, i2, i3], axis=-1)
-    num_not_triggers = tf.shape(not_trigger_idx)[0]
 
     # these are the ones we are going to MASK
     # subsample_trigger_rate = 0.0 -> mask nothing; subsample_trigger_rate = 1.0 -> mask everything
@@ -1055,19 +1049,17 @@ class NN(Configurable):
     cross_entropy *= tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
     cross_entropy = cross_entropy * om
 
-    cross_entropy = tf.Print(cross_entropy, [targets3D], "targets3D", summarize=5000)
-
-    cross_entropy = tf.Print(cross_entropy, [targets3D_masked], "targets3D_masked", summarize=5000)
-    cross_entropy = tf.Print(cross_entropy, [tf.shape(not_targets3D), not_targets3D], "not_targets3D", summarize=5000)
-    cross_entropy = tf.Print(cross_entropy, [tf.shape(not_trigger_indices), not_trigger_indices], "not_targets3D", summarize=5000)
-
-    cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), targets3D_masked * tf.cast(om, tf.int32)], "targets3D_masked masked", summarize=5000)
-    cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D_masked * tf.cast(om, tf.int32), tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D_masked masked gather", summarize=5000)
-    cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D gather", summarize=5000)
-    cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))], "targets3D_masked gather", summarize=5000)
-
-
-    cross_entropy = tf.Print(cross_entropy, [tf.reduce_sum(cross_entropy),cross_entropy], "cross entropy", summarize=1000)
+    # cross_entropy = tf.Print(cross_entropy, [targets3D], "targets3D", summarize=5000)
+    #
+    # cross_entropy = tf.Print(cross_entropy, [targets3D_masked], "targets3D_masked", summarize=5000)
+    # cross_entropy = tf.Print(cross_entropy, [tf.shape(not_targets3D), not_targets3D], "not_targets3D", summarize=5000)
+    # cross_entropy = tf.Print(cross_entropy, [tf.shape(not_trigger_indices), not_trigger_indices], "not_targets3D", summarize=5000)
+    #
+    # cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), targets3D_masked * tf.cast(om, tf.int32)], "targets3D_masked masked", summarize=5000)
+    # cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D_masked * tf.cast(om, tf.int32), tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D_masked masked gather", summarize=5000)
+    # cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(targets3D_masked * tf.cast(om, tf.int32)), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0)))], "targets3D gather", summarize=5000)
+    # cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))], "targets3D_masked gather", summarize=5000)
+    # cross_entropy = tf.Print(cross_entropy, [tf.reduce_sum(cross_entropy),cross_entropy], "cross entropy", summarize=1000)
 
     loss = tf.reduce_sum(cross_entropy) #/ self.n_tokens
 
