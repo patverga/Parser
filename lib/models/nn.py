@@ -1036,7 +1036,7 @@ class NN(Configurable):
 
     # these are the ones we are going to MASK
     # subsample_trigger_rate = 0.0 -> mask nothing; subsample_trigger_rate = 1.0 -> mask everything
-    num_to_sample = tf.cast((1.0 - self.subsample_trigger_rate) * tf.cast(num_not_triggers, tf.float32), tf.int32)
+    num_to_sample = tf.cast(self.subsample_trigger_rate * tf.cast(num_not_triggers, tf.float32), tf.int32)
     sampled_indices = tf.random_shuffle(not_trigger_idx)[:num_to_sample]
 
     om = 1.0 - tf.scatter_nd(sampled_indices, tf.fill([num_to_sample, bucket_size], 1.0), [batch_size, bucket_size, bucket_size])
