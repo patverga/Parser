@@ -1018,10 +1018,11 @@ class NN(Configurable):
     # get indices of trigger labels in srl_targets
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
 
-    # get
+    # get all the tags for each token (which is the trigger for a frame), structuring
+    # targets3D as follows:
+    # (t1) f1 f1 f1
+    # (t2) f3 f3 f3
     actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), tf.stack([trigger_indices[:,0],trigger_indices[:,2]], -1))
-
-    actual_targets = tf.Print(actual_targets, [tf.cond(tf.greater(tf.shape(actual_targets)[0], 0), lambda: actual_targets[0], lambda: actual_targets)], "actual_targets", summarize=5000)
 
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
     i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
