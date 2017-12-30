@@ -1077,7 +1077,7 @@ class NN(Configurable):
       'loss': loss,
       'probabilities': probabilities,
       'predictions': predictions,
-      'count': count
+      'count': count,
       'correct': correct
     }
 
