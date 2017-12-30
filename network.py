@@ -156,6 +156,8 @@ class Network(Configurable):
       n_train_correct = 0
       n_train_tokens = 0
       n_train_iters = 0
+      n_train_srl_correct = 0
+      n_train_srl_count = 0
       total_train_iters = sess.run(self.global_step)
       valid_time = 0
       valid_loss = 0
@@ -171,7 +173,7 @@ class Network(Configurable):
             # Dump the profile to '/tmp/train_dir' after the step.
             pctx.dump_next_step()
 
-          _, loss, n_correct, n_tokens, roots_loss, cycle2_loss, svd_loss, log_loss, rel_loss, srl_loss = sess.run(self.ops['train_op_srl'], feed_dict=feed_dict)
+          _, loss, n_correct, n_tokens, roots_loss, cycle2_loss, svd_loss, log_loss, rel_loss, srl_loss, srl_correct, srl_count = sess.run(self.ops['train_op_srl'], feed_dict=feed_dict)
           train_time += time.time() - start_time
           train_loss += loss
           train_log_loss += log_loss
@@ -183,6 +185,8 @@ class Network(Configurable):
           n_train_sents += len(train_targets)
           n_train_correct += n_correct
           n_train_tokens += n_tokens
+          n_train_srl_correct += srl_correct
+          n_train_srl_count += srl_count
           n_train_iters += 1
           total_train_iters += 1
           self.history['train_loss'].append(loss)
@@ -219,8 +223,9 @@ class Network(Configurable):
             train_rel_loss /= n_train_iters
             train_srl_loss /= n_train_iters
             train_accuracy = 100 * n_train_correct / n_train_tokens
+            train_srl_accuracy = 100 * n_train_srl_correct / n_train_srl_count
             train_time = n_train_sents / train_time
-            print('%6d) Train loss: %.4f    Train acc: %5.2f%%    Train rate: %6.1f sents/sec\n\tValid loss: %.4f    Valid acc: %5.2f%%    Valid rate: %6.1f sents/sec' % (total_train_iters, train_loss, train_accuracy, train_time, valid_loss, valid_accuracy, valid_time))
+            print('%6d) Train loss: %.4f    Train acc: %5.2f%%    SRL acc: %5.2f%%    Train rate: %6.1f sents/sec\n\tValid loss: %.4f    Valid acc: %5.2f%%    Valid rate: %6.1f sents/sec' % (total_train_iters, train_loss, train_accuracy, train_srl_accuracy, train_time, valid_loss, valid_accuracy, valid_time))
             print('\tlog loss: %f\trel loss: %f\tsrl loss: %f\troots loss: %f\t2cycle loss: %f\tsvd loss: %f' % (train_log_loss, train_rel_loss, train_srl_loss, train_roots_loss, train_cycle2_loss, train_svd_loss))
             sys.stdout.flush()
             train_time = 0
@@ -233,6 +238,8 @@ class Network(Configurable):
             train_roots_loss = 0
             train_cycle2_loss = 0
             train_rel_loss = 0
+            n_train_srl_correct = 0
+            n_train_srl_count = 0
           if save_every and (total_train_iters % save_every == 0):
             with open(os.path.join(self.save_dir, 'history.pkl'), 'w') as f:
               pkl.dump(self.history, f)
@@ -525,8 +532,8 @@ class Network(Configurable):
                       valid_output['len_2_cycles'],
                       valid_output['srl_probs'],
                       valid_output['srl_preds'],
-                      test_output['srl_correct'],
-                      test_output['srl_count'],
+                      valid_output['srl_correct'],
+                      valid_output['srl_count'],
                       test_output['probabilities'],
                       test_output['n_cycles'],
                       test_output['len_2_cycles'],
