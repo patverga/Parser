@@ -1063,7 +1063,7 @@ class NN(Configurable):
 
     non_masked_indices = tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0))
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
-    count = tf.count_nonzero(non_masked_targets)
+    count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32)
 
     loss = tf.reduce_sum(cross_entropy) / count
 
