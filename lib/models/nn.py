@@ -1061,15 +1061,15 @@ class NN(Configurable):
     # cross_entropy = tf.Print(cross_entropy, [tf.count_nonzero(tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))), tf.gather_nd(targets3D, tf.where(tf.not_equal(targets3D_masked, 3)))], "targets3D_masked gather", summarize=5000)
     # cross_entropy = tf.Print(cross_entropy, [tf.reduce_sum(cross_entropy),cross_entropy], "cross entropy", summarize=1000)
 
-    loss = tf.reduce_sum(cross_entropy) #/ self.n_tokens
-
-    probabilities = tf.nn.softmax(logits_transposed)
-    predictions = tf.argmax(logits_transposed, axis=-1)
-
     non_masked_indices = tf.where(tf.not_equal(targets3D_masked * tf.cast(om, tf.int32), 0))
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
-
     count = tf.count_nonzero(non_masked_targets)
+
+    loss = tf.reduce_sum(cross_entropy) / count
+
+    probabilities = tf.nn.softmax(logits_transposed)
+    predictions = tf.cast(tf.argmax(logits_transposed, axis=-1), tf.int32)
+
     correct = tf.reduce_sum(tf.cast(tf.equal(tf.gather_nd(predictions, non_masked_indices), non_masked_targets), tf.float32))
 
 
