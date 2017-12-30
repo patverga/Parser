@@ -181,13 +181,10 @@ class Parser(BaseParser):
         dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
         head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
 
-
-
-
       with tf.variable_scope('Arcs', reuse=reuse):
         arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
 
-        arc_logits = tf.cond(tf.equal(tf.shape(tf.shape(arc_logits)), 2), tf.expand_dims(arc_logits, 0), tf.identity(arc_logits))
+        arc_logits = tf.cond(tf.equal(tf.shape(tf.shape(arc_logits)), 2), lambda: tf.expand_dims(arc_logits, 0), lambda: arc_logits)
 
         arc_output = self.output_svd(arc_logits, targets[:,:,1])
         if moving_params is None:
