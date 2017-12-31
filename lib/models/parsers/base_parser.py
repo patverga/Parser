@@ -90,9 +90,11 @@ class BaseParser(NN):
       # targets has 3 non-srl things, then srls, variable length
       non_srl_targets_len = 3
       tokens = np.arange(length)
+      srl_pred = srl_pred[tokens]
       num_gold_srls = len(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx)[0])
       num_pred_srls = len(np.where(srl_pred == trigger_idx)[0])
       print("s_pred shape", srl_pred.shape)
+      print("num pred srls", num_pred_srls)
       print("np.where(s_pred == trigger_idx)", np.where(srl_pred == trigger_idx))
 
       # print("num srls", num_srls)
@@ -125,7 +127,7 @@ class BaseParser(NN):
       # print(targets[tokens, non_srl_targets_len:num_srls+non_srl_targets_len])
       sent[:,9:9+num_gold_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
       # todo fix this right here! need to grab the right srls
-      s_pred = srl_pred[tokens, :num_pred_srls]
+      s_pred = srl_pred[:, :num_pred_srls]
       if len(s_pred.shape) == 1:
         s_pred = np.expand_dims(s_pred, -1)
       sent[:,9+num_pred_srls:] = s_pred
