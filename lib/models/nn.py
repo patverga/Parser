@@ -1067,7 +1067,7 @@ class NN(Configurable):
 
     correct = tf.reduce_sum(tf.cast(tf.equal(tf.gather_nd(predictions, non_masked_indices), non_masked_targets), tf.float32))
 
-    count = tf.Print(count, [count, correct])
+    count = tf.Print(count, [count, correct, tf.reduce_sum(cross_entropy)])
 
     loss = tf.reduce_sum(cross_entropy) / count
 
