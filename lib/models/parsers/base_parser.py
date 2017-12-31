@@ -90,7 +90,11 @@ class BaseParser(NN):
       # targets has 3 non-srl things, then srls, variable length
       non_srl_targets_len = 3
       tokens = np.arange(length)
-      num_srls = len(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx)[0])
+      num_gold_srls = len(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx)[0])
+      num_pred_srls = len(np.where(s_pred == trigger_idx)[0])
+      print("s_pred shape", s_pred.shape)
+      print("np.where(s_pred == trigger_idx)", np.where(s_pred == trigger_idx))
+
       # print("num srls", num_srls)
       # print("where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
       # print("len", len(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx)))
@@ -98,7 +102,7 @@ class BaseParser(NN):
 
       # num_srls = targets.shape[-1]-non_srl_targets_len
       # sent will contain 7 things non-srl, including one thing from targets
-      sent = -np.ones((length, 2*num_srls+9), dtype=int)
+      sent = -np.ones((length, num_pred_srls+num_gold_srls+9), dtype=int)
 
       # print("srl targets", targets[tokens, 3:])
       # print("srl triggers", np.sum(np.where(targets[tokens, 3:] == trigger_idx)))
@@ -119,11 +123,12 @@ class BaseParser(NN):
       sent[:,8] = targets[tokens, 2] # 9
       # print(sent[:,9:9+num_srls])
       # print(targets[tokens, non_srl_targets_len:num_srls+non_srl_targets_len])
-      sent[:,9:9+num_srls] = targets[tokens, non_srl_targets_len:num_srls+non_srl_targets_len] # num_srls
-      s_pred = srl_pred[tokens, :num_srls]
+      sent[:,9:9+num_gold_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
+      # todo fix this right here! need to grab the right srls
+      s_pred = srl_pred[tokens, :num_pred_srls]
       if len(s_pred.shape) == 1:
         s_pred = np.expand_dims(s_pred, -1)
-      sent[:,9+num_srls:] = s_pred
+      sent[:,9+num_pred_srls:] = s_pred
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
