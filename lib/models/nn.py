@@ -1067,12 +1067,12 @@ class NN(Configurable):
 
     correct = tf.reduce_sum(tf.cast(tf.equal(tf.gather_nd(predictions, non_masked_indices), non_masked_targets), tf.float32))
 
-    count  = tf.Print(count, [targets3D_masked], "targets3D_masked", summarize=4000)
-
-    count  = tf.Print(count, [overall_mask], "overall_mask", summarize=4000)
-
-    count  = tf.Print(count, [cross_entropy], "cross entropy", summarize=4000)
-    count = tf.Print(count, [count, correct, tf.reduce_sum(cross_entropy)])
+    # count  = tf.Print(count, [targets3D_masked], "targets3D_masked", summarize=4000)
+    #
+    # count  = tf.Print(count, [overall_mask], "overall_mask", summarize=4000)
+    #
+    # count  = tf.Print(count, [cross_entropy], "cross entropy", summarize=4000)
+    # count = tf.Print(count, [count, correct, tf.reduce_sum(cross_entropy)])
 
     loss = tf.reduce_sum(cross_entropy) / count
 
