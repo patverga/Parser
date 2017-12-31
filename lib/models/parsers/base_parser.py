@@ -130,7 +130,7 @@ class BaseParser(NN):
       s_pred = srl_pred[:, :num_pred_srls]
       if len(s_pred.shape) == 1:
         s_pred = np.expand_dims(s_pred, -1)
-      sent[:,9+num_pred_srls:] = s_pred
+      sent[:,9+num_gold_srls:] = s_pred
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
