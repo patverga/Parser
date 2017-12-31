@@ -1059,7 +1059,7 @@ class NN(Configurable):
 
     non_masked_indices = tf.where(tf.not_equal(targets3D_masked * tf.cast(overall_mask, tf.int32), 0))
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
-    count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32) + 1  # smoothing to avoid divide by 0
+    count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32) #+ 1  # smoothing to avoid divide by 0
 
     probabilities = tf.nn.softmax(logits_transposed)
     predictions = tf.cast(tf.argmax(logits_transposed, axis=-1), tf.int32)
@@ -1074,7 +1074,7 @@ class NN(Configurable):
     # count  = tf.Print(count, [cross_entropy], "cross entropy", summarize=4000)
     # count = tf.Print(count, [count, correct, tf.reduce_sum(cross_entropy)])
 
-    loss = tf.reduce_sum(cross_entropy) / count
+    loss = tf.cond(tf.equal(count, 0.), lambda: tf.constant(0.), lambda: tf.reduce_sum(cross_entropy) / count)
 
     output = {
       'loss': loss,
