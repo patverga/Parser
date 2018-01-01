@@ -75,6 +75,7 @@ class BaseParser(NN):
     non_tree_preds = []
     if np.all(n_cycles == -1):
         n_cycles = len_2_cycles = [-1] * len(mb_inputs)
+    b = True
     for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
@@ -95,7 +96,7 @@ class BaseParser(NN):
       num_pred_srls = len(np.where(srl_pred == trigger_idx)[1])
       # print("s_pred shape", srl_pred.shape)
       # print("num pred srls", num_pred_srls)
-      if num_pred_srls > 0:
+      if b:# num_pred_srls > 0:
         np.set_printoptions(threshold=np.nan)
         print("shape, tokens", srl_pred.shape, length)
         print("np.where(s_pred == trigger_idx)", np.where(srl_pred == trigger_idx))
@@ -104,6 +105,7 @@ class BaseParser(NN):
         print("gold where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
         print("gold", targets[tokens, non_srl_targets_len:])
         print("gold where", targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len])
+        b=False
 
       # print("num srls", num_srls)
       # print("where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
