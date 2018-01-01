@@ -392,7 +392,8 @@ class Network(Configurable):
         data = dataset._metabucket[bkt_idx].data[idx]
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
-        srl_preds = preds[:,9:]
+        num_gold_srls = preds[0, 9]
+        srl_preds = preds[:, 10+num_gold_srls:]
         unclosed_paren = [0]*srl_preds.shape[1]
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
@@ -403,11 +404,8 @@ class Network(Configurable):
               unclosed_paren[j] += 1
             if srl_strs[-1] == ")":
               unclosed_paren[j] -= 1
-          num_srl_strs = len(srl_strs)
-          fields = (word_str,) + tuple(srl_strs[int(num_srl_strs/2):])
-          # print(fields)
+          fields = (word_str,) + tuple(srl_strs)
           owpl_str = '\t'.join(fields)
-          # print(owpl_str, file=f)
           f.write(owpl_str + "\n")
         f.write('\n')
 
@@ -419,7 +417,8 @@ class Network(Configurable):
         data = dataset._metabucket[bkt_idx].data[idx]
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
-        srl_preds = preds[:,9:]
+        num_gold_srls = preds[0, 9]
+        srl_preds = preds[:, 10:10+num_gold_srls]
         unclosed_paren = [0]*srl_preds.shape[1]
         # print("srl preds shape", srl_preds.shape)
         # print("srl_preds", srl_preds)
@@ -431,11 +430,8 @@ class Network(Configurable):
               unclosed_paren[j] += 1
             if srl_strs[-1] == ")":
               unclosed_paren[j] -= 1
-          num_srl_strs = len(srl_strs)
-          fields = (word_str,) + tuple(srl_strs[:int(num_srl_strs/2)])
-          # print(fields)
+          fields = (word_str,) + tuple(srl_strs)
           owpl_str = '\t'.join(fields)
-          # print(owpl_str, file=f)
           f.write(owpl_str + "\n")
         if np.any(unclosed_paren):
           print("unclosed paren")
