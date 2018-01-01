@@ -1013,7 +1013,7 @@ class NN(Configurable):
     # now we have k sets of targets for the k frames
     # (t1) f1 f2 f3
     # (t2) f1 f2 f3
-    srl_targets = targets[:,:,6:]
+    srl_targets = targets[:,:,3:]
 
     # get indices of trigger labels in srl_targets
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
@@ -1059,8 +1059,12 @@ class NN(Configurable):
 
     non_masked_indices = tf.where(tf.not_equal(targets3D_masked * tf.cast(overall_mask, tf.int32), 0))
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
-    count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32) #+ 1  # smoothing to avoid divide by 0
+    count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32)
 
+    # training with predictions = batch x seq_len x seq_len
+    # where each row is set of srl tags for that trigger
+    # transposed, this gives us columns for each trigger; need to select out the columns
+    # which contain the trigger label
     probabilities = tf.nn.softmax(logits_transposed)
     predictions = tf.cast(tf.argmax(logits_transposed, axis=-1), tf.int32)
     # gold_trigger_predictions
