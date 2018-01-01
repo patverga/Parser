@@ -96,7 +96,10 @@ class BaseParser(NN):
       # print("s_pred shape", srl_pred.shape)
       # print("num pred srls", num_pred_srls)
       if num_pred_srls > 0:
+        np.set_printoptions(threshold=np.nan)
+        print("shape, tokens", srl_pred.shape, length)
         print("np.where(s_pred == trigger_idx)", np.where(srl_pred == trigger_idx))
+        print("srl pred", srl_pred)
 
       # print("num srls", num_srls)
       # print("where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
