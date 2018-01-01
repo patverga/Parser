@@ -75,7 +75,6 @@ class BaseParser(NN):
     non_tree_preds = []
     if np.all(n_cycles == -1):
         n_cycles = len_2_cycles = [-1] * len(mb_inputs)
-    b = True
     for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
@@ -96,16 +95,15 @@ class BaseParser(NN):
       num_pred_srls = len(np.where(srl_pred == trigger_idx)[1])
       # print("s_pred shape", srl_pred.shape)
       # print("num pred srls", num_pred_srls)
-      if b:# num_pred_srls > 0:
+      if num_pred_srls > 0:
         np.set_printoptions(threshold=np.nan)
         print("shape, tokens", srl_pred.shape, length)
         print("np.where(s_pred == trigger_idx)", np.where(srl_pred == trigger_idx))
         print("srl pred", srl_pred)
-        print("srl pred where", srl_pred[:,np.where(srl_pred == trigger_idx)[1]])
+        print("srl pred where", srl_pred[:, np.where(srl_pred == trigger_idx)[1]])
         print("gold where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
         print("gold", targets[tokens, non_srl_targets_len:])
         print("gold where", targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len])
-        b=False
 
       # print("num srls", num_srls)
       # print("where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
@@ -114,7 +112,7 @@ class BaseParser(NN):
 
       # num_srls = targets.shape[-1]-non_srl_targets_len
       # sent will contain 7 things non-srl, including one thing from targets
-      sent = -np.ones((length, num_pred_srls+num_gold_srls+9), dtype=int)
+      sent = -np.ones((length, num_pred_srls+num_gold_srls+10), dtype=int)
 
       # print("srl targets", targets[tokens, 3:])
       # print("srl triggers", np.sum(np.where(targets[tokens, 3:] == trigger_idx)))
@@ -133,11 +131,12 @@ class BaseParser(NN):
       sent[:,6] = rel_preds[tokens] # 7
       sent[:,7] = targets[tokens, 1] # 8
       sent[:,8] = targets[tokens, 2] # 9
-      sent[:,9:9+num_gold_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
+      sent[:,9] = num_gold_srls # 10
+      sent[:,10:10+num_gold_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
       s_pred = srl_pred[:,np.where(srl_pred == trigger_idx)[1]]
       if len(s_pred.shape) == 1:
         s_pred = np.expand_dims(s_pred, -1)
-      sent[:,9+num_gold_srls:] = s_pred
+      sent[:,10+num_gold_srls:] = s_pred
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
