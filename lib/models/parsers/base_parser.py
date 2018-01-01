@@ -101,6 +101,9 @@ class BaseParser(NN):
         print("np.where(s_pred == trigger_idx)", np.where(srl_pred == trigger_idx))
         print("srl pred", srl_pred)
         print("srl pred where", srl_pred[:,np.where(srl_pred == trigger_idx)[1]])
+        print("gold where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
+        print("gold", targets[tokens, non_srl_targets_len:])
+        print("gold where", targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len])
 
       # print("num srls", num_srls)
       # print("where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
