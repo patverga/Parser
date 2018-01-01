@@ -71,7 +71,7 @@ class Network(Configurable):
       vocab_files = [(self.word_file, 3, 'Words'),
                      (self.tag_file, [5, 4], 'Tags'), # auto, gold
                      (self.rel_file, 7, 'Rels'),
-                     (self.srl_file, range(15, 50), 'SRLs'),]
+                     (self.srl_file, range(14, 50), 'SRLs'),]
 
     print("Loading vocabs")
     sys.stdout.flush()
