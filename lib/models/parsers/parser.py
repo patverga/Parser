@@ -232,7 +232,7 @@ class Parser(BaseParser):
 
     with tf.variable_scope('SRL-Arcs', reuse=reuse):
       srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, num_srl_classes)
-      srl_output = self.output_srl(srl_logits, targets, vocabs[3]['U-V'][0], vocabs[3]["O"][0], transition_params)
+      srl_output = self.output_srl(srl_logits, targets, vocabs[3]['U-V'][0], vocabs[3]["O"][0], transition_params if self.viterbi_train else None)
 
     # todo weight?
     srl_loss = srl_output['loss']
