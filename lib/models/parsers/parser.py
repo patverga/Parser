@@ -232,7 +232,8 @@ class Parser(BaseParser):
 
     with tf.variable_scope('SRL-Triggers', reuse=reuse):
       trigger_classifier_mlp = self.MLP(top_recur, self.trigger_mlp_size, n_splits=1)
-      trigger_classifier = self.MLP(trigger_classifier_mlp, 2, n_splits=1)
+      with tf.variable_scope('SRL-Triggers-Classifier', reuse=reuse):
+        trigger_classifier = self.MLP(trigger_classifier_mlp, 2, n_splits=1)
       trigger_output = self.output_trigger(trigger_classifier, targets, vocabs[3]['U-V'][0])
 
     with tf.variable_scope('SRL-Arcs', reuse=reuse):
