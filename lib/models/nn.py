@@ -1171,8 +1171,7 @@ class NN(Configurable):
       # 'gold_trigger_predictions': tf.transpose(predictions, [0, 2, 1]),
       'count': self.n_tokens,
       'correct': correct,
-      'targets_idx': idx,
-      'predictions_idx': tf.where(tf.equal(predictions, 1))
+      'targets': targets,
     }
 
     return output
