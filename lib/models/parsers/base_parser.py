@@ -135,15 +135,15 @@ class BaseParser(NN):
       sent[:,9] = num_gold_srls # 10
       sent[:,10:10+num_gold_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
       s_pred = srl_pred[:,np.where(srl_trigger == 1)[0]]
-      if transition_params is not None and s_pred.any():
-        v_pred = []
-        s_log = srl_logit[:, np.where(srl_trigger == 1)[0]]
-        for s in s_log:
-          viterbi_sequence, _ = tf.contrib.crf.viterbi_decode(s, transition_params)
-          v_pred.append(viterbi_sequence)
-        s_pred = np.array(v_pred)
-        # print("v_pred", v_pred)
-        # print("s_pred", s_pred)
+      # if transition_params is not None and s_pred.any():
+      #   v_pred = []
+      #   s_log = srl_logit[:, np.where(srl_trigger == 1)[0]]
+      #   for s in s_log:
+      #     viterbi_sequence, _ = tf.contrib.crf.viterbi_decode(s, transition_params)
+      #     v_pred.append(viterbi_sequence)
+      #   s_pred = np.array(v_pred)
+      #   # print("v_pred", v_pred)
+      #   # print("s_pred", s_pred)
 
       if len(s_pred.shape) == 1:
         s_pred = np.expand_dims(s_pred, -1)
