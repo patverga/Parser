@@ -424,7 +424,7 @@ class Configurable(object):
 
   @property
   def viterbi(self):
-    return self._config.getbool('Training', 'viterbi')
+    return self._config.getboolean('Training', 'viterbi')
   argparser.add_argument('--viterbi')
 
   #=============================================================
