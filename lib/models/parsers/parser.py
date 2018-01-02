@@ -68,7 +68,7 @@ class Parser(BaseParser):
     #   relu_dropout = 1.0
     #   self.recur_keep_prob = 1.0
 
-    with tf.variable_scope(reuse=reuse):  # to share parameters, change scope here
+    with tf.variable_scope("crf", reuse=reuse):  # to share parameters, change scope here
       if self.viterbi:
         transition_params = tf.get_variable("transitions", [num_srl_classes, num_srl_classes])
       else:
