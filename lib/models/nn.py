@@ -994,9 +994,9 @@ class NN(Configurable):
     logits_transposed = tf.transpose(logits, [0, 1, 3, 2])
 
     original_shape = tf.shape(logits)
-    original_shape = tf.shape(logits)
     batch_size = original_shape[0]
     bucket_size = original_shape[1]
+    num_classes = original_shape[2]
     flat_shape = tf.stack([batch_size, bucket_size])
 
     # flatten logits along last dimension: batch x seq_len x seq_len*num_classes
@@ -1056,7 +1056,7 @@ class NN(Configurable):
     if transition_params:
       # need to flatten batch x seq_len x seq_len x logits to
       # batch*seq_len x seq_len x logits,
-      flattened_scores = tf.reshape(logits_transposed, [batch_size*bucket_size, bucket_size, -1])
+      flattened_scores = tf.reshape(logits_transposed, [batch_size*bucket_size, bucket_size, num_classes])
       flattened_labels = tf.reshape(targets3D_masked, [batch_size*bucket_size, bucket_size])
 
       # and also get flattened sequence lengths.
