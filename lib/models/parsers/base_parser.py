@@ -75,7 +75,7 @@ class BaseParser(NN):
     non_tree_preds = []
     if np.all(n_cycles == -1):
         n_cycles = len_2_cycles = [-1] * len(mb_inputs)
-    for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred, srl_logit in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds, srl_logits):
+    for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred, srl_logit, srl_trigger in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds, srl_logits, srl_triggers):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
       parse_preds, rel_preds, argmax_time, roots_lt, roots_gt = self.prob_argmax(parse_probs, rel_probs, tokens_to_keep, n_cycle, len_2_cycle)
@@ -92,11 +92,12 @@ class BaseParser(NN):
       tokens = np.arange(length)
       srl_pred = srl_pred[tokens]
       num_gold_srls = len(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx)[0])
-      num_pred_srls = len(np.unique(np.where(srl_pred == trigger_idx)[0]))
+      num_pred_srls = len(np.where(srl_trigger == 1)[0])
       # print("s_pred shape", srl_pred.shape)
       # print("num pred srls", num_pred_srls)
       if num_pred_srls > 0:
         np.set_printoptions(threshold=np.nan)
+        print("srl_trigger", srl_trigger)
         print("shape, tokens", srl_pred.shape, length)
         print("np.where(s_pred == trigger_idx)", np.where(srl_pred == trigger_idx))
         print("srl pred", srl_pred)
@@ -133,10 +134,10 @@ class BaseParser(NN):
       sent[:,8] = targets[tokens, 2] # 9
       sent[:,9] = num_gold_srls # 10
       sent[:,10:10+num_gold_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
-      s_pred = srl_pred[:,np.where(srl_pred == trigger_idx)[1]]
+      s_pred = srl_pred[:,np.where(srl_trigger == 1)[0]]
       if transition_params is not None and s_pred.any():
         v_pred = []
-        s_log = srl_logit[:, np.where(srl_pred == trigger_idx)[1]]
+        s_log = srl_logit[:, np.where(srl_trigger == 1)[0]]
         for s in s_log:
           viterbi_sequence, _ = tf.contrib.crf.viterbi_decode(s, transition_params)
           v_pred.append(viterbi_sequence)

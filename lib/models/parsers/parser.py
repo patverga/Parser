@@ -230,8 +230,17 @@ class Parser(BaseParser):
       trigger_role_mlp = self.MLP(top_recur, self.trigger_mlp_size + self.role_mlp_size, n_splits=1)
       trigger_mlp, role_mlp = trigger_role_mlp[:,:,:self.trigger_mlp_size], trigger_role_mlp[:,:,self.trigger_mlp_size:]
 
+    with tf.variable_scope('SRL-Triggers', reuse=reuse):
+      trigger_classifier_mlp = self.MLP(top_recur, self.trigger_mlp_size, n_splits=1)
+      trigger_classifier = self.MLP(trigger_classifier_mlp, 2, n_splits=1)
+      trigger_output = self.output_trigger(trigger_classifier, targets, vocabs[3]['U-V'][0])
+
     with tf.variable_scope('SRL-Arcs', reuse=reuse):
       srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, num_srl_classes)
+      if moving_params is None:
+        trigger_predictions = trigger_output['target']
+      else:
+        trigger_predictions = trigger_output['predictions']
       srl_output = self.output_srl(srl_logits, targets, vocabs[3]['U-V'][0], vocabs[3]["O"][0], transition_params if self.viterbi_train else None)
 
     # todo weight?
@@ -276,6 +285,7 @@ class Parser(BaseParser):
     output['srl_correct'] = srl_output['correct']
     output['srl_count'] = srl_output['count']
     output['transition_params'] = transition_params
+    output['trigger_predictions'] = trigger_predictions
 
 
 

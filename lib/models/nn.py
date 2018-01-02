@@ -1081,10 +1081,6 @@ class NN(Configurable):
       cross_entropy *= overall_mask
       loss = tf.cond(tf.equal(count, 0.), lambda: tf.constant(0.), lambda: tf.reduce_sum(cross_entropy) / count)
 
-
-
-
-
     # training with predictions = batch x seq_len x seq_len
     # where each row is set of srl tags for that trigger
     # transposed, this gives us columns for each trigger; need to select out the columns
@@ -1112,6 +1108,71 @@ class NN(Configurable):
       # 'gold_trigger_predictions': tf.transpose(predictions, [0, 2, 1]),
       'count': count,
       'correct': correct
+    }
+
+    return output
+
+
+  def output_trigger(self, logits, targets, trigger_label_idx):
+    """"""
+
+    # logits are batch x seq_len x 2
+
+    original_shape = tf.shape(logits)
+    batch_size = original_shape[0]
+    bucket_size = original_shape[1]
+
+    # flatten logits along last dimension: batch x seq_len x seq_len*num_classes
+    # logits_flattened = tf.reshape(logits_transposed, [batch_size, bucket_size, -1])
+
+    # need to turn targets into this 2d representation.
+    # have: labels for each token for each trigger (<= sentence len) and trigger_label_idx
+    # need: batch_size x seq_len x seq_len labels: the actual labels for each trigger, and all O otherwise
+    # todo don't hardcode 7
+
+    # now we have k sets of targets for the k frames
+    # (t1) f1 f2 v0
+    # (t2) v0 f2 f3
+    # (t3) f1 f2 f3
+    # (t4) f1 v0 f3
+    srl_targets = targets[:,:,3:]
+
+    # get indices of trigger labels in srl_targets
+    trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
+    idx = tf.stack([trigger_indices[:,0], trigger_indices[:,2]], -1)
+
+    targets = tf.scatter_nd(idx, tf.ones([tf.shape(idx)[0]]), [batch_size, bucket_size])
+
+    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
+    cross_entropy *= self.tokens_to_keep3D
+    loss = tf.reduce_sum(cross_entropy) / self.n_tokens
+
+    # training with predictions = batch x seq_len x seq_len
+    # where each row is set of srl tags for that trigger
+    # transposed, this gives us columns for each trigger; need to select out the columns
+    # which contain the trigger label
+    predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
+    # probabilities = tf.nn.softmax(logits)
+    # gold_trigger_predictions
+
+    correct = tf.reduce_sum(tf.cast(tf.equal(predictions, targets) * self.tokens_to_keep3D, tf.float32))
+
+    # count  = tf.Print(count, [targets3D_masked], "targets3D_masked", summarize=4000)
+    #
+    # count  = tf.Print(count, [overall_mask], "overall_mask", summarize=4000)
+    #
+    # count  = tf.Print(count, [cross_entropy], "cross entropy", summarize=4000)
+    # count = tf.Print(count, [count, correct, tf.reduce_sum(cross_entropy)])
+
+    output = {
+      'loss': loss,
+      'predictions': predictions,
+      'logits': logits,
+      # 'gold_trigger_predictions': tf.transpose(predictions, [0, 2, 1]),
+      'count': self.n_tokens,
+      'correct': correct,
+      'targets_idx': idx,
+      'predictions_idx': tf.where(tf.equal(predictions, 1))
     }
 
     return output
