@@ -1155,7 +1155,7 @@ class NN(Configurable):
     # probabilities = tf.nn.softmax(logits)
     # gold_trigger_predictions
 
-    correct = tf.reduce_sum(tf.cast(tf.equal(predictions, targets) * self.tokens_to_keep3D, tf.float32))
+    correct = tf.reduce_sum(tf.cast(tf.cast(tf.equal(predictions, targets), tf.int32) * self.tokens_to_keep3D, tf.float32))
 
     # count  = tf.Print(count, [targets3D_masked], "targets3D_masked", summarize=4000)
     #
