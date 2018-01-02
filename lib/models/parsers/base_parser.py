@@ -134,7 +134,7 @@ class BaseParser(NN):
       sent[:,9] = num_gold_srls # 10
       sent[:,10:10+num_gold_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
       s_pred = srl_pred[:,np.where(srl_pred == trigger_idx)[1]]
-      if transition_params is not None and s_pred:
+      if transition_params is not None and s_pred.any():
         v_pred = []
         s_log = srl_logit[:, np.where(srl_pred == trigger_idx)[1]]
         for s in s_log:
