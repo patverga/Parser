@@ -20,7 +20,7 @@ mus="0.9"
 nus="0.98 0.9"
 epsilons="1e-12 1e-8 1e-4"
 warmup_steps="8000 2000"
-batch_sizes="500 1000"
+batch_sizes="500 1000 2000"
 
 trans_layers="2" # 3
 cnn_dims="512" # 768
