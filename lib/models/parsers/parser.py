@@ -285,7 +285,7 @@ class Parser(BaseParser):
     output['srl_logits'] = srl_output['logits']
     output['srl_correct'] = srl_output['correct']
     output['srl_count'] = srl_output['count']
-    output['transition_params'] = transition_params if transition_params is not None else bilou_constraints
+    output['transition_params'] = transition_params if transition_params is not None else tf.constant(bilou_constraints)
     output['srl_trigger'] = trigger_predictions
 
 
