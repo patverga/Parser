@@ -1062,7 +1062,7 @@ class NN(Configurable):
     print("num_classes", num_classes)
     print(logits.get_shape().as_list())
 
-    if transition_params:
+    if transition_params is not None:
       # need to flatten batch x seq_len x seq_len x logits to
       # batch*seq_len x seq_len x logits,
       flattened_scores = tf.reshape(logits_transposed, tf.stack([batch_size*bucket_size, bucket_size, num_classes]))
