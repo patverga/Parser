@@ -423,9 +423,14 @@ class Configurable(object):
   argparser.add_argument('--subsample_trigger_rate')
 
   @property
-  def viterbi(self):
-    return self._config.getboolean('Training', 'viterbi')
-  argparser.add_argument('--viterbi')
+  def viterbi_train(self):
+    return self._config.getboolean('Training', 'viterbi_train')
+  argparser.add_argument('--viterbi_train')
+
+  @property
+  def viterbi_decode(self):
+    return self._config.getboolean('Training', 'viterbi_decode')
+  argparser.add_argument('--viterbi_decode')
 
   #=============================================================
   # [Transformer]

@@ -59,6 +59,19 @@ class Parser(BaseParser):
     print("cnn2d_layers: ", self.cnn2d_layers)
     print("cnn_dim_2d: ", self.cnn_dim_2d)
 
+    # todo these are actually wrong because of nesting
+    bilou_constraints = np.zeros((num_srl_classes, num_srl_classes))
+    for s_str, s_idx in vocabs[3].iteritems():
+      for e_str, e_idx in vocabs[3].iteritems():
+        s_bilou = s_str[0]
+        e_bilou = e_str[0]
+        s_type = s_str[2:]
+        e_type = e_str[2:]
+        if (s_bilou == 'L' or s_bilou == 'U' or s_bilou == 'O') and (e_bilou == 'O' or e_bilou == 'B' or e_bilou == 'U'):
+          bilou_constraints[s_idx, e_idx] = 1.0
+        elif (s_bilou == 'B' or s_bilou == 'I') and s_type == e_type and (e_bilou == 'I' or e_bilou == 'L'):
+          bilou_constraints[s_idx, e_idx] = 1.0
+
     attn_dropout = 0.67
     prepost_dropout = 0.67
     relu_dropout = 0.67
@@ -69,8 +82,10 @@ class Parser(BaseParser):
     #   self.recur_keep_prob = 1.0
 
     with tf.variable_scope("crf", reuse=reuse):  # to share parameters, change scope here
-      if self.viterbi:
-        transition_params = tf.get_variable("transitions", [num_srl_classes, num_srl_classes])
+      if self.viterbi_train:
+        transition_params = tf.get_variable("transitions", [num_srl_classes, num_srl_classes], tf.constant_initializer(bilou_constraints))
+      elif self.viterbi_decode:
+        transition_params = bilou_constraints
       else:
         transition_params = None
 
