@@ -140,8 +140,9 @@ class BaseParser(NN):
         for s in s_log:
           viterbi_sequence, _ = tf.contrib.crf.viterbi_decode(s, transition_params)
           v_pred.append(viterbi_sequence)
-        print("v_pred", v_pred)
-        print("s_pred", s_pred)
+        s_pred = np.array(v_pred)
+        # print("v_pred", v_pred)
+        # print("s_pred", s_pred)
 
       if len(s_pred.shape) == 1:
         s_pred = np.expand_dims(s_pred, -1)
