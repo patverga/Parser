@@ -996,8 +996,12 @@ class NN(Configurable):
     original_shape = tf.shape(logits)
     batch_size = original_shape[0]
     bucket_size = original_shape[1]
-    num_classes = original_shape[2]
-    flat_shape = tf.stack([batch_size, bucket_size])
+    # num_classes = original_shape[2]
+    # flat_shape = tf.stack([batch_size, bucket_size])
+    # original_shape = logits.get_shape().as_list()[2]
+    # batch_size = original_shape[0]
+    # bucket_size = original_shape[1]
+    num_classes = logits.get_shape().as_list()[2]
 
     # flatten logits along last dimension: batch x seq_len x seq_len*num_classes
     # logits_flattened = tf.reshape(logits_transposed, [batch_size, bucket_size, -1])
