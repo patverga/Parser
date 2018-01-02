@@ -92,7 +92,7 @@ class BaseParser(NN):
       tokens = np.arange(length)
       srl_pred = srl_pred[tokens]
       num_gold_srls = len(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx)[0])
-      num_pred_srls = len(np.unique(np.where(srl_pred == trigger_idx)[0]))
+      num_pred_srls = len(np.where(srl_pred == trigger_idx)[0])
       # print("s_pred shape", srl_pred.shape)
       # print("num pred srls", num_pred_srls)
       # if num_pred_srls > 0:
