@@ -1056,6 +1056,7 @@ class NN(Configurable):
     print("batch size", batch_size)
     print("bucket_size", bucket_size)
     print("num_classes", num_classes)
+    print(logits.get_shape().as_list())
 
     if transition_params:
       # need to flatten batch x seq_len x seq_len x logits to
