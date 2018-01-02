@@ -286,7 +286,7 @@ class Parser(BaseParser):
     output['srl_correct'] = srl_output['correct']
     output['srl_count'] = srl_output['count']
     output['transition_params'] = transition_params
-    output['trigger_predictions'] = trigger_predictions
+    output['srl_trigger'] = trigger_predictions
 
 
 
