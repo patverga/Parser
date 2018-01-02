@@ -1060,13 +1060,13 @@ class NN(Configurable):
     if transition_params:
       # need to flatten batch x seq_len x seq_len x logits to
       # batch*seq_len x seq_len x logits,
-      flattened_scores = tf.reshape(logits_transposed, [batch_size*bucket_size, bucket_size, num_classes])
-      flattened_labels = tf.reshape(targets3D_masked, [batch_size*bucket_size, bucket_size])
+      flattened_scores = tf.reshape(logits_transposed, tf.stack([batch_size*bucket_size, bucket_size, num_classes]))
+      flattened_labels = tf.reshape(targets3D_masked, tf.stack([batch_size*bucket_size, bucket_size]))
 
       # and also get flattened sequence lengths.
       # this is batch x seq_len, need to tile rach seq_len seq_len times
       seq_lens = tf.reduce_sum(self.tokens_to_keep3D, 1)
-      flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), [batch_size*bucket_size])
+      flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), tf.stack([batch_size*bucket_size]))
       log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(flattened_scores, flattened_labels,
                                                                             flat_seq_lens,
                                                                             transition_params=transition_params)
