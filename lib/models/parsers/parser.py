@@ -26,6 +26,8 @@ class Parser(BaseParser):
     inputs = dataset.inputs
     targets = dataset.targets
 
+    num_srl_classes = len(vocabs[3])
+
     # need to add batch dim for batch size 1
     # inputs = tf.Print(inputs, [tf.shape(inputs), tf.shape(targets)], summarize=10)
 
@@ -65,6 +67,11 @@ class Parser(BaseParser):
     #   prepost_dropout = 1.0
     #   relu_dropout = 1.0
     #   self.recur_keep_prob = 1.0
+
+    if self.viterbi:
+      transition_params = tf.get_variable("transitions", [num_srl_classes, num_srl_classes])
+    else:
+      transition_params = None
 
     assert (self.cnn_layers != 0 and self.n_recur != 0) or self.num_blocks == 1, "num_blocks should be 1 if cnn_layers or n_recur is 0"
     assert self.dist_model == 'bilstm' or self.dist_model == 'transformer', 'Model must be either "transformer" or "bilstm"'
@@ -187,7 +194,6 @@ class Parser(BaseParser):
         arc_logits = tf.cond(tf.equal(tf.shape(tf.shape(arc_logits))[0], 2), lambda: tf.expand_dims(arc_logits, 0), lambda: arc_logits)
         # arc_logits = tf.Print(arc_logits, [tf.shape(arc_logits), tf.shape(tf.shape(arc_logits))])
 
-
         arc_output = self.output_svd(arc_logits, targets[:,:,1])
         if moving_params is None:
           predictions = targets[:,:,1]
@@ -209,8 +215,8 @@ class Parser(BaseParser):
       trigger_mlp, role_mlp = trigger_role_mlp[:,:,:self.trigger_mlp_size], trigger_role_mlp[:,:,self.trigger_mlp_size:]
 
     with tf.variable_scope('SRL-Arcs', reuse=reuse):
-      srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, len(vocabs[3]))
-      srl_output = self.output_srl(srl_logits, targets, vocabs[3]['U-V'])
+      srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, num_srl_classes)
+      srl_output = self.output_srl(srl_logits, targets, vocabs[3]['U-V'], vocabs[3]["O"], transition_params)
 
     # todo weight?
     srl_loss = srl_output['loss']
@@ -250,8 +256,10 @@ class Parser(BaseParser):
     output['srl_loss'] = srl_loss
     output['srl_preds'] = srl_output['predictions']
     output['srl_probs'] = srl_output['probabilities']
+    output['srl_logits'] = srl_output['logits']
     output['srl_correct'] = srl_output['correct']
     output['srl_count'] = srl_output['count']
+    output['transition_params'] = transition_params
 
 
 

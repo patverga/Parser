@@ -984,14 +984,11 @@ class NN(Configurable):
     return output
 
   #=============================================================
-  def output_srl(self, logits, targets, trigger_label_idx):
+  def output_srl(self, logits, targets, trigger_label_idx, outside_label_idx, transition_params):
     """"""
 
     # logits are batch x seq_len x num_classes x seq_len
     # targets are batch x seq_len x num_targets
-
-    # todo pass this in
-    o_label_idx = 3
 
     # transpose to batch x seq_len x seq_len x num_classes
     logits_transposed = tf.transpose(logits, [0, 1, 3, 2])
@@ -1048,25 +1045,43 @@ class NN(Configurable):
     om = 1.0 - tf.scatter_nd(sampled_indices, tf.fill([num_to_sample, bucket_size], 1.0), [batch_size, bucket_size, bucket_size])
 
     targ_empty_indices = tf.cast(tf.where(tf.equal(targets3D, 0)), tf.int32)
-    targets_mask3D = tf.scatter_nd(targ_empty_indices, tf.fill([tf.shape(targ_empty_indices)[0]], 3), shape=tf.stack([batch_size, bucket_size, bucket_size]))
+    targets_mask3D = tf.scatter_nd(targ_empty_indices, tf.fill([tf.shape(targ_empty_indices)[0]], outside_label_idx), shape=tf.stack([batch_size, bucket_size, bucket_size]))
     targets3D_masked = targets3D + targets_mask3D
 
-    cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D_masked)
-
     overall_mask = om * self.tokens_to_keep3D * tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
-
-    cross_entropy *= overall_mask
-
     non_masked_indices = tf.where(tf.not_equal(targets3D_masked * tf.cast(overall_mask, tf.int32), 0))
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
     count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32)
+
+    if transition_params:
+      # need to flatten batch x seq_len x seq_len x logits to
+      # batch*seq_len x seq_len x logits,
+      flattened_scores = tf.reshape(logits_transposed, [batch_size*bucket_size, bucket_size, -1])
+      flattened_labels = tf.reshape(targets3D_masked, [batch_size*bucket_size, bucket_size])
+
+      # and also get flattened sequence lengths.
+      # this is batch x seq_len, need to tile rach seq_len seq_len times
+      seq_lens = tf.reduce_sum(self.tokens_to_keep3D, 1)
+      flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), [-1])
+      log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(flattened_scores, flattened_labels,
+                                                                            flat_seq_lens,
+                                                                            transition_params=transition_params)
+      loss = tf.reduce_mean(-log_likelihood)
+    else:
+      cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D_masked)
+      cross_entropy *= overall_mask
+      loss = tf.cond(tf.equal(count, 0.), lambda: tf.constant(0.), lambda: tf.reduce_sum(cross_entropy) / count)
+
+
+
+
 
     # training with predictions = batch x seq_len x seq_len
     # where each row is set of srl tags for that trigger
     # transposed, this gives us columns for each trigger; need to select out the columns
     # which contain the trigger label
-    probabilities = tf.nn.softmax(logits_transposed)
     predictions = tf.cast(tf.argmax(logits_transposed, axis=-1), tf.int32)
+    probabilities = tf.nn.softmax(logits_transposed)
     # gold_trigger_predictions
 
     correct = tf.reduce_sum(tf.cast(tf.equal(tf.gather_nd(predictions, non_masked_indices), non_masked_targets), tf.float32))
@@ -1078,12 +1093,13 @@ class NN(Configurable):
     # count  = tf.Print(count, [cross_entropy], "cross entropy", summarize=4000)
     # count = tf.Print(count, [count, correct, tf.reduce_sum(cross_entropy)])
 
-    loss = tf.cond(tf.equal(count, 0.), lambda: tf.constant(0.), lambda: tf.reduce_sum(cross_entropy) / count)
 
     output = {
       'loss': loss,
       'probabilities': probabilities,
       'predictions': tf.transpose(predictions, [0, 2, 1]),
+      'logits': tf.transpose(logits_transposed, [0, 2, 1, 3]),
+      'transition_params': transition_params,
       # 'gold_trigger_predictions': tf.transpose(predictions, [0, 2, 1]),
       'count': count,
       'correct': correct

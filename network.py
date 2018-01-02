@@ -342,9 +342,9 @@ class Network(Configurable):
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
       forward_start = time.time()
-      probs, n_cycles, len_2_cycles, srl_probs, srl_preds, srl_correct, srl_count = sess.run(op, feed_dict=feed_dict)
+      probs, n_cycles, len_2_cycles, srl_probs, srl_preds, srl_logits, srl_correct, srl_count, transition_params = sess.run(op, feed_dict=feed_dict)
       forward_total_time += time.time() - forward_start
-      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles, srl_probs, srl_preds, self.trigger_idx)
+      preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles, srl_probs, srl_preds, srl_logits, self.trigger_idx, transition_params)
       total_time += parse_time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
@@ -530,15 +530,19 @@ class Network(Configurable):
                       valid_output['len_2_cycles'],
                       valid_output['srl_probs'],
                       valid_output['srl_preds'],
+                      valid_output['srl_logits'],
                       valid_output['srl_correct'],
                       valid_output['srl_count'],
+                      valid_output['transition_params'],
                       test_output['probabilities'],
                       test_output['n_cycles'],
                       test_output['len_2_cycles'],
                       test_output['srl_probs'],
                       test_output['srl_preds'],
+                      test_output['srl_logits'],
                       test_output['srl_correct'],
                       test_output['srl_count'],
+                      test_output['transition_params'],
                       ]
     ops['optimizer'] = optimizer
     

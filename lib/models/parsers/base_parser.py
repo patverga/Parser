@@ -61,7 +61,7 @@ class BaseParser(NN):
     return
   
   #=============================================================
-  def validate(self, mb_inputs, mb_targets, mb_probs, n_cycles, len_2_cycles, srl_probs, srl_preds, trigger_idx):
+  def validate(self, mb_inputs, mb_targets, mb_probs, n_cycles, len_2_cycles, srl_probs, srl_preds, srl_logits, trigger_idx, transition_params=None):
     """"""
     
     sents = []
@@ -75,7 +75,7 @@ class BaseParser(NN):
     non_tree_preds = []
     if np.all(n_cycles == -1):
         n_cycles = len_2_cycles = [-1] * len(mb_inputs)
-    for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds):
+    for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred, srl_logit in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds, srl_logits):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
       parse_preds, rel_preds, argmax_time, roots_lt, roots_gt = self.prob_argmax(parse_probs, rel_probs, tokens_to_keep, n_cycle, len_2_cycle)
@@ -134,6 +134,15 @@ class BaseParser(NN):
       sent[:,9] = num_gold_srls # 10
       sent[:,10:10+num_gold_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
       s_pred = srl_pred[:,np.where(srl_pred == trigger_idx)[1]]
+      if transition_params:
+        v_pred = []
+        s_log = srl_logit[:, np.where(srl_pred == trigger_idx)[1]]
+        for s in s_log:
+          viterbi_sequence, _ = tf.contrib.crf.viterbi_decode(s, transition_params)
+          v_pred.append(viterbi_sequence)
+        print("v_pred", v_pred)
+        print("s_pred", s_pred)
+
       if len(s_pred.shape) == 1:
         s_pred = np.expand_dims(s_pred, -1)
       sent[:,10+num_gold_srls:] = s_pred
