@@ -85,7 +85,7 @@ class Parser(BaseParser):
       if self.viterbi_train:
         transition_params = tf.get_variable("transitions", [num_srl_classes, num_srl_classes], tf.constant_initializer(bilou_constraints))
       elif self.viterbi_decode:
-        transition_params = bilou_constraints
+        transition_params = tf.get_variable("transitions", [num_srl_classes, num_srl_classes], tf.constant_initializer(bilou_constraints), trainable=False)
       else:
         transition_params = None
 
