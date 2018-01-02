@@ -1062,7 +1062,7 @@ class NN(Configurable):
       # and also get flattened sequence lengths.
       # this is batch x seq_len, need to tile rach seq_len seq_len times
       seq_lens = tf.reduce_sum(self.tokens_to_keep3D, 1)
-      flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), [-1])
+      flat_seq_lens = tf.reshape(tf.tile(seq_lens, [1, bucket_size]), [batch_size*bucket_size])
       log_likelihood, transition_params = tf.contrib.crf.crf_log_likelihood(flattened_scores, flattened_labels,
                                                                             flat_seq_lens,
                                                                             transition_params=transition_params)
