@@ -61,7 +61,7 @@ class BaseParser(NN):
     return
   
   #=============================================================
-  def validate(self, mb_inputs, mb_targets, mb_probs, n_cycles, len_2_cycles, srl_probs, srl_preds, srl_logits, , srl_triggers, trigger_idx, transition_params=None):
+  def validate(self, mb_inputs, mb_targets, mb_probs, n_cycles, len_2_cycles, srl_probs, srl_preds, srl_logits, srl_triggers, trigger_idx, transition_params=None):
     """"""
     
     sents = []
