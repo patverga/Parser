@@ -1149,13 +1149,13 @@ class NN(Configurable):
     # probabilities = tf.nn.softmax(logits)
     # gold_trigger_predictions
 
-    predictions = tf.Print(predictions, [targets], "targets", summarize=1000)
-    predictions = tf.Print(predictions, [predictions], "predictions", summarize=1000)
+    # predictions = tf.Print(predictions, [targets], "targets", summarize=1000)
+    # predictions = tf.Print(predictions, [predictions], "predictions", summarize=1000)
+    #
+    # predictions= tf.Print(predictions, [tf.shape(cross_entropy), tf.shape(self.tokens_to_keep3D)], "shape", summarize=1000)
 
-    predictions= tf.Print(predictions, [tf.shape(cross_entropy), tf.shape(self.tokens_to_keep3D)], "shape", summarize=1000)
 
-
-    correct = tf.reduce_sum(tf.cast(tf.equal(predictions, targets), tf.float32) * self.tokens_to_keep3D)
+    correct = tf.reduce_sum(tf.cast(tf.equal(predictions, tf.squeeze(targets, -1)), tf.float32) * self.tokens_to_keep3D)
 
     # count  = tf.Print(count, [targets3D_masked], "targets3D_masked", summarize=4000)
     #
