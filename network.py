@@ -326,7 +326,6 @@ class Network(Configurable):
     strings = map(lambda i: self._vocabs[3][i], indices)
     converted = []
     started_types = []
-    print(strings)
     for i, s in enumerate(strings):
       label_parts = s.split('/')
       curr_len = len(label_parts)
@@ -461,8 +460,9 @@ class Network(Configurable):
         # print("srl preds shape", srl_preds.shape)
         print("srl_preds", srl_preds)
         print("srl_preds transpose", np.transpose(srl_preds))
-        print([self.convert_bilou(j) for j in np.transpose(srl_preds)])
+        print("converted", [self.convert_bilou(j) for j in np.transpose(srl_preds)])
         srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
+        print("mapped", srl_preds_str)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
           word_str = word if self.trigger_str in pred else '-'
           srl_strs = self.convert_bilou(pred)
