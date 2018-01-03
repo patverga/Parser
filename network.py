@@ -83,7 +83,7 @@ class Network(Configurable):
                     global_step=self.global_step)
       self._vocabs.append(vocab)
 
-    self.trigger_idx = self._vocabs[3]['U-V']
+    self.trigger_idx = self._vocabs[3][self.trigger_str]
 
     print("Loading data")
     sys.stdout.flush()
@@ -229,6 +229,7 @@ class Network(Configurable):
             train_svd_loss /= n_train_iters
             train_rel_loss /= n_train_iters
             train_srl_loss /= n_train_iters
+            train_trigger_loss /= n_train_iters
             train_accuracy = 100 * n_train_correct / n_train_tokens
             train_srl_accuracy = 100 * n_train_srl_correct / n_train_srl_count
             train_trigger_accuracy = 100 * n_train_trigger_correct / n_train_trigger_count
@@ -246,6 +247,8 @@ class Network(Configurable):
             train_roots_loss = 0
             train_cycle2_loss = 0
             train_rel_loss = 0
+            train_trigger_loss = 0
+            train_srl_loss = 0
             n_train_srl_correct = 0
             n_train_srl_count = 0
             n_train_trigger_correct = 0
@@ -289,34 +292,86 @@ class Network(Configurable):
   # todo need to split by '/'
   # also need a bio version
   # I-R-ARG0/L-ARG0
-  def convert_bilou(self, idx):
-    label_str = self._vocabs[3][idx]
-    label_parts = label_str.split('/')
-    combined_str = ''
-    for idx, label in enumerate(label_parts):
-      bilou = label[0]
-      label_type = label[2:]
-      props_str = ''  # '*'
-      if bilou == 'O' or bilou == 'I':
-        props_str = ''
-      elif bilou == 'U':
-        props_str = '(' + label_type + '*)' if idx == len(label_parts)-1 else ""
-      elif bilou == 'B':
-        props_str = '(' + label_type # + '*'
-      elif bilou == 'L':
-        props_str = ')'
-      combined_str += props_str
-    if not combined_str:
-      # print("string: %s" % bilou_str)
-      combined_str = '*'
-    elif combined_str[0] == "(" and combined_str[-1] != ")":
-      combined_str += '*'
-    elif combined_str[-1] == ")" and combined_str[0] != "(":
-      combined_str = '*' + combined_str
-    # if len(label_parts) > 1:
-    #   print(label_parts)
-    #   print(combined_str)
-    return combined_str
+  # L-ARG2/L-ARGM-MOD --> *))
+  # def convert_bilou(self, idx):
+  #   label_str = self._vocabs[3][idx]
+  #   label_parts = label_str.split('/')
+  #   combined_str = ''
+  #   for idx, label in enumerate(label_parts):
+  #     bilou = label[0]
+  #     label_type = label[2:]
+  #     props_str = ''  # '*'
+  #     if bilou == 'O' or bilou == 'I':
+  #       props_str = ''
+  #     elif bilou == 'U':
+  #       props_str = '(' + label_type + '*)' if idx == len(label_parts)-1 else ""
+  #     elif bilou == 'B':
+  #       props_str = '(' + label_type # + '*'
+  #     elif bilou == 'L':
+  #       props_str = ')'
+  #     combined_str += props_str
+  #   if not combined_str:
+  #     # print("string: %s" % bilou_str)
+  #     combined_str = '*'
+  #   elif combined_str[0] == "(" and combined_str[-1] != ")":
+  #     combined_str += '*'
+  #   elif combined_str[-1] == ")" and combined_str[0] != "(":
+  #     combined_str = '*' + combined_str
+  #   # if len(label_parts) > 1:
+  #   #   print(label_parts)
+  #   #   print(combined_str)
+  #   return combined_str
+
+  def convert_bilou(self, indices):
+    strings = map(lambda i: self._vocabs[3][i], indices)
+    converted = []
+    started_types = []
+    for i, s in enumerate(strings):
+      label_parts = s.split('/')
+      curr_len = len(label_parts)
+      combined_str = ''
+      print(s)
+      for idx, label in enumerate(label_parts):
+        bilou = label[0]
+        label_type = label[2:]
+        props_str = ''  # '*'
+        if bilou == 'I':
+          if curr_len > len(started_types):
+            props_str = '(' + label_type
+            started_types.append(label_type)
+          else:
+            props_str = ''
+        elif bilou == 'O':
+          curr_len = 0
+          props_str = ''
+        elif bilou == 'U':
+          # need to check whether last one was ended
+          props_str = '(' + label_type + ('*)' if idx == len(label_parts) - 1 else "")
+        elif bilou == 'B':
+          # need to check whether last one was ended
+          props_str = '(' + label_type
+          started_types.append(label_type)
+        elif bilou == 'L':
+          props_str = ')'
+          started_types.pop()
+          curr_len -= 1
+        combined_str += props_str
+      print(len(started_types), curr_len)
+      while len(started_types) > curr_len:
+        converted[-1] += ')'
+        started_types.pop()
+      if not combined_str:
+        combined_str = '*'
+      elif combined_str[0] == "(" and combined_str[-1] != ")":
+        combined_str += '*'
+      elif combined_str[-1] == ")" and combined_str[0] != "(":
+        combined_str = '*' + combined_str
+      print(combined_str)
+      converted.append(combined_str)
+    while len(started_types) > 0:
+      converted[-1] += ')'
+      started_types.pop()
+    return converted
 
     
   #=============================================================
@@ -408,7 +463,7 @@ class Network(Configurable):
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if self.trigger_idx in pred else '-'
-          srl_strs = map(self.convert_bilou, pred)
+          srl_strs = self.convert_bilou(pred)
           for j, s in enumerate(srl_strs):
             if srl_strs[0] == "(":
               unclosed_paren[j] += 1
@@ -434,7 +489,7 @@ class Network(Configurable):
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if self.trigger_idx in pred else '-'
-          srl_strs = map(self.convert_bilou, pred)
+          srl_strs = self.convert_bilou(pred)
           for j, s in enumerate(srl_strs):
             if srl_strs[0] == "(":
               unclosed_paren[j] += 1

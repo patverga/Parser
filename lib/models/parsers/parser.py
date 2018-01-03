@@ -234,7 +234,7 @@ class Parser(BaseParser):
       trigger_classifier_mlp = self.MLP(top_recur, self.trigger_mlp_size, n_splits=1)
       with tf.variable_scope('SRL-Triggers-Classifier', reuse=reuse):
         trigger_classifier = self.MLP(trigger_classifier_mlp, 2, n_splits=1)
-      trigger_output = self.output_trigger(trigger_classifier, targets, vocabs[3]['U-V'][0])
+      trigger_output = self.output_trigger(trigger_classifier, targets, vocabs[3][self.trigger_str][0])
       trigger_loss = trigger_output['loss']
 
     with tf.variable_scope('SRL-Arcs', reuse=reuse):
@@ -243,7 +243,7 @@ class Parser(BaseParser):
         trigger_predictions = trigger_output['targets']
       else:
         trigger_predictions = trigger_output['predictions']
-      srl_output = self.output_srl(srl_logits, targets, vocabs[3]['U-V'][0], vocabs[3]["O"][0], transition_params if self.viterbi_train else None)
+      srl_output = self.output_srl(srl_logits, targets, vocabs[3][self.trigger_str][0], vocabs[3]["O"][0], transition_params if self.viterbi_train else None)
 
     # todo weight?
     srl_loss = srl_output['loss']

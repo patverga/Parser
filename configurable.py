@@ -432,6 +432,11 @@ class Configurable(object):
     return self._config.getboolean('Training', 'viterbi_decode')
   argparser.add_argument('--viterbi_decode')
 
+  @property
+  def trigger_str(self):
+    return self._config.get('Training', 'trigger_str')
+  argparser.add_argument('--trigger_str')
+
   #=============================================================
   # [Transformer]
   @property
