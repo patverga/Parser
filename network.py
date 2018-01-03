@@ -448,6 +448,37 @@ class Network(Configurable):
         f.write('\n')
 
     # save SRL output
+    with open(os.path.join(self.save_dir, 'srl_golds.tsv'), 'w') as f:
+      for bkt_idx, idx in dataset._metabucket.data:
+        # for each word, if trigger print word, otherwise -
+        # then all the SRL labels
+        data = dataset._metabucket[bkt_idx].data[idx]
+        preds = all_predictions[bkt_idx][idx]
+        words = all_sents[bkt_idx][idx]
+        num_gold_srls = preds[0, 9]
+        srl_preds = preds[:, 10:10 + num_gold_srls]
+        unclosed_paren = [0] * srl_preds.shape[1]
+        # print("srl preds shape", srl_preds.shape)
+        print("srl_preds", srl_preds)
+        print("srl_preds transpose", np.transpose(srl_preds))
+        print([self.convert_bilou(j) for j in np.transpose(srl_preds)])
+        srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
+        for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
+          word_str = word if self.trigger_str in pred else '-'
+          srl_strs = self.convert_bilou(pred)
+          # for j, s in enumerate(srl_strs):
+          #   unclosed_paren[j] += s.count('(')
+          #   unclosed_paren[j] -= s.count(')')
+          fields = (word_str,) + tuple(srl_strs)
+          owpl_str = '\t'.join(fields)
+          f.write(owpl_str + "\n")
+        if np.any(unclosed_paren):
+          print("unclosed paren")
+          print(words)
+          print(srl_preds)
+        f.write('\n')
+
+    # save SRL output
     with open(os.path.join(self.save_dir, 'srl_preds.tsv'), 'w') as f:
       for bkt_idx, idx in dataset._metabucket.data:
         # for each word, if trigger print word, otherwise -
@@ -471,34 +502,7 @@ class Network(Configurable):
           f.write(owpl_str + "\n")
         f.write('\n')
 
-    # save SRL output
-    with open(os.path.join(self.save_dir, 'srl_golds.tsv'), 'w') as f:
-      for bkt_idx, idx in dataset._metabucket.data:
-        # for each word, if trigger print word, otherwise -
-        # then all the SRL labels
-        data = dataset._metabucket[bkt_idx].data[idx]
-        preds = all_predictions[bkt_idx][idx]
-        words = all_sents[bkt_idx][idx]
-        num_gold_srls = preds[0, 9]
-        srl_preds = preds[:, 10:10+num_gold_srls]
-        unclosed_paren = [0]*srl_preds.shape[1]
-        # print("srl preds shape", srl_preds.shape)
-        # print("srl_preds", srl_preds)
-        srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
-        for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
-          word_str = word if self.trigger_str in pred else '-'
-          srl_strs = self.convert_bilou(pred)
-          # for j, s in enumerate(srl_strs):
-          #   unclosed_paren[j] += s.count('(')
-          #   unclosed_paren[j] -= s.count(')')
-          fields = (word_str,) + tuple(srl_strs)
-          owpl_str = '\t'.join(fields)
-          f.write(owpl_str + "\n")
-        if np.any(unclosed_paren):
-          print("unclosed paren")
-          print(words)
-          print(srl_preds)
-        f.write('\n')
+
 
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
