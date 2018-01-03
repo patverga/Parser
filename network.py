@@ -458,18 +458,18 @@ class Network(Configurable):
         srl_preds = preds[:, 10:10 + num_gold_srls]
         unclosed_paren = [0] * srl_preds.shape[1]
         # print("srl preds shape", srl_preds.shape)
-        print("srl_preds", srl_preds)
-        print("srl_preds transpose", np.transpose(srl_preds))
-        print("converted", [self.convert_bilou(j) for j in np.transpose(srl_preds)])
+        # print("srl_preds", srl_preds)
+        # print("srl_preds transpose", np.transpose(srl_preds))
+        # print("converted", [self.convert_bilou(j) for j in np.transpose(srl_preds)])
         srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
-        print("mapped", srl_preds_str)
+        # print("mapped", srl_preds_str)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
           word_str = word if self.trigger_str in pred else '-'
-          srl_strs = self.convert_bilou(pred)
+          # srl_strs = self.convert_bilou(pred)
           # for j, s in enumerate(srl_strs):
           #   unclosed_paren[j] += s.count('(')
           #   unclosed_paren[j] -= s.count(')')
-          fields = (word_str,) + tuple(srl_strs)
+          fields = (word_str,) + tuple(pred)
           owpl_str = '\t'.join(fields)
           f.write(owpl_str + "\n")
         if np.any(unclosed_paren):
@@ -493,11 +493,11 @@ class Network(Configurable):
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
           word_str = word if self.trigger_str in pred else '-'
-          srl_strs = self.convert_bilou(pred)
+          # srl_strs = self.convert_bilou(pred)
           # for j, s in enumerate(srl_strs):
           #   unclosed_paren[j] += s.count('(')
           #   unclosed_paren[j] -= s.count(')')
-          fields = (word_str,) + tuple(srl_strs)
+          fields = (word_str,) + tuple(pred)
           owpl_str = '\t'.join(fields)
           f.write(owpl_str + "\n")
         f.write('\n')
