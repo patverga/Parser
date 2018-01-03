@@ -1122,14 +1122,6 @@ class NN(Configurable):
     batch_size = original_shape[0]
     bucket_size = original_shape[1]
 
-    # flatten logits along last dimension: batch x seq_len x seq_len*num_classes
-    # logits_flattened = tf.reshape(logits_transposed, [batch_size, bucket_size, -1])
-
-    # need to turn targets into this 2d representation.
-    # have: labels for each token for each trigger (<= sentence len) and trigger_label_idx
-    # need: batch_size x seq_len x seq_len labels: the actual labels for each trigger, and all O otherwise
-    # todo don't hardcode 7
-
     # now we have k sets of targets for the k frames
     # (t1) f1 f2 v0
     # (t2) v0 f2 f3
@@ -1144,6 +1136,9 @@ class NN(Configurable):
     targets = tf.scatter_nd(idx, tf.ones([tf.shape(idx)[0]], dtype=tf.int32), [batch_size, bucket_size])
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
+
+    cross_entropy = tf.Print(cross_entropy, [targets], "targets", summarize=1000)
+    cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy), tf.shape(self.tokens_to_keep3D)], "shape", summarize=1000)
     cross_entropy *= self.tokens_to_keep3D
     loss = tf.reduce_sum(cross_entropy) / self.n_tokens
 
