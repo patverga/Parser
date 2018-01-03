@@ -330,7 +330,6 @@ class Network(Configurable):
       label_parts = s.split('/')
       curr_len = len(label_parts)
       combined_str = ''
-      print(s)
       for idx, label in enumerate(label_parts):
         bilou = label[0]
         label_type = label[2:]
@@ -356,7 +355,6 @@ class Network(Configurable):
           started_types.pop()
           curr_len -= 1
         combined_str += props_str
-      print(len(started_types), curr_len)
       while len(started_types) > curr_len:
         converted[-1] += ')'
         started_types.pop()
@@ -366,7 +364,6 @@ class Network(Configurable):
         combined_str += '*'
       elif combined_str[-1] == ")" and combined_str[0] != "(":
         combined_str = '*' + combined_str
-      print(combined_str)
       converted.append(combined_str)
     while len(started_types) > 0:
       converted[-1] += ')'
