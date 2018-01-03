@@ -1138,7 +1138,7 @@ class NN(Configurable):
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
 
-    cross_entropy *= self.tokens_to_keep3D
+    cross_entropy *= tf.squeeze(self.tokens_to_keep3D, -1)
     loss = tf.reduce_sum(cross_entropy) / self.n_tokens
 
     # training with predictions = batch x seq_len x seq_len
