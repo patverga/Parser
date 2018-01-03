@@ -1137,8 +1137,7 @@ class NN(Configurable):
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
-    cross_entropy = tf.Print(cross_entropy, [targets], "targets", summarize=1000)
-    cross_entropy = tf.Print(cross_entropy, [tf.shape(cross_entropy), tf.shape(self.tokens_to_keep3D)], "shape", summarize=1000)
+
     cross_entropy *= self.tokens_to_keep3D
     loss = tf.reduce_sum(cross_entropy) / self.n_tokens
 
@@ -1149,6 +1148,12 @@ class NN(Configurable):
     predictions = tf.cast(tf.argmax(logits, axis=-1), tf.int32)
     # probabilities = tf.nn.softmax(logits)
     # gold_trigger_predictions
+
+    predictions = tf.Print(predictions, [targets], "targets", summarize=1000)
+    predictions = tf.Print(predictions, [predictions], "predictions", summarize=1000)
+
+    predictions= tf.Print(predictions, [tf.shape(cross_entropy), tf.shape(self.tokens_to_keep3D)], "shape", summarize=1000)
+
 
     correct = tf.reduce_sum(tf.cast(tf.equal(predictions, targets), tf.float32) * self.tokens_to_keep3D)
 
