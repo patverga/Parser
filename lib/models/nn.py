@@ -1155,7 +1155,7 @@ class NN(Configurable):
     # predictions= tf.Print(predictions, [tf.shape(cross_entropy), tf.shape(self.tokens_to_keep3D)], "shape", summarize=1000)
 
 
-    correct = tf.reduce_sum(tf.cast(tf.equal(predictions, tf.squeeze(targets, -1)), tf.float32) * self.tokens_to_keep3D)
+    correct = tf.reduce_sum(tf.cast(tf.equal(predictions, targets), tf.float32) * tf.squeeze(self.tokens_to_keep3D, -1))
 
     # count  = tf.Print(count, [targets3D_masked], "targets3D_masked", summarize=4000)
     #
