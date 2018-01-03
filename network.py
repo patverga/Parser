@@ -326,6 +326,7 @@ class Network(Configurable):
     strings = map(lambda i: self._vocabs[3][i], indices)
     converted = []
     started_types = []
+    print(strings)
     for i, s in enumerate(strings):
       label_parts = s.split('/')
       curr_len = len(label_parts)
@@ -462,10 +463,8 @@ class Network(Configurable):
           word_str = word if self.trigger_idx in pred else '-'
           srl_strs = self.convert_bilou(pred)
           for j, s in enumerate(srl_strs):
-            if srl_strs[0] == "(":
-              unclosed_paren[j] += 1
-            if srl_strs[-1] == ")":
-              unclosed_paren[j] -= 1
+            unclosed_paren[j] += s.count('(')
+            unclosed_paren[j] -= s.count(')')
           fields = (word_str,) + tuple(srl_strs)
           owpl_str = '\t'.join(fields)
           f.write(owpl_str + "\n")
@@ -483,15 +482,13 @@ class Network(Configurable):
         srl_preds = preds[:, 10:10+num_gold_srls]
         unclosed_paren = [0]*srl_preds.shape[1]
         # print("srl preds shape", srl_preds.shape)
-        # print("srl_preds", srl_preds)
+        print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
           word_str = word if self.trigger_idx in pred else '-'
           srl_strs = self.convert_bilou(pred)
           for j, s in enumerate(srl_strs):
-            if srl_strs[0] == "(":
-              unclosed_paren[j] += 1
-            if srl_strs[-1] == ")":
-              unclosed_paren[j] -= 1
+            unclosed_paren[j] += s.count('(')
+            unclosed_paren[j] -= s.count(')')
           fields = (word_str,) + tuple(srl_strs)
           owpl_str = '\t'.join(fields)
           f.write(owpl_str + "\n")
