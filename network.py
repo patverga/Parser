@@ -457,14 +457,15 @@ class Network(Configurable):
         words = all_sents[bkt_idx][idx]
         num_gold_srls = preds[0, 9]
         srl_preds = preds[:, 10+num_gold_srls:]
-        unclosed_paren = [0]*srl_preds.shape[1]
+        srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
+        # unclosed_paren = [0]*srl_preds.shape[1]
         # print("srl_preds", srl_preds)
-        for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
-          word_str = word if self.trigger_idx in pred else '-'
+        for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
+          word_str = word if self.trigger_str in pred else '-'
           srl_strs = self.convert_bilou(pred)
-          for j, s in enumerate(srl_strs):
-            unclosed_paren[j] += s.count('(')
-            unclosed_paren[j] -= s.count(')')
+          # for j, s in enumerate(srl_strs):
+          #   unclosed_paren[j] += s.count('(')
+          #   unclosed_paren[j] -= s.count(')')
           fields = (word_str,) + tuple(srl_strs)
           owpl_str = '\t'.join(fields)
           f.write(owpl_str + "\n")
@@ -482,13 +483,14 @@ class Network(Configurable):
         srl_preds = preds[:, 10:10+num_gold_srls]
         unclosed_paren = [0]*srl_preds.shape[1]
         # print("srl preds shape", srl_preds.shape)
-        print("srl_preds", srl_preds)
-        for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds)):
-          word_str = word if self.trigger_idx in pred else '-'
+        # print("srl_preds", srl_preds)
+        srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
+        for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
+          word_str = word if self.trigger_str in pred else '-'
           srl_strs = self.convert_bilou(pred)
-          for j, s in enumerate(srl_strs):
-            unclosed_paren[j] += s.count('(')
-            unclosed_paren[j] -= s.count(')')
+          # for j, s in enumerate(srl_strs):
+          #   unclosed_paren[j] += s.count('(')
+          #   unclosed_paren[j] -= s.count(')')
           fields = (word_str,) + tuple(srl_strs)
           owpl_str = '\t'.join(fields)
           f.write(owpl_str + "\n")
