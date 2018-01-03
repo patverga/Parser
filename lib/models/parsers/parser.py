@@ -235,6 +235,7 @@ class Parser(BaseParser):
       with tf.variable_scope('SRL-Triggers-Classifier', reuse=reuse):
         trigger_classifier = self.MLP(trigger_classifier_mlp, 2, n_splits=1)
       trigger_output = self.output_trigger(trigger_classifier, targets, vocabs[3]['U-V'][0])
+      trigger_loss = trigger_output['loss']
 
     with tf.variable_scope('SRL-Arcs', reuse=reuse):
       srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, num_srl_classes)
@@ -258,7 +259,7 @@ class Parser(BaseParser):
     output['n_correct'] = tf.reduce_sum(output['correct'])
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
-    output['loss'] = srl_loss #arc_output['loss'] + rel_output['loss'] + srl_loss
+    output['loss'] = srl_loss + trigger_loss #arc_output['loss'] + rel_output['loss'] + srl_loss
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 
@@ -287,6 +288,9 @@ class Parser(BaseParser):
     output['srl_count'] = srl_output['count']
     output['transition_params'] = transition_params if transition_params is not None else tf.constant(bilou_constraints)
     output['srl_trigger'] = trigger_predictions
+    output['trigger_loss'] = trigger_loss
+    output['trigger_count'] = trigger_output['count']
+    output['trigger_correct'] = trigger_output['correct']
 
 
 
