@@ -73,7 +73,8 @@ class BaseParser(NN):
     cycles_n_total = 0.
     non_trees_total = 0.
     non_tree_preds = []
-    srl_triggers = np.transpose(srl_triggers)
+    # srl_triggers = np.transpose(srl_triggers)
+    np.set_printoptions(threshold=np.nan)
     print("triggers", srl_triggers)
     if np.all(n_cycles == -1):
         n_cycles = len_2_cycles = [-1] * len(mb_inputs)
