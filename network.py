@@ -455,7 +455,8 @@ class Network(Configurable):
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
         num_gold_srls = preds[0, 9]
-        srl_preds = preds[:, 10:10 + num_gold_srls]
+        num_pred_srls = preds[0, 10]
+        srl_preds = preds[:, 11+num_pred_srls:11+num_pred_srls+num_gold_srls]
         # unclosed_paren = [0] * srl_preds.shape[1]
         # print("num_gold_srls", num_gold_srls)
         # print("srl preds shape", srl_preds.shape)
@@ -494,13 +495,15 @@ class Network(Configurable):
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
         num_gold_srls = preds[0, 9]
-        srl_preds = preds[:, 10+num_gold_srls:]
+        num_pred_srls = preds[0, 10]
+        srl_preds = preds[:, 11+num_gold_srls+num_pred_srls:]
+        trigger_indices = preds[:, 11:11+num_pred_srls]
         srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
         # unclosed_paren = [0]*srl_preds.shape[1]
         # print("srl_preds", srl_preds)
         for i, (datum, word) in enumerate(zip(data, words)):
           pred = srl_preds_str[i] if srl_preds_str else []
-          word_str = word if "(V*)" in pred else '-'
+          word_str = word if i in trigger_indices in pred else '-'
           # srl_strs = self.convert_bilou(pred)
           # for j, s in enumerate(srl_strs):
           #   unclosed_paren[j] += s.count('(')

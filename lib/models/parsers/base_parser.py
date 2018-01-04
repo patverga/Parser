@@ -91,6 +91,7 @@ class BaseParser(NN):
       non_srl_targets_len = 3
       tokens = np.arange(length)
       srl_pred = srl_pred[tokens]
+      pred_trigger_indices = np.where(srl_trigger[tokens] == 1)[0]
       num_gold_srls = len(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx)[0])
       num_pred_srls = len(np.where(srl_trigger[tokens] == 1)[0])
       # print("s_pred shape", srl_pred.shape)
@@ -113,7 +114,7 @@ class BaseParser(NN):
 
       # num_srls = targets.shape[-1]-non_srl_targets_len
       # sent will contain 7 things non-srl, including one thing from targets
-      sent = -np.ones((length, num_pred_srls+num_gold_srls+10), dtype=int)
+      sent = -np.ones((length, 2*num_pred_srls+num_gold_srls+10), dtype=int)
 
       # print("srl targets", targets[tokens, 3:])
       # print("srl triggers", np.sum(np.where(targets[tokens, 3:] == trigger_idx)))
@@ -133,12 +134,15 @@ class BaseParser(NN):
       sent[:,7] = targets[tokens, 1] # 8
       sent[:,8] = targets[tokens, 2] # 9
       sent[:,9] = num_gold_srls # 10
-      sent[:,10:10+num_gold_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
-      print("trigger tokens", srl_trigger[tokens])
-      print("indices", np.where(srl_trigger[tokens] == 1)[0])
-      print("srl_pred", srl_pred)
-      print("srl_pred where", srl_pred[:,np.where(srl_trigger[tokens] == 1)[0]])
-      s_pred = srl_pred[:,np.where(srl_trigger[tokens] == 1)[0]]
+      sent[:, 10] = num_pred_srls  # 11
+      sent[:,11:11+num_pred_srls] = pred_trigger_indices
+      # save trigger indices
+      sent[:,11+num_pred_srls:11+num_gold_srls+num_pred_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
+      # print("trigger tokens", srl_trigger[tokens])
+      # print("indices", np.where(srl_trigger[tokens] == 1)[0])
+      # print("srl_pred", srl_pred)
+      # print("srl_pred where", srl_pred[:,np.where(srl_trigger[tokens] == 1)[0]])
+      s_pred = srl_pred[:, pred_trigger_indices]
       # if transition_params is not None and s_pred.any():
       #   v_pred = []
       #   s_log = srl_logit[:, np.where(srl_trigger == 1)[0]]
@@ -151,7 +155,7 @@ class BaseParser(NN):
 
       if len(s_pred.shape) == 1:
         s_pred = np.expand_dims(s_pred, -1)
-      sent[:,10+num_gold_srls:] = s_pred
+      sent[:,11+num_pred_srls+num_gold_srls:] = s_pred
       sents.append(sent)
     return sents, total_time, roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total, non_trees_total, non_tree_preds
   
