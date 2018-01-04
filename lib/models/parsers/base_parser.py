@@ -114,7 +114,7 @@ class BaseParser(NN):
 
       # num_srls = targets.shape[-1]-non_srl_targets_len
       # sent will contain 7 things non-srl, including one thing from targets
-      sent = -np.ones((length, 2*num_pred_srls+num_gold_srls+10), dtype=int)
+      sent = -np.ones((length, 2*num_pred_srls+num_gold_srls+11), dtype=int)
 
       # print("srl targets", targets[tokens, 3:])
       # print("srl triggers", np.sum(np.where(targets[tokens, 3:] == trigger_idx)))
