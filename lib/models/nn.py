@@ -1141,7 +1141,6 @@ class NN(Configurable):
 
     # targets = tf.Print(targets, [targets], "targets", summarize=5000)
 
-
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
 
     cross_entropy *= tf.squeeze(self.tokens_to_keep3D, -1)
