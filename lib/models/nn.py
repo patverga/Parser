@@ -916,9 +916,13 @@ class NN(Configurable):
     input_shape = tf.shape(inputs1)
     batch_size = input_shape[0]
     bucket_size = input_shape[1]
-    input_size = inputs1.get_shape().as_list()[-1]
-    input_shape_to_set = [tf.Dimension(None), tf.Dimension(None), input_size + 1]
-    output_shape = tf.stack([batch_size, bucket_size, n_classes, bucket_size])
+    input_size1 = inputs1.get_shape().as_list()[-1]
+    input_size2= inputs2.get_shape().as_list()[-1]
+
+    input_shape_to_set1 = [tf.Dimension(None), tf.Dimension(None), input_size1 + 1]
+    input_shape_to_set2 = [tf.Dimension(None), tf.Dimension(None), input_size2 + 1]
+
+    # output_shape = tf.stack([batch_size, bucket_size, n_classes, bucket_size])
     # if len(probs.get_shape().as_list()) == 2:
     #   probs = tf.to_float(tf.one_hot(tf.to_int64(probs), bucket_size, 1, 0))
     # else:
@@ -929,14 +933,16 @@ class NN(Configurable):
     else:
       keep_prob = 1
     if isinstance(keep_prob, tf.Tensor) or keep_prob < 1:
-      noise_shape = tf.stack([batch_size, 1, input_size])
-      inputs1 = tf.nn.dropout(inputs1, keep_prob, noise_shape=noise_shape)
-      inputs2 = tf.nn.dropout(inputs2, keep_prob, noise_shape=noise_shape)
+      noise_shape1 = tf.stack([batch_size, 1, input_size1])
+      noise_shape2 = tf.stack([batch_size, 1, input_size2])
+
+      inputs1 = tf.nn.dropout(inputs1, keep_prob, noise_shape=noise_shape1)
+      inputs2 = tf.nn.dropout(inputs2, keep_prob, noise_shape=noise_shape2)
 
     inputs1 = tf.concat(axis=2, values=[inputs1, tf.ones(tf.stack([batch_size, bucket_size, 1]))])
-    inputs1.set_shape(input_shape_to_set)
+    inputs1.set_shape(input_shape_to_set1)
     inputs2 = tf.concat(axis=2, values=[inputs2, tf.ones(tf.stack([batch_size, bucket_size, 1]))])
-    inputs2.set_shape(input_shape_to_set)
+    inputs2.set_shape(input_shape_to_set2)
 
     bilin = linalg.bilinear(inputs1, inputs2,
                             n_classes,
