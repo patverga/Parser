@@ -516,7 +516,8 @@ class Network(Configurable):
           f.write(owpl_str + "\n")
         f.write('\n')
 
-    srl_eval = check_output(["perl", "srl-eval.pl", srl_gold_fname, srl_preds_fname])
+    with open(os.devnull, 'w') as devnull:
+      srl_eval = check_output(["perl", "srl-eval.pl", srl_gold_fname, srl_preds_fname], stderr=devnull)
     print(srl_eval)
 
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
