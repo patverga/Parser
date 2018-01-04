@@ -1057,11 +1057,6 @@ class NN(Configurable):
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
     count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32)
 
-    print("batch size", batch_size)
-    print("bucket_size", bucket_size)
-    print("num_classes", num_classes)
-    print(logits.get_shape().as_list())
-
     if transition_params is not None:
       # need to flatten batch x seq_len x seq_len x logits to
       # batch*seq_len x seq_len x logits,

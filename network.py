@@ -258,10 +258,13 @@ class Network(Configurable):
             with open(os.path.join(self.save_dir, 'history.pkl'), 'w') as f:
               pkl.dump(self.history, f)
             correct = self.test(sess, validate=True)
-            las = np.mean(correct["LAS"]) * 100
-            uas = np.mean(correct["UAS"]) * 100
-            print('UAS: %.2f    LAS: %.2f' % (uas, las))
-            current_score = np.mean(correct[self.eval_criterion]) * 100
+            # las = np.mean(correct["LAS"]) * 100
+            # uas = np.mean(correct["UAS"]) * 100
+            # print('UAS: %.2f    LAS: %.2f' % (uas, las))
+            if self.eval_criterion == 'LAS' or self.eval_criterion == 'UAS':
+              current_score = np.mean(correct[self.eval_criterion]) * 100
+            else:
+              current_score = correct[self.eval_criterion]
             if self.save and current_score > current_best:
               current_best = current_score
               print("Writing model to %s" % (os.path.join(self.save_dir, self.name.lower() + '-trained')))
@@ -519,10 +522,13 @@ class Network(Configurable):
     with open(os.devnull, 'w') as devnull:
       srl_eval = check_output(["perl", "srl-eval.pl", srl_gold_fname, srl_preds_fname], stderr=devnull)
     print(srl_eval)
+    overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
 
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
       f.write(s)
+
+    correct['F1'] = overall_f1
     # if validate:
     #   np.savez(os.path.join(self.save_dir, 'non_tree_preds.txt'), non_tree_preds_total)
     # print(non_tree_preds_total)
@@ -531,6 +537,7 @@ class Network(Configurable):
     uas = np.mean(correct["UAS"]) * 100
     print('UAS: %.2f    LAS: %.2f' % (uas, las))
     print('SRL acc: %.2f' % ((srl_correct_total / srl_count_total)*100))
+    print('SRL F1: %.2f' % (overall_f1))
     return correct
   
   #=============================================================
