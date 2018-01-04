@@ -480,6 +480,9 @@ class Network(Configurable):
           #   print(words)
           #   print(srl_preds)
           f.write('\n')
+        else:
+          print("srl preds", srl_preds)
+          print("converted", [self.convert_bilou(j) for j in np.transpose(srl_preds)])
 
     # save SRL output
     with open(os.path.join(self.save_dir, 'srl_preds.tsv'), 'w') as f:
