@@ -457,13 +457,13 @@ class Network(Configurable):
         num_gold_srls = preds[0, 9]
         srl_preds = preds[:, 10:10 + num_gold_srls]
         # unclosed_paren = [0] * srl_preds.shape[1]
-        print("num_gold_srls", num_gold_srls)
-        print("srl preds shape", srl_preds.shape)
+        # print("num_gold_srls", num_gold_srls)
+        # print("srl preds shape", srl_preds.shape)
         # print("srl_preds", srl_preds)
         # print("srl_preds transpose", np.transpose(srl_preds))
         # print("converted", [self.convert_bilou(j) for j in np.transpose(srl_preds)])
         srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
-        print("srl preds str", srl_preds_str)
+        # print("srl preds str", srl_preds_str)
         # print("mapped", srl_preds_str)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
           word_str = word if self.trigger_str in pred else '-'
