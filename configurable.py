@@ -462,6 +462,11 @@ class Configurable(object):
     return self._config.getfloat('Training', 'arc_loss_penalty')
   argparser.add_argument('--arc_loss_penalty')
 
+  @property
+  def add_pos_to_input(self):
+    return self._config.getboolean('Training', 'add_pos_to_input')
+  argparser.add_argument('--add_pos_to_input')
+
   #=============================================================
   # [Transformer]
   @property
