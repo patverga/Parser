@@ -134,6 +134,10 @@ class BaseParser(NN):
       sent[:,8] = targets[tokens, 2] # 9
       sent[:,9] = num_gold_srls # 10
       sent[:,10:10+num_gold_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
+      print("trigger tokens", srl_trigger[tokens])
+      print("indices", np.where(srl_trigger[tokens] == 1)[0])
+      print("srl_pred", srl_pred)
+      print("srl_pred where", srl_pred[:,np.where(srl_trigger[tokens] == 1)[0]])
       s_pred = srl_pred[:,np.where(srl_trigger[tokens] == 1)[0]]
       # if transition_params is not None and s_pred.any():
       #   v_pred = []
