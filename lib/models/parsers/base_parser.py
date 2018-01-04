@@ -99,13 +99,14 @@ class BaseParser(NN):
       num_pred_srls = len(pred_trigger_indices)
       # print("s_pred shape", srl_pred.shape)
       # print("num pred srls", num_pred_srls)
-      if num_pred_srls > 0:
-        np.set_printoptions(threshold=np.nan)
-        print("srl_trigger", srl_trigger)
-        print("shape, tokens", srl_pred.shape, length)
-        print("srl pred", srl_pred)
-        print("srl pred where", srl_pred[:, pred_trigger_indices])
-        print("trigger indices", pred_trigger_indices)
+      # if num_pred_srls > 0:
+      #   np.set_printoptions(threshold=np.nan)
+      #   print("srl_trigger", srl_trigger)
+      #   print("shape, tokens", srl_pred.shape, length)
+      #   print("srl pred", srl_pred)
+      #   print("srl pred where", srl_pred[:, pred_trigger_indices])
+      #   print("trigger indices", pred_trigger_indices)
+
         # print("gold where", np.where(targets[tokens, non_srl_targets_len:] == trigger_idx))
         # print("gold", targets[tokens, non_srl_targets_len:])
         # print("gold where", targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len])
