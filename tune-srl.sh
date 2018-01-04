@@ -12,15 +12,15 @@ fi
 
 echo "Writing to $OUT_LOG"
 
-num_gpus=108
-#num_gpus=40
+#num_gpus=108
+num_gpus=36
 
 lrs="0.04 0.01 0.1" # 0.06"
 mus="0.9"
 nus="0.98 0.9"
 epsilons="1e-12 1e-8 1e-4"
-warmup_steps="8000 2000"
-batch_sizes="500 1000 2000"
+warmup_steps="8000 2000 0"
+batch_sizes="1000 2000"
 
 trans_layers="2" # 3
 cnn_dims="512" # 768
@@ -29,11 +29,11 @@ head_sizes="64" # 128"
 relu_hidden_sizes="256"
 trigger_mlp_sizes="256"
 role_mlp_sizes="256"
-subsample_trigger_rates="0.0 0.5 1.0"
+subsample_trigger_rates="1.0"
 
 reps="3"
 
-# 3*2*3*2*2*3*3
+# 3*2*3*3*3*2
 
 
 
@@ -56,7 +56,7 @@ for lr in ${lrs[@]}; do
                                                     for trigger_mlp_size in ${trigger_mlp_sizes[@]}; do
                                                         for rep in `seq $reps`; do
                                                             fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$role_mlp_size-$trigger_mlp_size-$subsample_trigger_rate"
-                                                            commands+=("srun --gres=gpu:1 --partition=titanx-short,m40-short --time=04:00:00
+                                                            commands+=("srun --gres=gpu:1 --partition=titanx-long,m40-long --time=08:00:00
                                                              python network.py \
                                                             --config_file config/trans-fast-conll12-bio.cfg \
                                                             --save_dir $OUT_LOG/scores-$fname_append \
