@@ -35,6 +35,7 @@ from configurable import Configurable
 from vocab import Vocab
 from dataset import Dataset
 import contextlib
+from subprocess import check_output
 
 @contextlib.contextmanager
 def dummy_context_mgr():
@@ -447,7 +448,8 @@ class Network(Configurable):
         f.write('\n')
 
     # save SRL output
-    with open(os.path.join(self.save_dir, 'srl_golds.tsv'), 'w') as f:
+    srl_gold_fname = os.path.join(self.save_dir, 'srl_golds.tsv')
+    with open(srl_gold_fname, 'w') as f:
       for bkt_idx, idx in dataset._metabucket.data:
         # for each word, if trigger print word, otherwise -
         # then all the SRL labels
@@ -487,7 +489,8 @@ class Network(Configurable):
         #   print("converted", [self.convert_bilou(j) for j in np.transpose(srl_preds)])
 
     # save SRL output
-    with open(os.path.join(self.save_dir, 'srl_preds.tsv'), 'w') as f:
+    srl_preds_fname = os.path.join(self.save_dir, 'srl_preds.tsv')
+    with open(srl_preds_fname, 'w') as f:
       for bkt_idx, idx in dataset._metabucket.data:
         # for each word, if trigger print word, otherwise -
         # then all the SRL labels
@@ -503,7 +506,7 @@ class Network(Configurable):
         # print("srl_preds", srl_preds)
         for i, (datum, word) in enumerate(zip(data, words)):
           pred = srl_preds_str[i] if srl_preds_str else []
-          word_str = word if i in trigger_indices in pred else '-'
+          word_str = word if i in trigger_indices else '-'
           # srl_strs = self.convert_bilou(pred)
           # for j, s in enumerate(srl_strs):
           #   unclosed_paren[j] += s.count('(')
@@ -513,7 +516,8 @@ class Network(Configurable):
           f.write(owpl_str + "\n")
         f.write('\n')
 
-
+    srl_eval = check_output(["perl", "srl-eval.pl", srl_gold_fname, srl_preds_fname])
+    print(srl_eval)
 
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
