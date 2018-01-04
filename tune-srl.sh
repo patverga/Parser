@@ -56,7 +56,7 @@ for lr in ${lrs[@]}; do
                                                     for trigger_mlp_size in ${trigger_mlp_sizes[@]}; do
                                                         for rep in `seq $reps`; do
                                                             fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$role_mlp_size-$trigger_mlp_size-$subsample_trigger_rate"
-                                                            commands+=("srun --gres=gpu:1 --partition=titanx-long,m40-long --time=08:00:00
+                                                            commands+=("srun --gres=gpu:1 --partition=titanx-long,m40-long --time=08:00:00 --mem 8g
                                                              python network.py \
                                                             --config_file config/trans-fast-conll12-bio.cfg \
                                                             --save_dir $OUT_LOG/scores-$fname_append \
