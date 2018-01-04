@@ -1019,7 +1019,7 @@ class NN(Configurable):
     # get indices of trigger labels in srl_targets
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
 
-    trigger_indices = tf.Print(trigger_indices, [trigger_indices], "trigger_indices", summarize=5000)
+    # trigger_indices = tf.Print(trigger_indices, [trigger_indices], "trigger_indices", summarize=5000)
 
     # get all the tags for each token (which is the trigger for a frame), structuring
     # targets3D as follows (assuming t1 and t2 are triggers for f1 and f3, repsectively):
@@ -1027,7 +1027,7 @@ class NN(Configurable):
     # (t2) f3 f3 f3
     actual_targets = tf.gather_nd(tf.transpose(srl_targets, [0, 2, 1]), tf.stack([trigger_indices[:,0],trigger_indices[:,2]], -1))
     i1 = tf.tile(tf.expand_dims(trigger_indices[:,0], -1), [1, bucket_size])
-    i2 = tf.tile(tf.expand_dims(trigger_indices[:,2], -1), [1, bucket_size])
+    i2 = tf.tile(tf.expand_dims(trigger_indices[:,1], -1), [1, bucket_size])
     i3 = tf.tile(tf.expand_dims(tf.range(bucket_size), 0), [tf.shape(trigger_indices)[0], 1])
     trigger_idx = tf.stack([i1, i2, i3], axis=-1)
     targets3D = tf.scatter_nd(trigger_idx, actual_targets, [batch_size, bucket_size, bucket_size])
@@ -1059,7 +1059,7 @@ class NN(Configurable):
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
     count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32)
 
-    targets3D_masked = tf.Print(targets3D_masked, [targets3D_masked], "cross_entropy", summarize=5000)
+    # targets3D_masked = tf.Print(targets3D_masked, [targets3D_masked], "cross_entropy", summarize=5000)
 
     if transition_params is not None:
       # need to flatten batch x seq_len x seq_len x logits to
@@ -1087,7 +1087,7 @@ class NN(Configurable):
     # which contain the trigger label
     predictions = tf.cast(tf.argmax(logits_transposed, axis=-1), tf.int32)
 
-    predictions = tf.Print(predictions, [predictions], "predictions", summarize=5000)
+    # predictions = tf.Print(predictions, [predictions], "predictions", summarize=5000)
 
     probabilities = tf.nn.softmax(logits_transposed)
     # gold_trigger_predictions
