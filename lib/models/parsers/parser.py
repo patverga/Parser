@@ -231,7 +231,7 @@ class Parser(BaseParser):
       trigger_mlp, role_mlp = trigger_role_mlp[:,:,:self.trigger_mlp_size], trigger_role_mlp[:,:,self.trigger_mlp_size:]
 
     with tf.variable_scope('SRL-Triggers', reuse=reuse):
-      trigger_classifier_mlp = self.MLP(top_recur, self.trigger_mlp_size, n_splits=1)
+      trigger_classifier_mlp = self.MLP(top_recur, self.trigger_pred_mlp_size, n_splits=1)
       with tf.variable_scope('SRL-Triggers-Classifier', reuse=reuse):
         trigger_classifier = self.MLP(trigger_classifier_mlp, 2, n_splits=1)
       trigger_output = self.output_trigger(trigger_classifier, targets, vocabs[3][self.trigger_str][0])

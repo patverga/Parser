@@ -78,6 +78,8 @@ class BaseParser(NN):
     # print("triggers", srl_triggers)
     if np.all(n_cycles == -1):
         n_cycles = len_2_cycles = [-1] * len(mb_inputs)
+
+    # for each batch element (sequence)
     for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred, srl_logit, srl_trigger in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds, srl_logits, srl_triggers):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
