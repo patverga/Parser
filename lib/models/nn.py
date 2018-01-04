@@ -1019,6 +1019,8 @@ class NN(Configurable):
     # get indices of trigger labels in srl_targets
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
 
+    trigger_indices = tf.Print(trigger_indices, [trigger_indices], "trigger_indices", summarize=5000)
+
     # get all the tags for each token (which is the trigger for a frame), structuring
     # targets3D as follows (assuming t1 and t2 are triggers for f1 and f3, repsectively):
     # (t1) f1 f1 f1
@@ -1057,6 +1059,8 @@ class NN(Configurable):
     non_masked_targets = tf.gather_nd(targets3D, non_masked_indices)
     count = tf.cast(tf.count_nonzero(non_masked_targets), tf.float32)
 
+    targets3D_masked = tf.Print(targets3D_masked, [targets3D_masked], "cross_entropy", summarize=5000)
+
     if transition_params is not None:
       # need to flatten batch x seq_len x seq_len x logits to
       # batch*seq_len x seq_len x logits,
@@ -1074,6 +1078,7 @@ class NN(Configurable):
     else:
       cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D_masked)
       cross_entropy *= overall_mask
+      cross_entropy = tf.Print(cross_entropy, [cross_entropy], "cross_entropy", summarize=5000)
       loss = tf.cond(tf.equal(count, 0.), lambda: tf.constant(0.), lambda: tf.reduce_sum(cross_entropy) / count)
 
     # training with predictions = batch x seq_len x seq_len
@@ -1081,6 +1086,9 @@ class NN(Configurable):
     # transposed, this gives us columns for each trigger; need to select out the columns
     # which contain the trigger label
     predictions = tf.cast(tf.argmax(logits_transposed, axis=-1), tf.int32)
+
+    predictions = tf.Print(predictions, [predictions], "predictions", summarize=5000)
+
     probabilities = tf.nn.softmax(logits_transposed)
     # gold_trigger_predictions
 
