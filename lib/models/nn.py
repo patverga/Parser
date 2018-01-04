@@ -1131,15 +1131,15 @@ class NN(Configurable):
 
     # get indices of trigger labels in srl_targets
     trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
-    idx = tf.stack([trigger_indices[:,0], trigger_indices[:,2]], -1)
+    idx = tf.stack([trigger_indices[:,0], trigger_indices[:,1]], -1)
 
-    idx = tf.Print(idx, [trigger_indices], "trigger_indices", summarize=5000)
-
-    idx = tf.Print(idx, [idx], "idx", summarize=5000)
+    # idx = tf.Print(idx, [trigger_indices], "trigger_indices", summarize=5000)
+    #
+    # idx = tf.Print(idx, [idx], "idx", summarize=5000)
 
     targets = tf.scatter_nd(idx, tf.ones([tf.shape(idx)[0]], dtype=tf.int32), [batch_size, bucket_size])
 
-    targets = tf.Print(targets, [targets], "targets", summarize=5000)
+    # targets = tf.Print(targets, [targets], "targets", summarize=5000)
 
 
     cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=targets)
