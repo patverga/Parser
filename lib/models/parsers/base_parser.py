@@ -73,6 +73,8 @@ class BaseParser(NN):
     cycles_n_total = 0.
     non_trees_total = 0.
     non_tree_preds = []
+    srl_triggers = np.transpose(srl_triggers)
+    print("triggers", srl_triggers)
     if np.all(n_cycles == -1):
         n_cycles = len_2_cycles = [-1] * len(mb_inputs)
     for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred, srl_logit, srl_trigger in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds, srl_logits, srl_triggers):
@@ -93,7 +95,7 @@ class BaseParser(NN):
       srl_pred = srl_pred[tokens]
       pred_trigger_indices = np.where(srl_trigger[tokens] == 1)[0]
       num_gold_srls = len(np.where(targets[tokens, non_srl_targets_len:] == trigger_idx)[0])
-      num_pred_srls = len(np.where(srl_trigger[tokens] == 1)[0])
+      num_pred_srls = len(pred_trigger_indices)
       # print("s_pred shape", srl_pred.shape)
       # print("num pred srls", num_pred_srls)
       # if num_pred_srls > 0:
@@ -134,7 +136,7 @@ class BaseParser(NN):
       sent[:,7] = targets[tokens, 1] # 8
       sent[:,8] = targets[tokens, 2] # 9
       sent[:,9] = num_gold_srls # 10
-      sent[:, 10] = num_pred_srls  # 11
+      sent[:,10] = num_pred_srls  # 11
       sent[:,11:11+num_pred_srls] = pred_trigger_indices
       # save trigger indices
       sent[:,11+num_pred_srls:11+num_gold_srls+num_pred_srls] = targets[tokens, non_srl_targets_len:num_gold_srls+non_srl_targets_len] # num_srls
