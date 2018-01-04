@@ -12,8 +12,8 @@ fi
 
 echo "Writing to $OUT_LOG"
 
-#num_gpus=108
-num_gpus=27
+num_gpus=108
+#num_gpus=27
 
 lrs="0.04" # 0.06"
 mus="0.9"
