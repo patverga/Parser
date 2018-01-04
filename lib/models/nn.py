@@ -1078,7 +1078,7 @@ class NN(Configurable):
     else:
       cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits_transposed, labels=targets3D_masked)
       cross_entropy *= overall_mask
-      cross_entropy = tf.Print(cross_entropy, [cross_entropy], "cross_entropy", summarize=5000)
+      # cross_entropy = tf.Print(cross_entropy, [cross_entropy], "cross_entropy", summarize=5000)
       loss = tf.cond(tf.equal(count, 0.), lambda: tf.constant(0.), lambda: tf.reduce_sum(cross_entropy) / count)
 
     # training with predictions = batch x seq_len x seq_len
