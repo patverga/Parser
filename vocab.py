@@ -132,7 +132,7 @@ class Vocab(Configurable):
     """"""
     
     counts = Counter()
-    with open(self.train_file) as f:
+    with open(self.train_file, 'r') as f:
       buff = []
       for line_num, line in enumerate(f):
         line = line.strip().split()
@@ -168,7 +168,7 @@ class Vocab(Configurable):
     self._str2embed = self.init_str2idx()
     self._embed2str = self.init_idx2str()
     embeds = []
-    with open(self.embed_file) as f:
+    with open(self.embed_file, 'r') as f:
       cur_idx = Vocab.START_IDX
       for line_num, line in enumerate(f):
         line = line.strip().split()
@@ -183,7 +183,7 @@ class Vocab(Configurable):
     self.pretrained_embeddings = np.array(embeds, dtype=np.float32)
     self.pretrained_embeddings = np.pad(self.pretrained_embeddings, ((self.START_IDX, 0), (0, 0)), 'constant')
     if os.path.isfile(self.embed_aux_file):
-      with open(self.embed_aux_file) as f:
+      with open(self.embed_aux_file, 'r') as f:
         for line in f:
           line = line.strip().split()
           if line[0] == self.SPECIAL_TOKENS[0]:
@@ -208,7 +208,7 @@ class Vocab(Configurable):
     """"""
     
     counts = Counter()
-    with open(self.vocab_file) as f:
+    with open(self.vocab_file, 'r') as f:
       for line_num, line in enumerate(f):
         line = line.strip().split('\t')
         if line:
