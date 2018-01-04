@@ -235,7 +235,6 @@ class Parser(BaseParser):
       with tf.variable_scope('SRL-Triggers-Classifier', reuse=reuse):
         trigger_classifier = self.MLP(trigger_classifier_mlp, 2, n_splits=1)
       trigger_output = self.output_trigger(trigger_classifier, targets, vocabs[3][self.trigger_str][0])
-      trigger_loss = trigger_output['loss']
 
     with tf.variable_scope('SRL-Arcs', reuse=reuse):
       srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, num_srl_classes)
@@ -245,9 +244,10 @@ class Parser(BaseParser):
         trigger_predictions = trigger_output['predictions']
       srl_output = self.output_srl(srl_logits, targets, vocabs[3][self.trigger_str][0], vocabs[3]["O"][0], transition_params if self.viterbi_train else None)
 
-    # todo weight?
-    srl_loss = srl_output['loss']
-
+    trigger_loss = self.trigger_loss_penalty * trigger_output['loss']
+    srl_loss = self.role_loss_penalty * srl_output['loss']
+    arc_loss = self.arc_loss_penalty * arc_output['loss']
+    rel_loss = self.rel_loss_penalty * rel_output['loss']
 
     output = {}
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
@@ -259,7 +259,7 @@ class Parser(BaseParser):
     output['n_correct'] = tf.reduce_sum(output['correct'])
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
-    output['loss'] = srl_loss + trigger_loss #arc_output['loss'] + rel_output['loss'] + srl_loss
+    output['loss'] = srl_loss + trigger_loss + arc_loss + rel_loss #arc_output['loss'] + rel_output['loss'] + srl_loss
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 
@@ -272,8 +272,8 @@ class Parser(BaseParser):
     output['arc_logits'] = arc_logits
     output['rel_logits'] = rel_logits
 
-    output['rel_loss'] = rel_output['loss']
-    output['log_loss'] = arc_output['log_loss']
+    output['rel_loss'] = rel_loss # rel_output['loss']
+    output['log_loss'] = arc_loss # arc_output['log_loss']
     output['2cycle_loss'] = arc_output['2cycle_loss']
     output['roots_loss'] = arc_output['roots_loss']
     output['svd_loss'] = arc_output['svd_loss']

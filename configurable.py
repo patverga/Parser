@@ -442,6 +442,26 @@ class Configurable(object):
     return self._config.get('Training', 'trigger_str')
   argparser.add_argument('--trigger_str')
 
+  @property
+  def trigger_loss_penalty(self):
+    return self._config.getfloat('Training', 'trigger_loss_penalty')
+  argparser.add_argument('--trigger_loss_penalty')
+
+  @property
+  def role_loss_penalty(self):
+    return self._config.getfloat('Training', 'role_loss_penalty')
+  argparser.add_argument('--role_loss_penalty')
+
+  @property
+  def rel_loss_penalty(self):
+    return self._config.getfloat('Training', 'rel_loss_penalty')
+  argparser.add_argument('--rel_loss_penalty')
+
+  @property
+  def arc_loss_penalty(self):
+    return self._config.getfloat('Training', 'arc_loss_penalty')
+  argparser.add_argument('--arc_loss_penalty')
+
   #=============================================================
   # [Transformer]
   @property
