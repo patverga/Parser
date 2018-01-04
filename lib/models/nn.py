@@ -1166,7 +1166,7 @@ class NN(Configurable):
 
     output = {
       'loss': loss,
-      'predictions': predictions * tf.squeeze(self.tokens_to_keep3D, -1),
+      'predictions': predictions, # * tf.squeeze(self.tokens_to_keep3D, -1),
       'logits': logits,
       # 'gold_trigger_predictions': tf.transpose(predictions, [0, 2, 1]),
       'count': self.n_tokens,
