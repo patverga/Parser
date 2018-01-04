@@ -465,20 +465,21 @@ class Network(Configurable):
         srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
         # print("srl preds str", srl_preds_str)
         # print("mapped", srl_preds_str)
-        for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
-          word_str = word if self.trigger_str in pred else '-'
-          # srl_strs = self.convert_bilou(pred)
-          # for j, s in enumerate(srl_strs):
-          #   unclosed_paren[j] += s.count('(')
-          #   unclosed_paren[j] -= s.count(')')
-          fields = (word_str,) + tuple(pred)
-          owpl_str = '\t'.join(fields)
-          f.write(owpl_str + "\n")
-        # if np.any(unclosed_paren):
-        #   print("unclosed paren")
-        #   print(words)
-        #   print(srl_preds)
-        f.write('\n')
+        if srl_preds_str:
+          for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
+            word_str = word if "(V*)" in pred else '-'
+            # srl_strs = self.convert_bilou(pred)
+            # for j, s in enumerate(srl_strs):
+            #   unclosed_paren[j] += s.count('(')
+            #   unclosed_paren[j] -= s.count(')')
+            fields = (word_str,) + tuple(pred)
+            owpl_str = '\t'.join(fields)
+            f.write(owpl_str + "\n")
+          # if np.any(unclosed_paren):
+          #   print("unclosed paren")
+          #   print(words)
+          #   print(srl_preds)
+          f.write('\n')
 
     # save SRL output
     with open(os.path.join(self.save_dir, 'srl_preds.tsv'), 'w') as f:
@@ -494,7 +495,7 @@ class Network(Configurable):
         # unclosed_paren = [0]*srl_preds.shape[1]
         # print("srl_preds", srl_preds)
         for i, (datum, word, pred) in enumerate(zip(data, words, srl_preds_str)):
-          word_str = word if self.trigger_str in pred else '-'
+          word_str = word if "(V*)" in pred else '-'
           # srl_strs = self.convert_bilou(pred)
           # for j, s in enumerate(srl_strs):
           #   unclosed_paren[j] += s.count('(')
