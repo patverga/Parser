@@ -917,7 +917,7 @@ class NN(Configurable):
     batch_size = input_shape[0]
     bucket_size = input_shape[1]
     input_size1 = inputs1.get_shape().as_list()[-1]
-    input_size2= inputs2.get_shape().as_list()[-1]
+    input_size2 = inputs2.get_shape().as_list()[-1]
 
     input_shape_to_set1 = [tf.Dimension(None), tf.Dimension(None), input_size1 + 1]
     input_shape_to_set2 = [tf.Dimension(None), tf.Dimension(None), input_size2 + 1]
