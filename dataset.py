@@ -63,7 +63,7 @@ class Dataset(Configurable):
               buff[-1].append(line)
             else:
               if len(buff) < self.lines_per_buffer:
-                if len(buff[-1]) > 1:
+                if len(buff[-1]) > 0:
                   buff.append([])
                 else:
                   buff[-1] = []
@@ -87,7 +87,7 @@ class Dataset(Configurable):
           if line:
             buff[-1].append(line)
           else:
-            if len(buff[-1]) > 1:
+            if len(buff[-1]) > 0:
               buff.append([])
             else:
               buff[-1] = []
