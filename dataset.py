@@ -126,9 +126,9 @@ class Dataset(Configurable):
             head = int(head) - 1
           # for s in srls.conll_idx:
           srl_fields = [token[idx] if idx < len(token)-1 else 'O' for idx in srls.conll_idx]
-          if "B-ARGM-MOD/B-ARG1" in srl_fields:
-            print("stuff:",  word, tag1, tag2, head, rel)
-            print("srl_fields", [token[idx] for idx in range(len(token)-1)])
+          # if "B-ARGM-MOD/B-ARG1" in srl_fields:
+          #   print("stuff:",  word, tag1, tag2, head, rel)
+          #   print("srl_fields", [token[idx] for idx in range(len(token)-1)])
           srl_tags = [srls[s][0] for s in srl_fields]
           buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
         # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
@@ -192,6 +192,12 @@ class Dataset(Configurable):
       data = self[bkt_idx].data[bkt_mb]
       sents = self[bkt_idx].sents[bkt_mb]
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
+
+      print("data", data[:,:,0])
+      print("data.shape", data.shape)
+      print("maxlen", maxlen)
+      print("range", min(target_idxs), maxlen+max(target_idxs))
+
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
         self.targets: data[:,:maxlen,min(target_idxs):maxlen+max(target_idxs)]
