@@ -119,7 +119,7 @@ class Dataset(Configurable):
           buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
         elif self.conll2012:
           word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
-          print(word, tag1, tag2, head, rel)
+          # print(word, tag1, tag2, head, rel)
           if rel == 'root':
             head = j
           else:
