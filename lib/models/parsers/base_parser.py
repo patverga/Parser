@@ -80,7 +80,7 @@ class BaseParser(NN):
         n_cycles = len_2_cycles = [-1] * len(mb_inputs)
 
     # for each batch element (sequence)
-    for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred, srl_logit, srl_trigger, srl_trigger_target in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds, srl_logits, srl_trigger_targets):
+    for inputs, targets, parse_probs, rel_probs, n_cycle, len_2_cycle, srl_pred, srl_logit, srl_trigger, srl_trigger_target in zip(mb_inputs, mb_targets, mb_parse_probs, mb_rel_probs, n_cycles, len_2_cycles, srl_preds, srl_logits, srl_triggers, srl_trigger_targets):
       tokens_to_keep = np.greater(inputs[:,0], Vocab.ROOT)
       length = np.sum(tokens_to_keep)
       parse_preds, rel_preds, argmax_time, roots_lt, roots_gt = self.prob_argmax(parse_probs, rel_probs, tokens_to_keep, n_cycle, len_2_cycle)
