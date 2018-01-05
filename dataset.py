@@ -103,11 +103,13 @@ class Dataset(Configurable):
     
     words, tags, rels, srls = self.vocabs
     sents = 0
+    toks = 0
     for i, sent in enumerate(buff):
       # if not self.conll2012 or (self.conll2012 and len(list(sent)) > 1):
       # print(sent, len(sent))
       sents += 1
       for j, token in enumerate(sent):
+        toks += 1
         if self.conll:
           word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
           if rel == 'root':
@@ -127,7 +129,7 @@ class Dataset(Configurable):
           srl_tags = [srls[s][0] for s in srl_fields]
           buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
         # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
-    print("Loaded %d sentences (%s)" % (sents, self.name))
+    print("Loaded %d sentences with %d tokens (%s)" % (sents, toks, self.name))
     return buff
   
   #=============================================================
