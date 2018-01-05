@@ -64,7 +64,6 @@ class Parser(BaseParser):
     print("cnn_dim_2d: ", self.cnn_dim_2d)
 
     trigger_indices = [i for s, i in vocabs[3].iteritems() if self.trigger_str in s]
-    num_trigger_labels = len(trigger_indices)
 
     # todo these are actually wrong because of nesting
     bilou_constraints = np.zeros((num_srl_classes, num_srl_classes))
@@ -241,7 +240,7 @@ class Parser(BaseParser):
       trigger_classifier_mlp = self.MLP(top_recur, self.trigger_pred_mlp_size, n_splits=1)
       with tf.variable_scope('SRL-Triggers-Classifier', reuse=reuse):
         trigger_classifier = self.MLP(trigger_classifier_mlp, 2, n_splits=1)
-      trigger_output = self.output_trigger(trigger_classifier, targets, trigger_indices, num_trigger_labels)
+      trigger_output = self.output_trigger(trigger_classifier, targets, trigger_indices)
 
     with tf.variable_scope('SRL-Arcs', reuse=reuse):
       srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, num_srl_classes)
@@ -249,7 +248,7 @@ class Parser(BaseParser):
         trigger_predictions = trigger_output['targets']
       else:
         trigger_predictions = trigger_output['predictions']
-      srl_output = self.output_srl(srl_logits, targets, trigger_indices, num_trigger_labels, vocabs[3]["O"][0], transition_params if self.viterbi_train else None)
+      srl_output = self.output_srl(srl_logits, targets, trigger_indices, vocabs[3]["O"][0], transition_params if self.viterbi_train else None)
 
     trigger_loss = self.trigger_loss_penalty * trigger_output['loss']
     srl_loss = self.role_loss_penalty * srl_output['loss']
@@ -297,6 +296,7 @@ class Parser(BaseParser):
     output['srl_count'] = srl_output['count']
     output['transition_params'] = transition_params if transition_params is not None else tf.constant(bilou_constraints)
     output['srl_trigger'] = trigger_predictions
+    output['srl_trigger_targets'] = trigger_output['targets']
     output['trigger_loss'] = trigger_loss
     output['trigger_count'] = trigger_output['count']
     output['trigger_correct'] = trigger_output['correct']
