@@ -192,7 +192,7 @@ class Dataset(Configurable):
       data = self[bkt_idx].data[bkt_mb]
       sents = self[bkt_idx].sents[bkt_mb]
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
-
+      np.set_printoptions(threshold=np.nan)
       print("data", data[:,:,0])
       print("data.shape", data.shape)
       print("maxlen", maxlen)
