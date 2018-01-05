@@ -123,7 +123,7 @@ class Dataset(Configurable):
             head = j
           else:
             head = int(head) - 1
-          # print(word, tag1, tag2, head, rel)
+          print(word, tag1, tag2, head, rel)
           # for s in srls.conll_idx:
           srl_fields = [token[idx] if idx < len(token) and idx != len(token)-1 else 'O' for idx in srls.conll_idx]
           srl_tags = [srls[s][0] for s in srl_fields]
