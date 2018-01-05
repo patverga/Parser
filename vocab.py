@@ -157,6 +157,28 @@ class Vocab(Configurable):
             print('The training file is misformatted at line %d (had %d columns, expected %d)' % (line_num+1, len(line), 13))
             # raise ValueError('The training file is misformatted at line %d' % (line_num+1))
 
+    # add all the labels
+    if self.name == "SRLs":
+      with open(self.valid_file, 'r') as f:
+        for line_num, line in enumerate(f):
+          line = line.strip().split()
+          if line:
+            if hasattr(self.conll_idx, '__iter__'):
+              for idx in self.conll_idx:
+                if idx < len(line)-1:
+                  # print("adding ", line[idx])
+                  self.add(counts, line[idx])
+      with open(self.test_file, 'r') as f:
+        for line_num, line in enumerate(f):
+          line = line.strip().split()
+          if line:
+            if hasattr(self.conll_idx, '__iter__'):
+              for idx in self.conll_idx:
+                if idx < len(line)-1:
+                  # print("adding ", line[idx])
+                  self.add(counts, line[idx])
+
+
     self._counts = counts
     self._str2idx, self._idx2str = self.index_vocab(counts)
     return
