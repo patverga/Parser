@@ -474,7 +474,8 @@ class Network(Configurable):
         # if srl_preds_str:
         for i, (datum, word) in enumerate(zip(data, words)):
           pred = srl_preds_str[i] if srl_preds_str else []
-          word_str = word if "(V*)" in pred else '-'
+          # pred = ['tag', 'tag', 'tag', 'tag']
+          word_str = word if "(V*)" in [p for p in pred] else '-'
           # srl_strs = self.convert_bilou(pred)
           # for j, s in enumerate(srl_strs):
           #   unclosed_paren[j] += s.count('(')
