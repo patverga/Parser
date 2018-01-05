@@ -990,7 +990,7 @@ class NN(Configurable):
     return output
 
   #=============================================================
-  def output_srl(self, logits, targets, trigger_label_idx, outside_label_idx, transition_params):
+  def output_srl(self, logits, targets, trigger_label_indices, num_trigger_labels, outside_label_idx, transition_params):
     """"""
 
     # logits are batch x seq_len x num_classes x seq_len
@@ -1023,7 +1023,9 @@ class NN(Configurable):
     srl_targets = targets[:,:,3:]
 
     # get indices of trigger labels in srl_targets
-    trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
+    srl_targets_tile = tf.tile(srl_targets, [1, 1, 1, num_trigger_labels])
+    trigger_indices = tf.cast(tf.where(tf.reduce_any(tf.equal(srl_targets_tile, trigger_label_indices), -1)), tf.int32)
+    # trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
 
     # trigger_indices = tf.Print(trigger_indices, [trigger_indices], "trigger_indices", summarize=5000)
 
@@ -1122,7 +1124,7 @@ class NN(Configurable):
     return output
 
 
-  def output_trigger(self, logits, targets, trigger_label_idx):
+  def output_trigger(self, logits, targets, trigger_label_indices, num_trigger_labels):
     """"""
 
     # logits are batch x seq_len x 2
@@ -1139,7 +1141,9 @@ class NN(Configurable):
     srl_targets = targets[:,:,3:]
 
     # get indices of trigger labels in srl_targets
-    trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
+    targets_tile = tf.tile(srl_targets, [1, 1, num_trigger_labels])
+    trigger_indices = tf.cast(tf.where(tf.reduce_any(tf.equal(targets_tile, trigger_label_indices), -1)), tf.int32)
+    # trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
     idx = tf.stack([trigger_indices[:,0], trigger_indices[:,1]], -1)
 
     # idx = tf.Print(idx, [trigger_indices], "trigger_indices", summarize=5000)

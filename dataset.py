@@ -193,10 +193,6 @@ class Dataset(Configurable):
       sents = self[bkt_idx].sents[bkt_mb]
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
       np.set_printoptions(threshold=np.nan)
-      print("data", data[:,:,0])
-      print("data.shape", data.shape)
-      print("maxlen", maxlen)
-      print("range", min(target_idxs), maxlen+max(target_idxs))
 
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
