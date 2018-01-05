@@ -334,16 +334,19 @@ class Network(Configurable):
       label_parts = s.split('/')
       curr_len = len(label_parts)
       combined_str = ''
+      Itypes = []
+      Btypes = []
       for idx, label in enumerate(label_parts):
         bilou = label[0]
         label_type = label[2:]
         props_str = ''  # '*'
         if bilou == 'I':
-          if curr_len > len(started_types):
-            props_str = '(' + label_type
-            started_types.append(label_type)
-          else:
-            props_str = ''
+          # if curr_len > len(started_types):
+          #   props_str = '(' + label_type
+          #   started_types.append(label_type)
+          # else:
+          Itypes.append(label_type)
+          props_str = ''
         elif bilou == 'O':
           curr_len = 0
           props_str = ''
@@ -354,6 +357,7 @@ class Network(Configurable):
           # need to check whether last one was ended
           props_str = '(' + label_type
           started_types.append(label_type)
+          Btypes.append(label_type)
         elif bilou == 'L':
           props_str = ')'
           started_types.pop()
@@ -362,6 +366,9 @@ class Network(Configurable):
       while len(started_types) > curr_len:
         converted[-1] += ')'
         started_types.pop()
+      while len(started_types) < len(Itypes) + len(Btypes):
+        combined_str = '(' + Itypes[-1]
+        Itypes.pop()
       if not combined_str:
         combined_str = '*'
       elif combined_str[0] == "(" and combined_str[-1] != ")":
