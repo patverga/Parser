@@ -1023,8 +1023,11 @@ class NN(Configurable):
     srl_targets = targets[:,:,3:]
 
     # get indices of trigger labels in srl_targets
-    srl_targets_tile = tf.tile(srl_targets, [1, 1, 1, num_trigger_labels])
-    trigger_indices = tf.cast(tf.where(tf.reduce_any(tf.equal(srl_targets_tile, trigger_label_indices), -1)), tf.int32)
+    tile_multiples = tf.concat([tf.ones(tf.shape(tf.shape(srl_targets)), dtype=tf.int32), tf.shape(trigger_label_indices)], axis=0)
+    targets_tile = tf.tile(tf.expand_dims(targets, -1), tile_multiples)
+    trigger_indices = tf.cast(tf.where(tf.reduce_any(tf.equal(targets_tile, trigger_label_indices), -1)), tf.int32)
+    # srl_targets_tile = tf.tile(srl_targets, [1, 1, 1, num_trigger_labels])
+    # trigger_indices = tf.cast(tf.where(tf.reduce_any(tf.equal(srl_targets_tile, trigger_label_indices), -1)), tf.int32)
     # trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
 
     # trigger_indices = tf.Print(trigger_indices, [trigger_indices], "trigger_indices", summarize=5000)
@@ -1141,8 +1144,11 @@ class NN(Configurable):
     srl_targets = targets[:,:,3:]
 
     # get indices of trigger labels in srl_targets
-    targets_tile = tf.tile(srl_targets, [1, 1, num_trigger_labels])
+    tile_multiples = tf.concat([tf.ones(tf.shape(tf.shape(srl_targets)), dtype=tf.int32), tf.shape(trigger_label_indices)], axis=0)
+    targets_tile = tf.tile(tf.expand_dims(targets, -1), tile_multiples)
     trigger_indices = tf.cast(tf.where(tf.reduce_any(tf.equal(targets_tile, trigger_label_indices), -1)), tf.int32)
+    # targets_tile = tf.tile(srl_targets, [1, 1, num_trigger_labels])
+    # trigger_indices = tf.cast(tf.where(tf.reduce_any(tf.equal(targets_tile, trigger_label_indices), -1)), tf.int32)
     # trigger_indices = tf.cast(tf.where(tf.equal(srl_targets, trigger_label_idx)), tf.int32)
     idx = tf.stack([trigger_indices[:,0], trigger_indices[:,1]], -1)
 
