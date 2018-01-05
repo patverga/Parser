@@ -125,7 +125,10 @@ class Dataset(Configurable):
           else:
             head = int(head) - 1
           # for s in srls.conll_idx:
-          srl_fields = [token[idx] if idx < len(token) and idx != len(token)-1 else 'O' for idx in srls.conll_idx]
+          srl_fields = [token[idx] if idx < len(token)-1 else 'O' for idx in srls.conll_idx]
+          if "B-ARGM-MOD/B-ARG1" in srl_fields:
+            print("stuff:",  word, tag1, tag2, head, rel)
+            print("srl_fields", srl_fields)
           srl_tags = [srls[s][0] for s in srl_fields]
           buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
         # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
