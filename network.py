@@ -330,6 +330,7 @@ class Network(Configurable):
     strings = map(lambda i: self._vocabs[3][i], indices)
     converted = []
     started_types = []
+    print(strings)
     for i, s in enumerate(strings):
       label_parts = s.split('/')
       curr_len = len(label_parts)
@@ -469,35 +470,14 @@ class Network(Configurable):
         num_gold_srls = preds[0, 9]
         num_pred_srls = preds[0, 10]
         srl_preds = preds[:, 11+num_pred_srls:11+num_pred_srls+num_gold_srls]
-        # unclosed_paren = [0] * srl_preds.shape[1]
-        # print("num_gold_srls", num_gold_srls)
-        # print("srl preds shape", srl_preds.shape)
-        # print("srl_preds", srl_preds)
-        # print("srl_preds transpose", np.transpose(srl_preds))
-        # print("converted", [self.convert_bilou(j) for j in np.transpose(srl_preds)])
         srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
-        # print("srl preds str", srl_preds_str)
-        # print("mapped", srl_preds_str)
-        # if srl_preds_str:
         for i, (datum, word) in enumerate(zip(data, words)):
           pred = srl_preds_str[i] if srl_preds_str else []
-          # pred = ['tag', 'tag', 'tag', 'tag']
           word_str = word if "(V*)" in [p for p in pred] else '-'
-          # srl_strs = self.convert_bilou(pred)
-          # for j, s in enumerate(srl_strs):
-          #   unclosed_paren[j] += s.count('(')
-          #   unclosed_paren[j] -= s.count(')')
           fields = (word_str,) + tuple(pred)
           owpl_str = '\t'.join(fields)
           f.write(owpl_str + "\n")
-        # if np.any(unclosed_paren):
-        #   print("unclosed paren")
-        #   print(words)
-        #   print(srl_preds)
         f.write('\n')
-        # else:
-        #   print("srl preds", srl_preds)
-        #   print("converted", [self.convert_bilou(j) for j in np.transpose(srl_preds)])
 
     # save SRL output
     srl_preds_fname = os.path.join(self.save_dir, 'srl_preds.tsv')
@@ -513,15 +493,9 @@ class Network(Configurable):
         srl_preds = preds[:, 11+num_gold_srls+num_pred_srls:]
         trigger_indices = preds[:, 11:11+num_pred_srls]
         srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
-        # unclosed_paren = [0]*srl_preds.shape[1]
-        # print("srl_preds", srl_preds)
         for i, (datum, word) in enumerate(zip(data, words)):
           pred = srl_preds_str[i] if srl_preds_str else []
           word_str = word if i in trigger_indices else '-'
-          # srl_strs = self.convert_bilou(pred)
-          # for j, s in enumerate(srl_strs):
-          #   unclosed_paren[j] += s.count('(')
-          #   unclosed_paren[j] -= s.count(')')
           fields = (word_str,) + tuple(pred)
           owpl_str = '\t'.join(fields)
           f.write(owpl_str + "\n")
