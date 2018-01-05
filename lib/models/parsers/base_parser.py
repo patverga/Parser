@@ -96,8 +96,8 @@ class BaseParser(NN):
       non_srl_targets_len = 3
       tokens = np.arange(length)
       srl_pred = srl_pred[tokens]
-      print(srl_trigger)
-      print(srl_trigger_target)
+      # print(srl_trigger)
+      # print(srl_trigger_target)
       pred_trigger_indices = np.where(srl_trigger[tokens] == 1)[0]
       gold_trigger_indices = np.where(srl_trigger_target[tokens] == 1)[0]
       num_gold_srls = len(gold_trigger_indices)
