@@ -330,8 +330,7 @@ class Network(Configurable):
     strings = map(lambda i: self._vocabs[3][i], indices)
     converted = []
     started_types = []
-    if "B-R-ARG0/B-ARG0" in strings:
-      print(strings)
+    print(strings)
     for i, s in enumerate(strings):
       label_parts = s.split('/')
       curr_len = len(label_parts)
