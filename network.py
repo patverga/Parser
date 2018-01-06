@@ -109,8 +109,7 @@ class Network(Configurable):
     
     return self._trainset.get_minibatches(self.train_batch_size,
                                           self.model.input_idxs,
-                                          self.model.target_idxs,
-                                          shuffle=False)
+                                          self.model.target_idxs)
   
   #=============================================================
   def valid_minibatches(self):
@@ -398,12 +397,12 @@ class Network(Configurable):
     """"""
     
     if validate:
-      # filename = self.valid_file
-      # minibatches = self.valid_minibatches
-      # dataset = self._validset
-      filename = self.train_file
-      minibatches = self.train_minibatches
-      dataset = self._trainset
+      filename = self.valid_file
+      minibatches = self.valid_minibatches
+      dataset = self._validset
+      # filename = self.train_file
+      # minibatches = self.train_minibatches
+      # dataset = self._trainset
       op = self.ops['test_op'][:11]
     else:
       filename = self.test_file
@@ -614,17 +613,17 @@ class Network(Configurable):
                        valid_output['n_correct'],
                        valid_output['n_tokens'],
                        valid_output['predictions']]
-    ops['test_op'] = [train_output['probabilities'],
-                      train_output['n_cycles'],
-                      train_output['len_2_cycles'],
-                      train_output['srl_probs'],
-                      train_output['srl_preds'],
-                      train_output['srl_logits'],
-                      train_output['srl_correct'],
-                      train_output['srl_count'],
-                      train_output['srl_trigger'],
-                      train_output['srl_trigger_targets'],
-                      train_output['transition_params'],
+    ops['test_op'] = [valid_output['probabilities'],
+                      valid_output['n_cycles'],
+                      valid_output['len_2_cycles'],
+                      valid_output['srl_probs'],
+                      valid_output['srl_preds'],
+                      valid_output['srl_logits'],
+                      valid_output['srl_correct'],
+                      valid_output['srl_count'],
+                      valid_output['srl_trigger'],
+                      valid_output['srl_trigger_targets'],
+                      valid_output['transition_params'],
                       test_output['probabilities'],
                       test_output['n_cycles'],
                       test_output['len_2_cycles'],
