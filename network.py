@@ -35,7 +35,7 @@ from configurable import Configurable
 from vocab import Vocab
 from dataset import Dataset
 import contextlib
-from subprocess import check_output
+from subprocess import check_output, CalledProcessError
 
 @contextlib.contextmanager
 def dummy_context_mgr():
@@ -502,9 +502,15 @@ class Network(Configurable):
         f.write('\n')
 
     with open(os.devnull, 'w') as devnull:
-      srl_eval = check_output(["perl", "srl-eval.pl", srl_gold_fname, srl_preds_fname], stderr=devnull)
-    print(srl_eval)
-    overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
+      try:
+        srl_eval = check_output(["perl", "srl-eval.pl", srl_gold_fname, srl_preds_fname], stderr=devnull)
+        print(srl_eval)
+        overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
+      except CalledProcessError as e:
+        print("Call to eval failed: %s" % (e.message))
+        overall_f1 = 0.
+
+
 
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
