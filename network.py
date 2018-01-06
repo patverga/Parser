@@ -331,6 +331,7 @@ class Network(Configurable):
     converted = []
     started_types = []
     # print(strings)
+    parens_count = 0
     for i, s in enumerate(strings):
       label_parts = s.split('/')
       curr_len = len(label_parts)
@@ -359,6 +360,7 @@ class Network(Configurable):
           props_str = '(' + label_type
           started_types.append(label_type)
           Btypes.append(label_type)
+          parens_count += 1
         elif bilou == 'L':
           props_str = ')'
           started_types.pop()
@@ -367,9 +369,11 @@ class Network(Configurable):
       while len(started_types) > curr_len:
         converted[-1] += ')'
         started_types.pop()
+        parens_count -= 1
       while len(started_types) < len(Itypes) + len(Btypes):
         combined_str = '(' + Itypes[-1]
         Itypes.pop()
+        parens_count += 1
       if not combined_str:
         combined_str = '*'
       elif combined_str[0] == "(" and combined_str[-1] != ")":
@@ -377,11 +381,11 @@ class Network(Configurable):
       elif combined_str[-1] == ")" and combined_str[0] != "(":
         combined_str = '*' + combined_str
       converted.append(combined_str)
-    if len(started_types) > 0:
-      print("unended stuff", strings)
     while len(started_types) > 0:
       converted[-1] += ')'
       started_types.pop()
+    if parens_count > 0:
+      print("unended stuff", strings)
     return converted
 
     
