@@ -109,7 +109,8 @@ class Network(Configurable):
     
     return self._trainset.get_minibatches(self.train_batch_size,
                                           self.model.input_idxs,
-                                          self.model.target_idxs)
+                                          self.model.target_idxs,
+                                          shuffle=False)
   
   #=============================================================
   def valid_minibatches(self):
@@ -397,9 +398,12 @@ class Network(Configurable):
     """"""
     
     if validate:
-      filename = self.valid_file
-      minibatches = self.valid_minibatches
-      dataset = self._validset
+      # filename = self.valid_file
+      # minibatches = self.valid_minibatches
+      # dataset = self._validset
+      filename = self.train_file
+      minibatches = self.train_minibatches
+      dataset = self._trainset
       op = self.ops['test_op'][:11]
     else:
       filename = self.test_file
@@ -467,17 +471,17 @@ class Network(Configurable):
         f.write('\n')
 
     # save SRL output
-    srl_gold_train_fname = os.path.join(self.save_dir, 'srl_golds_train.tsv')
-    with open(srl_gold_train_fname, 'w') as f:
-      for bkt_idx, idx in self._trainset._metabucket.data:
+    srl_gold_fname = os.path.join(self.save_dir, 'srl_golds.tsv')
+    with open(srl_gold_fname, 'w') as f:
+      for bkt_idx, idx in dataset._metabucket.data:
         # for each word, if trigger print word, otherwise -
         # then all the SRL labels
-        data = self._trainset._metabucket[bkt_idx].data[idx]
+        data = dataset._metabucket[bkt_idx].data[idx]
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
         num_gold_srls = preds[0, 9]
         num_pred_srls = preds[0, 10]
-        srl_preds = preds[:, 11+num_pred_srls:11+num_pred_srls+num_gold_srls]
+        srl_preds = preds[:, 11 + num_pred_srls:11 + num_pred_srls + num_gold_srls]
         srl_preds_str = map(list, zip(*[self.convert_bilou(j) for j in np.transpose(srl_preds)]))
         for i, (datum, word) in enumerate(zip(data, words)):
           pred = srl_preds_str[i] if srl_preds_str else []
