@@ -377,6 +377,8 @@ class Network(Configurable):
       elif combined_str[-1] == ")" and combined_str[0] != "(":
         combined_str = '*' + combined_str
       converted.append(combined_str)
+    if len(started_types) > 0:
+      print("unended stuff", strings)
     while len(started_types) > 0:
       converted[-1] += ')'
       started_types.pop()
@@ -509,8 +511,6 @@ class Network(Configurable):
       except CalledProcessError as e:
         print("Call to eval failed: %s" % (e.message))
         overall_f1 = 0.
-
-
 
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
