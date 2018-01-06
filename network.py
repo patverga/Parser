@@ -386,6 +386,7 @@ class Network(Configurable):
       started_types.pop()
     if parens_count > 0:
       print("unended stuff", strings)
+      print(converted)
     return converted
 
     
