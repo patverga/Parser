@@ -385,9 +385,9 @@ class Network(Configurable):
     while len(started_types) > 0:
       converted[-1] += ')'
       started_types.pop()
-    # if parens_count > 0:
-    #   print("unended stuff", strings)
-    #   print(converted)
+    if parens_count != 0:
+      print("unended stuff", strings)
+      print(converted)
     return converted
 
     
