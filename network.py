@@ -716,7 +716,7 @@ if __name__ == '__main__':
           os.system('echo Training: > %s/HEAD' % network.save_dir)
           os.system('git rev-parse HEAD >> %s/HEAD' % network.save_dir)
           saver = tf.train.Saver(var_list=network.save_vars)
-          saver.restore(sess, tf.train.latest_checkpoint(network.save_dir, latest_filename=network.name.lower()))
+          saver.restore(sess, tf.train.latest_checkpoint(network.load_dir, latest_filename=network.name.lower()))
           if os.path.isfile(os.path.join(network.save_dir, 'history.pkl')):
             with open(os.path.join(network.save_dir, 'history.pkl')) as f:
               network.history = pkl.load(f)
