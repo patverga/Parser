@@ -467,9 +467,10 @@ class Network(Configurable):
         f.write('\n')
 
     # save SRL output
-    srl_gold_fname = os.path.join(self.save_dir, 'srl_golds.tsv')
-    with open(srl_gold_fname, 'w') as f:
-      for bkt_idx, idx in dataset._metabucket.data:
+    srl_gold_train_fname = os.path.join(self.save_dir, 'srl_golds_train.tsv')
+    with open(srl_gold_train_fname, 'w') as f:
+      # for bkt_idx, idx in dataset._metabucket.data:
+      for bkt_idx, idx in self._trainset._metabucket.data:
         # for each word, if trigger print word, otherwise -
         # then all the SRL labels
         data = dataset._metabucket[bkt_idx].data[idx]
