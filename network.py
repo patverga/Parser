@@ -400,9 +400,6 @@ class Network(Configurable):
       filename = self.valid_file
       minibatches = self.valid_minibatches
       dataset = self._validset
-      # filename = self.train_file
-      # minibatches = self.train_minibatches
-      # dataset = self._trainset
       op = self.ops['test_op'][:11]
     else:
       filename = self.test_file
@@ -518,7 +515,7 @@ class Network(Configurable):
         print(srl_eval)
         overall_f1 = float(srl_eval.split('\n')[6].split()[-1])
       except CalledProcessError as e:
-        print("Call to eval failed: %s" % (e.message))
+        print("Call to eval failed: %s" % e.output)
         overall_f1 = 0.
 
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
@@ -689,8 +686,8 @@ if __name__ == '__main__':
   
   # if 'save_dir' in cargs and os.path.isdir(cargs['save_dir']) and not (args.test or args.matrix or args.load):
   #   raw_input('Save directory already exists. Press <Enter> to overwrite or <Ctrl-C> to exit.')
-  if (args.test or args.load or args.matrix) and 'save_dir' in cargs:
-    cargs['config_file'] = os.path.join(cargs['save_dir'], 'config.cfg')
+  # if (args.test or args.load or args.matrix) and 'save_dir' in cargs:
+  #   cargs['config_file'] = os.path.join(cargs['save_dir'], 'config.cfg')
   network = Network(model, **cargs)
   os.system('echo Model: %s > %s/MODEL' % (network.model.__class__.__name__, network.save_dir))
 
@@ -721,7 +718,7 @@ if __name__ == '__main__':
             with open(os.path.join(network.save_dir, 'history.pkl')) as f:
               network.history = pkl.load(f)
         else:
-          os.system('echo Loading: >> %s/HEAD' % network.save_dir)
+          os.system('echo Loading: >> %s/HEAD' % network.load_dir)
           os.system('git rev-parse HEAD >> %s/HEAD' % network.save_dir)
         network.train(sess, profile)
       elif args.matrix:
