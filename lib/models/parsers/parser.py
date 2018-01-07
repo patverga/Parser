@@ -268,7 +268,7 @@ class Parser(BaseParser):
     rel_loss = self.rel_loss_penalty * rel_output['loss']
 
     actual_parse_loss = tf.cond(do_parse_update, lambda: tf.add(rel_loss, arc_loss), lambda: tf.constant(0.))
-    actual_srl_loss = tf.cond(do_parse_update, lambda: tf.constant(0.), lambda: tf.add(srl_loss, trigger_loss))
+    actual_srl_loss = tf.cond(tf.logical_and(do_parse_update, tf.not_equal(self.parse_update_proportion, 1.0)), lambda: tf.constant(0.), lambda: tf.add(srl_loss, trigger_loss))
 
     output = {}
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
