@@ -60,41 +60,42 @@ for lr in ${lrs[@]}; do
                                                     for trigger_pred_mlp_size in ${trigger_pred_mlp_sizes[@]}; do
                                                         for parse_update_proportion in ${parse_update_proportions[@]}; do
                                                             for load_pretrained in ${do_load_pretrained[@]}; do
-                                                            for rep in `seq $reps`; do
-                                                                fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$role_mlp_size-$trigger_mlp_size-$trigger_pred_mlp_size-$parse_update_proportion-$load_pretrained"
-                                                                load_pretrained_str=""
-                                                                if [[ $load_pretrained -eq "True" ]]; then
-                                                                    load_pretrained_str="--load_dir $load_dir"
-                                                                fi
-                                                                commands+=("srun --gres=gpu:1 --partition=titanx-long,m40-long --time=24:00:00 --mem=10000
-                                                                 python network.py \
-                                                                --config_file config/trans-fast-conll12-bio-parse.cfg \
-                                                                --save_dir $OUT_LOG/scores-$fname_append \
-                                                                --save_every 500 \
-                                                                --train_iters 100000 \
-                                                                --train_batch_size $batch_size \
-                                                                --test_batch_size $batch_size \
-                                                                --warmup_steps $warmup_steps \
-                                                                --learning_rate $lr \
-                                                                --cnn_dim $cnn_dim \
-                                                                --n_recur $trans_layer \
-                                                                --num_heads $num_head \
-                                                                --head_size $head_size \
-                                                                --relu_hidden_size $relu_hidden_size \
-                                                                --mu $mu \
-                                                                --nu $nu \
-                                                                --epsilon $epsilon \
-                                                                --trigger_mlp_size $trigger_mlp_size \
-                                                                --trigger_pred_mlp_size $trigger_pred_mlp_size \
-                                                                --role_mlp_size $role_mlp_size \
-                                                                $load_pretrained_str \
-                                                                --parse_update_proportion $parse_update_proportion \
-                                                                --svd_tree False \
-                                                                --mask_pairs True \
-                                                                --mask_roots True \
-                                                                --ensure_tree True \
-                                                                --save False \
-                                                                &> $OUT_LOG/train-$fname_append.log")
+                                                                for rep in `seq $reps`; do
+                                                                    fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$role_mlp_size-$trigger_mlp_size-$trigger_pred_mlp_size-$parse_update_proportion-$load_pretrained"
+                                                                    load_pretrained_str=""
+                                                                    if [[ $load_pretrained -eq "True" ]]; then
+                                                                        load_pretrained_str="--load_dir $load_dir"
+                                                                    fi
+                                                                    commands+=("srun --gres=gpu:1 --partition=titanx-long,m40-long --time=24:00:00 --mem=10000
+                                                                     python network.py \
+                                                                    --config_file config/trans-fast-conll12-bio-parse.cfg \
+                                                                    --save_dir $OUT_LOG/scores-$fname_append \
+                                                                    --save_every 500 \
+                                                                    --train_iters 100000 \
+                                                                    --train_batch_size $batch_size \
+                                                                    --test_batch_size $batch_size \
+                                                                    --warmup_steps $warmup_steps \
+                                                                    --learning_rate $lr \
+                                                                    --cnn_dim $cnn_dim \
+                                                                    --n_recur $trans_layer \
+                                                                    --num_heads $num_head \
+                                                                    --head_size $head_size \
+                                                                    --relu_hidden_size $relu_hidden_size \
+                                                                    --mu $mu \
+                                                                    --nu $nu \
+                                                                    --epsilon $epsilon \
+                                                                    --trigger_mlp_size $trigger_mlp_size \
+                                                                    --trigger_pred_mlp_size $trigger_pred_mlp_size \
+                                                                    --role_mlp_size $role_mlp_size \
+                                                                    $load_pretrained_str \
+                                                                    --parse_update_proportion $parse_update_proportion \
+                                                                    --svd_tree False \
+                                                                    --mask_pairs True \
+                                                                    --mask_roots True \
+                                                                    --ensure_tree True \
+                                                                    --save False \
+                                                                    &> $OUT_LOG/train-$fname_append.log")
+                                                                done
                                                             done
                                                         done
                                                     done
