@@ -65,7 +65,7 @@ class Parser(BaseParser):
 
     trigger_indices = [i for s, i in vocabs[3].iteritems() if self.trigger_str in s]
 
-    do_srl_update = tf.less_equal(tf.random_uniform([1]), self.srl_update_proportion)
+    do_srl_update = tf.less_equal(np.random.rand(), self.srl_update_proportion)
     do_arc_update = tf.not_equal(self.arc_loss_penalty, 0.)
     do_rel_update = tf.not_equal(self.rel_loss_penalty, 0.)
     do_parse_update = tf.logical_and(do_arc_update, do_rel_update)
