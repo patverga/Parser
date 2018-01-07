@@ -65,6 +65,11 @@ class Parser(BaseParser):
 
     trigger_indices = [i for s, i in vocabs[3].iteritems() if self.trigger_str in s]
 
+    do_srl_update = tf.less_equal(tf.random_uniform([1]), self.srl_update_proportion)
+    do_arc_update = tf.not_equal(self.arc_loss_penalty, 0.)
+    do_rel_update = tf.not_equal(self.rel_loss_penalty, 0.)
+    do_parse_update = tf.logical_and(do_arc_update, do_rel_update)
+
     # todo these are actually wrong because of nesting
     bilou_constraints = np.zeros((num_srl_classes, num_srl_classes))
     for s_str, s_idx in vocabs[3].iteritems():
@@ -205,6 +210,7 @@ class Parser(BaseParser):
           conditioned = tf.reshape(conditioned, [batch_size, bucket_size, self.cnn_dim_2d])
           dep_rel_mlp, head_rel_mlp = self.MLP(conditioned, self.class_mlp_size + self.attn_mlp_size, n_splits=2)
     else:
+      ######## do parse-specific stuff (arcs) ########
       with tf.variable_scope('MLP', reuse=reuse):
         dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
         dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
@@ -222,16 +228,22 @@ class Parser(BaseParser):
         else:
           predictions = arc_output['predictions']
 
+    ######## do parse-specific stuff (rels) ########
     with tf.variable_scope('Rels', reuse=reuse):
-      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
+      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]),
+                                                                         predictions)
       rel_output = self.output(rel_logits, targets[:, :, 2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
+    # def compute_rels_output():
+    #   with tf.variable_scope('Rels', reuse=reuse):
+    #     rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
+    #     rel_output = self.output(rel_logits, targets[:, :, 2])
+    #     rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
+    #     return rel_output
+    # def dummy_compute_rels_output():
 
-    # predict SRL
-    # Have a bunch of cols of labels, some of which are empty
-    # need to sample from non-empty ones
-    # rel_output = tf.Print(rel_output, [tf.reduce_any(targets[:, :, 3:] != 3, axis=1)], "targets", summarize=500)
-    # arc_output['loss'] = tf.Print(arc_output['loss'], [tf.shape(targets), tf.reduce_any(tf.not_equal(targets, 3), axis=1)], "targets", summarize=500)
+
+    ######## do SRL-specific stuff (rels) ########
     with tf.variable_scope('SRL-MLP', reuse=reuse):
       trigger_role_mlp = self.MLP(top_recur, self.trigger_mlp_size + self.role_mlp_size, n_splits=1)
       trigger_mlp, role_mlp = trigger_role_mlp[:,:,:self.trigger_mlp_size], trigger_role_mlp[:,:,self.trigger_mlp_size:]
@@ -255,6 +267,8 @@ class Parser(BaseParser):
     arc_loss = self.arc_loss_penalty * arc_output['loss']
     rel_loss = self.rel_loss_penalty * rel_output['loss']
 
+    actual_srl_loss = tf.cond(do_srl_update, lambda: tf.add(srl_loss, trigger_loss), lambda: tf.constant(0.))
+
     output = {}
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])
@@ -266,7 +280,9 @@ class Parser(BaseParser):
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
 
-    output['loss'] = srl_loss + trigger_loss + arc_loss + rel_loss
+    # output['loss'] = srl_loss + trigger_loss + arc_loss + rel_loss
+    output['loss'] = actual_srl_loss + arc_loss + rel_loss
+
 
     if self.word_l2_reg > 0:
       output['loss'] += word_loss

@@ -12,8 +12,8 @@ fi
 
 echo "Writing to $OUT_LOG"
 
-num_gpus=108
-#num_gpus=27
+#num_gpus=108
+num_gpus=40
 
 lrs="0.04" # 0.06"
 mus="0.9"
@@ -22,18 +22,20 @@ epsilons="1e-12"
 warmup_steps="8000 2000 1000"
 batch_sizes="1000"
 
-trans_layers="2 4" # 3
-cnn_dims="512 768 1024" # 768
+trans_layers="2" # 3
+cnn_dims="512" # 768
 num_heads="8" # 4 8"
 head_sizes="64" # 128"
 relu_hidden_sizes="256"
-trigger_mlp_sizes="128 256 512"
-trigger_pred_mlp_sizes="128 256 512"
-role_mlp_sizes="128 256 512"
+trigger_mlp_sizes="256"
+trigger_pred_mlp_sizes="256"
+role_mlp_sizes="256"
 
 reps="3"
 
 # 3*3*3*3*3*3*2 = 486*3
+
+load_dir="saves/trans-fast-srl-pretrain-parser"
 
 
 
@@ -56,7 +58,7 @@ for lr in ${lrs[@]}; do
                                                     for trigger_pred_mlp_size in ${trigger_pred_mlp_sizes[@]}; do
                                                         for rep in `seq $reps`; do
                                                             fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$role_mlp_size-$trigger_mlp_size-$trigger_pred_mlp_size"
-                                                            commands+=("srun --gres=gpu:1 --partition=titanx-short,m40-short --time=04:00:00 --mem 8000
+                                                            commands+=("srun --gres=gpu:1 --partition=titanx-long,m40-long --time=12:00:00 --mem=10000
                                                              python network.py \
                                                             --config_file config/trans-fast-conll12-bio-parse.cfg \
                                                             --save_dir $OUT_LOG/scores-$fname_append \
@@ -77,6 +79,7 @@ for lr in ${lrs[@]}; do
                                                             --trigger_mlp_size $trigger_mlp_size \
                                                             --trigger_pred_mlp_size $trigger_pred_mlp_size \
                                                             --role_mlp_size $role_mlp_size \
+                                                            --load_dir $load_dir \
                                                             --svd_tree False \
                                                             --mask_pairs True \
                                                             --mask_roots True \

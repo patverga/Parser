@@ -528,3 +528,8 @@ class Configurable(object):
   def cnn_residual(self):
     return self._config.getboolean('Training', 'cnn_residual')
   argparser.add_argument('--cnn_residual')
+
+  @property
+  def srl_update_proportion(self):
+    return self._config.getfloat('Training', 'srl_update_proportion')
+  argparser.add_argument('--srl_update_proportion')
