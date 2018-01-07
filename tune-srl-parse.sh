@@ -64,7 +64,7 @@ for lr in ${lrs[@]}; do
                                                                     fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$role_mlp_size-$trigger_mlp_size-$trigger_pred_mlp_size-$parse_update_proportion-$load_pretrained"
                                                                     load_pretrained_str=""
                                                                     if [[ $load_pretrained -eq "True" ]]; then
-                                                                        load_pretrained_str="--load_dir $load_dir"
+                                                                        load_pretrained_str="--load_dir $load_dir --load"
                                                                     fi
                                                                     commands+=("srun --gres=gpu:1 --partition=titanx-long,m40-long --time=24:00:00 --mem=10000
                                                                      python network.py \
