@@ -530,6 +530,6 @@ class Configurable(object):
   argparser.add_argument('--cnn_residual')
 
   @property
-  def srl_update_proportion(self):
-    return self._config.getfloat('Training', 'srl_update_proportion')
-  argparser.add_argument('--srl_update_proportion')
+  def parse_update_proportion(self):
+    return self._config.getfloat('Training', 'parse_update_proportion')
+  argparser.add_argument('--parse_update_proportion')

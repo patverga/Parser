@@ -65,10 +65,10 @@ class Parser(BaseParser):
 
     trigger_indices = [i for s, i in vocabs[3].iteritems() if self.trigger_str in s]
 
-    do_srl_update = tf.less_equal(np.random.rand(), self.srl_update_proportion)
-    do_arc_update = tf.not_equal(self.arc_loss_penalty, 0.)
-    do_rel_update = tf.not_equal(self.rel_loss_penalty, 0.)
-    do_parse_update = tf.logical_and(do_arc_update, do_rel_update)
+    do_parse_update = tf.less_equal(np.random.rand(), self.parse_update_proportion)
+    # do_arc_update = tf.not_equal(self.arc_loss_penalty, 0.)
+    # do_rel_update = tf.not_equal(self.rel_loss_penalty, 0.)
+    # do_parse_update = tf.logical_and(do_arc_update, do_rel_update)
 
     # todo these are actually wrong because of nesting
     bilou_constraints = np.zeros((num_srl_classes, num_srl_classes))
@@ -267,7 +267,8 @@ class Parser(BaseParser):
     arc_loss = self.arc_loss_penalty * arc_output['loss']
     rel_loss = self.rel_loss_penalty * rel_output['loss']
 
-    actual_srl_loss = tf.cond(do_srl_update, lambda: tf.add(srl_loss, trigger_loss), lambda: tf.constant(0.))
+    actual_parse_loss = tf.cond(do_parse_update, lambda: tf.add(rel_loss, arc_loss), lambda: tf.constant(0.))
+    actual_srl_loss = tf.cond(do_parse_update, lambda: tf.constant(0.), lambda: tf.add(srl_loss, trigger_loss))
 
     output = {}
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
@@ -280,8 +281,9 @@ class Parser(BaseParser):
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
 
-    # output['loss'] = srl_loss + trigger_loss + arc_loss + rel_loss
-    output['loss'] = actual_srl_loss + arc_loss + rel_loss
+    output['loss'] = actual_srl_loss + actual_parse_loss
+    # output['loss'] = srl_loss + trigger_loss + actual_parse_loss
+    # output['loss'] = actual_srl_loss + arc_loss + rel_loss
 
 
     if self.word_l2_reg > 0:
