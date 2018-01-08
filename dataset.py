@@ -37,6 +37,7 @@ class Dataset(Configurable):
     """"""
     
     super(Dataset, self).__init__(*args, **kwargs)
+    self.vocabs = vocabs
 
     self.trigger_indices = [i for s, i in self.vocabs[3].iteritems() if self.trigger_str in s]
 
@@ -44,7 +45,6 @@ class Dataset(Configurable):
     self._train = (filename == self.train_file)
     self._metabucket = Metabucket(self._config, n_bkts=self.n_bkts)
     self._data = None
-    self.vocabs = vocabs
     self.rebucket()
 
 
