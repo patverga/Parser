@@ -222,9 +222,9 @@ class BaseParser(NN):
   #=============================================================
   @property
   def input_idxs(self):
-    return (0, 1, 2)
+    return (0, 1, 2, 3)
   @property
   def target_idxs(self):
     # need to add target indices here?
     # up to max len?
-    return (3, 4, 5)
+    return (4, 5, 6)

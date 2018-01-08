@@ -43,6 +43,8 @@ class Dataset(Configurable):
     self._data = None
     self.vocabs = vocabs
     self.rebucket()
+
+    self.trigger_indices = [i for s, i in self.vocabs[3].iteritems() if self.trigger_str in s]
     
     self.inputs = tf.placeholder(dtype=tf.int32, shape=(None,None,None), name='inputs')
     self.targets = tf.placeholder(dtype=tf.int32, shape=(None,None,None), name='targets')
@@ -101,7 +103,7 @@ class Dataset(Configurable):
   def _process_buff(self, buff):
     """"""
     
-    words, tags, rels, srls = self.vocabs
+    words, tags, rels, srls, trigs = self.vocabs
     sents = 0
     toks = 0
     for i, sent in enumerate(buff):
@@ -130,7 +132,8 @@ class Dataset(Configurable):
           #   print("stuff:",  word, tag1, tag2, head, rel)
           #   print("srl_fields", [token[idx] for idx in range(len(token)-1)])
           srl_tags = [srls[s][0] for s in srl_fields]
-          buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
+          is_trigger = str(np.any([s in self.trigger_indices for s in srl_tags]))
+          buff[i][j] = (word,) + words[word] + tags[tag1] + trigs[is_trigger] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
         # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     print("Loaded %d sentences with %d tokens (%s)" % (sents, toks, self.name))
     return buff

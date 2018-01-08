@@ -98,6 +98,10 @@ class Configurable(object):
     return self._config.get('OS', 'srl_file')
   argparser.add_argument('--srl_file')
   @property
+  def trig_file(self):
+    return self._config.get('OS', 'trig_file')
+  argparser.add_argument('--trig_file')
+  @property
   def embed_file(self):
     return self._config.get('OS', 'embed_file')
   argparser.add_argument('--embed_file')
@@ -470,6 +474,11 @@ class Configurable(object):
   def add_pos_to_input(self):
     return self._config.getboolean('Training', 'add_pos_to_input')
   argparser.add_argument('--add_pos_to_input')
+
+  @property
+  def add_triggers_to_input(self):
+    return self._config.getboolean('Training', 'add_triggers_to_input')
+  argparser.add_argument('--add_triggers_to_input')
 
   #=============================================================
   # [Transformer]

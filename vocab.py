@@ -130,53 +130,57 @@ class Vocab(Configurable):
   #=============================================================
   def add_train_file(self):
     """"""
-    
     counts = Counter()
-    with open(self.train_file, 'r') as f:
-      buff = []
-      for line_num, line in enumerate(f):
-        line = line.strip().split()
-        # print(line)
-        if line:
-          if self.conll and len(line) == 10:
-            if hasattr(self.conll_idx, '__iter__'):
-              for idx in self.conll_idx:
-                self.add(counts, line[idx])
-            else:
-              self.add(counts, line[self.conll_idx])
-          elif self.conll2012: #and len(line) > 1:
-            if hasattr(self.conll_idx, '__iter__'):
-              for idx in self.conll_idx:
-                if idx < len(line) and (self.name != 'SRLs' or idx != len(line)-1):
-                  # print("adding ", line[idx])
-                  self.add(counts, line[idx])
-            else:
-              self.add(counts, line[self.conll_idx])
-              # print("adding ", line[self.conll_idx])
-          else:
-            print('The training file is misformatted at line %d (had %d columns, expected %d)' % (line_num+1, len(line), 13))
-            # raise ValueError('The training file is misformatted at line %d' % (line_num+1))
 
-    # add all the labels
-    if self.name == "SRLs":
-      with open(self.valid_file, 'r') as f:
+    if self.name == "Trig":
+      self.add(counts, "True")
+      self.add(counts, "False")
+    else:
+      with open(self.train_file, 'r') as f:
+        buff = []
         for line_num, line in enumerate(f):
           line = line.strip().split()
+          # print(line)
           if line:
-            if hasattr(self.conll_idx, '__iter__'):
-              for idx in self.conll_idx:
-                if idx < len(line)-1:
-                  # print("adding ", line[idx])
+            if self.conll and len(line) == 10:
+              if hasattr(self.conll_idx, '__iter__'):
+                for idx in self.conll_idx:
                   self.add(counts, line[idx])
-      with open(self.test_file, 'r') as f:
-        for line_num, line in enumerate(f):
-          line = line.strip().split()
-          if line:
-            if hasattr(self.conll_idx, '__iter__'):
-              for idx in self.conll_idx:
-                if idx < len(line)-1:
-                  # print("adding ", line[idx])
-                  self.add(counts, line[idx])
+              else:
+                self.add(counts, line[self.conll_idx])
+            elif self.conll2012: #and len(line) > 1:
+              if hasattr(self.conll_idx, '__iter__'):
+                for idx in self.conll_idx:
+                  if idx < len(line) and (self.name != 'SRLs' or idx != len(line)-1):
+                    # print("adding ", line[idx])
+                    self.add(counts, line[idx])
+              else:
+                self.add(counts, line[self.conll_idx])
+                # print("adding ", line[self.conll_idx])
+            else:
+              print('The training file is misformatted at line %d (had %d columns, expected %d)' % (line_num+1, len(line), 13))
+              # raise ValueError('The training file is misformatted at line %d' % (line_num+1))
+
+      # add all the labels
+      if self.name == "SRLs":
+        with open(self.valid_file, 'r') as f:
+          for line_num, line in enumerate(f):
+            line = line.strip().split()
+            if line:
+              if hasattr(self.conll_idx, '__iter__'):
+                for idx in self.conll_idx:
+                  if idx < len(line)-1:
+                    # print("adding ", line[idx])
+                    self.add(counts, line[idx])
+        with open(self.test_file, 'r') as f:
+          for line_num, line in enumerate(f):
+            line = line.strip().split()
+            if line:
+              if hasattr(self.conll_idx, '__iter__'):
+                for idx in self.conll_idx:
+                  if idx < len(line)-1:
+                    # print("adding ", line[idx])
+                    self.add(counts, line[idx])
 
 
     self._counts = counts

@@ -38,17 +38,21 @@ class Parser(BaseParser):
     self.moving_params = moving_params
     
     word_inputs, pret_inputs = vocabs[0].embedding_lookup(inputs[:,:,0], inputs[:,:,1], moving_params=self.moving_params)
-    if self.add_pos_to_input:
-      tag_inputs = vocabs[1].embedding_lookup(inputs[:,:,2], moving_params=self.moving_params)
     if self.add_to_pretrained:
       word_inputs += pret_inputs
     if self.word_l2_reg > 0:
-      unk_mask = tf.expand_dims(tf.to_float(tf.greater(inputs[:,:,1], vocabs[0].UNK)),2)
+      unk_mask = tf.expand_dims(tf.to_float(tf.greater(inputs[:,:,1], vocabs[0].UNK)), 2)
       word_loss = self.word_l2_reg*tf.nn.l2_loss((word_inputs - pret_inputs) * unk_mask)
+    inputs_to_embed = [word_inputs]
     if self.add_pos_to_input:
-      embed_inputs = self.embed_concat(word_inputs, tag_inputs)
-    else:
-      embed_inputs = word_inputs
+      pos_inputs = vocabs[1].embedding_lookup(inputs[:, :, 2], moving_params=self.moving_params)
+      inputs_to_embed.append(pos_inputs)
+    if self.add_triggers_to_input:
+      trigger_inputs = vocabs[4].embedding_lookup(inputs[:, :, 3], moving_params=self.moving_params)
+      inputs_to_embed.append(trigger_inputs)
+
+    embed_inputs = self.embed_concat(*inputs_to_embed)
+
     
     top_recur = embed_inputs
 
