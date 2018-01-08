@@ -71,7 +71,6 @@ for lr in ${lrs[@]}; do
                                                                     --config_file config/trans-fast-conll12-bio-parse.cfg \
                                                                     --save_dir $OUT_LOG/scores-$fname_append \
                                                                     --save_every 500 \
-                                                                    --train_iters 100000 \
                                                                     --train_batch_size $batch_size \
                                                                     --test_batch_size $batch_size \
                                                                     --warmup_steps $warmup_steps \
