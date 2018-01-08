@@ -136,7 +136,7 @@ class BaseParser(NN):
       # print("targets", targets)
       # print("tokens", tokens)
       sent[:,0] = tokens # 1
-      sent[:,1:4] = inputs[tokens] # 2,3,4
+      sent[:,1:4] = inputs[tokens:-1] # 2,3,4
       sent[:,4] = targets[tokens, 0] # 5
       sent[:,5] = parse_preds[tokens] # 6
       sent[:,6] = rel_preds[tokens] # 7
