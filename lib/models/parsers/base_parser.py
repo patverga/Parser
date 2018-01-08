@@ -128,6 +128,7 @@ class BaseParser(NN):
       # print("srl targets", targets[tokens, 3:])
       # print("srl triggers", np.sum(np.where(targets[tokens, 3:] == trigger_idx)))
 
+      # print("inputs", inputs[tokens])
       # print("srl pred shape", srl_pred.shape)
       # print("srl pred", srl_pred)
       # print("srl pred[tokens]", srl_pred[tokens])
@@ -136,7 +137,7 @@ class BaseParser(NN):
       # print("targets", targets)
       # print("tokens", tokens)
       sent[:,0] = tokens # 1
-      sent[:,1:4] = inputs[tokens:,:-1] # 2,3,4
+      sent[:,1:4] = inputs[tokens,:-1] # 2,3,4
       sent[:,4] = targets[tokens, 0] # 5
       sent[:,5] = parse_preds[tokens] # 6
       sent[:,6] = rel_preds[tokens] # 7
