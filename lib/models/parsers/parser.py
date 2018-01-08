@@ -260,7 +260,7 @@ class Parser(BaseParser):
 
     with tf.variable_scope('SRL-Arcs', reuse=reuse):
       srl_logits = self.bilinear_classifier_nary(trigger_mlp, role_mlp, num_srl_classes)
-      if moving_params is None:
+      if moving_params is None or self.add_triggers_to_input:
         trigger_predictions = trigger_output['targets']
       else:
         trigger_predictions = trigger_output['predictions']
