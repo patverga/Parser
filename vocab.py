@@ -263,7 +263,7 @@ class Vocab(Configurable):
       embed_size = self.pretrained_embeddings.shape[1]
     else:
       initializer = tf.random_normal_initializer()
-      embed_size = self.embed_size
+      embed_size = self.embed_size if self.name != 'Trigs' else self.trig_embed_size
     
     with tf.device('/cpu:0'):
       with tf.variable_scope(self.name):

@@ -214,6 +214,10 @@ class Configurable(object):
     return self._config.getint('Sizes', 'embed_size')
   argparser.add_argument('--embed_size')
   @property
+  def trig_embed_size(self):
+    return self._config.getint('Sizes', 'trig_embed_size')
+  argparser.add_argument('--trig_embed_size')
+  @property
   def recur_size(self):
     return self._config.getint('Sizes', 'recur_size')
   argparser.add_argument('--recur_size')
