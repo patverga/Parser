@@ -39,13 +39,16 @@ class Vocab(Configurable):
   #=============================================================
   def __init__(self, vocab_file, conll_idx, *args, **kwargs):
     """"""
-    
+
     self._vocab_file = vocab_file
     self._conll_idx = conll_idx
     global_step = kwargs.pop('global_step', None)
     cased = kwargs.pop('cased', None)
     self._use_pretrained = kwargs.pop('use_pretrained', False)
     super(Vocab, self).__init__(*args, **kwargs)
+
+    self._embed_size = self.embed_size if self.name != 'Trigs' else self.trig_embed_size
+
     if cased is None:
       self._cased = super(Vocab, self).cased
     else:
@@ -132,34 +135,38 @@ class Vocab(Configurable):
     """"""
     counts = Counter()
 
-    if self.name == "Trig":
-      self.add(counts, "True")
-      self.add(counts, "False")
-    else:
-      with open(self.train_file, 'r') as f:
-        buff = []
-        for line_num, line in enumerate(f):
-          line = line.strip().split()
-          # print(line)
-          if line:
-            if self.conll and len(line) == 10:
-              if hasattr(self.conll_idx, '__iter__'):
-                for idx in self.conll_idx:
-                  self.add(counts, line[idx])
-              else:
-                self.add(counts, line[self.conll_idx])
-            elif self.conll2012: #and len(line) > 1:
-              if hasattr(self.conll_idx, '__iter__'):
-                for idx in self.conll_idx:
-                  if idx < len(line) and (self.name != 'SRLs' or idx != len(line)-1):
-                    # print("adding ", line[idx])
-                    self.add(counts, line[idx])
-              else:
-                self.add(counts, line[self.conll_idx])
-                # print("adding ", line[self.conll_idx])
+    # if self.name == "Trig":
+    #   self.add(counts, "True")
+    #   self.add(counts, "False")
+    # else:
+    with open(self.train_file, 'r') as f:
+      buff = []
+      for line_num, line in enumerate(f):
+        line = line.strip().split()
+        # print(line)
+        if line:
+          if self.conll and len(line) == 10:
+            if hasattr(self.conll_idx, '__iter__'):
+              for idx in self.conll_idx:
+                self.add(counts, line[idx])
             else:
-              print('The training file is misformatted at line %d (had %d columns, expected %d)' % (line_num+1, len(line), 13))
-              # raise ValueError('The training file is misformatted at line %d' % (line_num+1))
+              self.add(counts, line[self.conll_idx])
+          elif self.conll2012: #and len(line) > 1:
+            if hasattr(self.conll_idx, '__iter__'):
+              for idx in self.conll_idx:
+                if idx < len(line) and (self.name != 'SRLs' or idx != len(line)-1):
+                  # print("adding ", line[idx])
+                  self.add(counts, line[idx])
+            else:
+              if self.name == "Trigs":
+                actual = "False" if line[self.conll_idx] == '-' else "True"
+                self.add(counts, actual)
+              else:
+                self.add(counts, line[self.conll_idx])
+              # print("adding ", line[self.conll_idx])
+          else:
+            print('The training file is misformatted at line %d (had %d columns, expected %d)' % (line_num+1, len(line), 13))
+            # raise ValueError('The training file is misformatted at line %d' % (line_num+1))
 
       # add all the labels
       if self.name == "SRLs":
@@ -263,7 +270,7 @@ class Vocab(Configurable):
       embed_size = self.pretrained_embeddings.shape[1]
     else:
       initializer = tf.random_normal_initializer()
-      embed_size = self.embed_size if self.name != 'Trigs' else self.trig_embed_size
+      embed_size = self._embed_size
     
     with tf.device('/cpu:0'):
       with tf.variable_scope(self.name):
@@ -306,8 +313,8 @@ class Vocab(Configurable):
     
     embed_input = tf.matmul(tf.reshape(inputs, [-1, input_size]),
                             trainable_embeddings)
-    embed_input = tf.reshape(embed_input, tf.stack([batch_size, bucket_size, self.embed_size]))
-    embed_input.set_shape([tf.Dimension(None), tf.Dimension(None), tf.Dimension(self.embed_size)]) 
+    embed_input = tf.reshape(embed_input, tf.stack([batch_size, bucket_size, self._embed_size]))
+    embed_input.set_shape([tf.Dimension(None), tf.Dimension(None), tf.Dimension(self._embed_size)])
     if moving_params is None:
       tf.add_to_collection('Weights', embed_input)
     return embed_input
