@@ -160,7 +160,6 @@ class Vocab(Configurable):
             else:
               if self.name == "Trigs":
                 actual = "False" if line[self.conll_idx] == '-' else "True"
-                print("adding %s to vocab" % actual)
                 self.add(counts, actual)
               else:
                 self.add(counts, line[self.conll_idx])
