@@ -135,10 +135,6 @@ class Vocab(Configurable):
     """"""
     counts = Counter()
 
-    # if self.name == "Trig":
-    #   self.add(counts, "True")
-    #   self.add(counts, "False")
-    # else:
     with open(self.train_file, 'r') as f:
       buff = []
       for line_num, line in enumerate(f):
@@ -163,10 +159,8 @@ class Vocab(Configurable):
                 self.add(counts, actual)
               else:
                 self.add(counts, line[self.conll_idx])
-              # print("adding ", line[self.conll_idx])
           else:
             print('The training file is misformatted at line %d (had %d columns, expected %d)' % (line_num+1, len(line), 13))
-            # raise ValueError('The training file is misformatted at line %d' % (line_num+1))
 
       # add all the labels
       if self.name == "SRLs":
