@@ -263,12 +263,12 @@ class Network(Configurable):
       filename = self.valid_file
       minibatches = self.valid_minibatches
       dataset = self._validset
-      op = self.ops['test_op'][:3]
+      op = self.ops['test_op'][:4]
     else:
       filename = self.test_file
       minibatches = self.test_minibatches
       dataset = self._testset
-      op = self.ops['test_op'][3:]
+      op = self.ops['test_op'][4:]
     
     all_predictions = [[]]
     all_sents = [[]]
@@ -281,11 +281,13 @@ class Network(Configurable):
     not_tree_total = 0.
     forward_total_time = 0.
     non_tree_preds_total = []
+    attention_weights = []
     for (feed_dict, sents) in minibatches():
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
       forward_start = time.time()
-      probs, n_cycles, len_2_cycles = sess.run(op, feed_dict=feed_dict)
+      probs, n_cycles, len_2_cycles, attn_weights = sess.run(op, feed_dict=feed_dict)
+      attention_weights.append(attn_weights)
       forward_total_time += time.time() - forward_start
       preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles)
       total_time += parse_time
@@ -327,8 +329,8 @@ class Network(Configurable):
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
       f.write(s)
-    # if validate:
-    #   np.savez(os.path.join(self.save_dir, 'non_tree_preds.txt'), non_tree_preds_total)
+    if validate:
+      np.savez(os.path.join(self.save_dir, 'attention_weights'), attention_weights)
     # print(non_tree_preds_total)
     # print(non_tree_preds_total, file=f)
     las = np.mean(correct["LAS"]) * 100
@@ -411,9 +413,11 @@ class Network(Configurable):
     ops['test_op'] = [valid_output['probabilities'],
                       valid_output['n_cycles'],
                       valid_output['len_2_cycles'],
+                      valid_output['attn_weights'],
                       test_output['probabilities'],
                       test_output['n_cycles'],
-                      test_output['len_2_cycles']
+                      test_output['len_2_cycles'],
+                      test_output['attn_weights'],
                       ]
     ops['optimizer'] = optimizer
     

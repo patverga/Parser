@@ -305,6 +305,9 @@ class Parser(BaseParser):
     output['svd_loss'] = arc_output['svd_loss']
     output['n_cycles'] = arc_output['n_cycles']
     output['len_2_cycles'] = arc_output['len_2_cycles']
+
+    output['attn_weights'] = attn_weights_by_layer
+
     # output['cycles'] = arc_output['n_cycles'] + arc_output['len_2_cycles']
 
     #### OLD: TRANSFORMER ####
