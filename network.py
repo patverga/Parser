@@ -281,13 +281,13 @@ class Network(Configurable):
     not_tree_total = 0.
     forward_total_time = 0.
     non_tree_preds_total = []
-    attention_weights = []
+    attention_weights = {}
     for (feed_dict, sents) in minibatches():
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
       forward_start = time.time()
       probs, n_cycles, len_2_cycles, attn_weights = sess.run(op, feed_dict=feed_dict)
-      attention_weights.append(attn_weights)
+      attention_weights.extend(attn_weights)
       forward_total_time += time.time() - forward_start
       preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles)
       total_time += parse_time
@@ -330,7 +330,7 @@ class Network(Configurable):
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
       f.write(s)
     if validate:
-      np.savez(os.path.join(self.save_dir, 'attention_weights'), attention_weights)
+      np.savez(os.path.join(self.save_dir, 'attention_weights'), **attention_weights)
     # print(non_tree_preds_total)
     # print(non_tree_preds_total, file=f)
     las = np.mean(correct["LAS"]) * 100
