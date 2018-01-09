@@ -72,9 +72,8 @@ class Network(Configurable):
       vocab_files = [(self.word_file, 3, 'Words'),
                      (self.tag_file, [5, 4], 'Tags'), # auto, gold
                      (self.rel_file, 7, 'Rels'),
-                     (self.srl_file, range(14, 50), 'SRLs')]
-      if self.add_triggers_to_input:
-        vocab_files.append((self.trig_file, 9, 'Trigs'))
+                     (self.srl_file, range(14, 50), 'SRLs'),
+                     (self.trig_file, 9, 'Trigs'),]
 
     print("Loading vocabs")
     sys.stdout.flush()
