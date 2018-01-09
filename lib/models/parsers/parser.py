@@ -69,6 +69,8 @@ class Parser(BaseParser):
 
     trigger_indices = [i for s, i in vocabs[3].iteritems() if self.trigger_str in s]
 
+    # do parse update if the random ~ unif(0,1) < proportion
+    # otherwise, do srl update
     do_parse_update = tf.less_equal(np.random.rand(), self.parse_update_proportion)
     # do_arc_update = tf.not_equal(self.arc_loss_penalty, 0.)
     # do_rel_update = tf.not_equal(self.rel_loss_penalty, 0.)
@@ -271,9 +273,11 @@ class Parser(BaseParser):
     arc_loss = self.arc_loss_penalty * arc_output['loss']
     rel_loss = self.rel_loss_penalty * rel_output['loss']
 
+    # if this is a parse update, then actual parse loss equal to sum of rel loss and arc loss
     actual_parse_loss = tf.cond(do_parse_update, lambda: tf.add(rel_loss, arc_loss), lambda: tf.constant(0.))
 
-    # don't do srl update if do_parse_update is set and parse_update_proportion is not 1.0
+    # if this is a parse update and the parse proportion is not one, then no srl update. otherwise,
+    # srl update equal to sum of srl_loss, trigger_loss
     actual_srl_loss = tf.cond(tf.logical_and(do_parse_update, tf.not_equal(self.parse_update_proportion, 1.0)), lambda: tf.constant(0.), lambda: tf.add(srl_loss, trigger_loss))
 
     output = {}
