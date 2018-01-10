@@ -7,9 +7,9 @@ import string
 
 plt.ioff()
 
-data = np.load("attn_weights.npz")
+data = np.load("attn_weights_multitask.npz")
 lines = map(lambda x: x.split('\t'), open("sanitycheck.txt", 'r').readlines())
-save_dir = "attn_plots3"
+save_dir = "attn_plots_multitask"
 sentences = []
 current_sent = []
 for line in lines:
@@ -22,7 +22,7 @@ sentences.append(map(list, zip(*current_sent)))
 max_layer = 3
 
 remove_padding = True
-plot = False
+plot = True
 
 batch_sum = 0
 fig, axes = plt.subplots(nrows=2, ncols=4)
@@ -35,6 +35,7 @@ for arr_name in sorted(data.files):
     idx_in_batch = 0
     # For each element in the batch (one layer)
     # if layer == max_layer and batch > 0:
+    # a = np.transpose(data[arr_name], [1, 0, 2, 3])
     for b_i, arrays in enumerate(data[arr_name]):
         sentence_idx = batch_sum + b_i
 

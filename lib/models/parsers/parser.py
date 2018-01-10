@@ -111,6 +111,7 @@ class Parser(BaseParser):
                 top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                              attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                              self.info_func, reuse)
+                # head x batch x seq_len x seq_len
                 attn_weights_by_layer[i] = tf.transpose(attn_weights, [1, 0, 2, 3])
 
             # if normalization is done in layer_preprocess, then it should also be done
@@ -239,17 +240,15 @@ class Parser(BaseParser):
     grandparents = tf.reshape(tf.gather_nd(parents, idx), [batch_size, bucket_size])
     multitask_targets['grandparents'] = grandparents
 
-    # create siblings targets
-    # def count_all_fnc(e):
-    #   return tf.unsorted_segment_sum(tf.ones_like(e), e, n)
-    #
-    # count_all = tf.map_fn(count_all_fnc, t)
     multitask_losses = {}
     multitask_loss_sum = 0
     for l, attn_weights in attn_weights_by_layer.iteritems():
+      # attn_weights is: head x batch x seq_len x seq_len
+      # idx into attention heads
       attn_idx = 0
       if 'parents' in self.multi_layers.keys() and l in self.multi_layers['parents']:
-        outputs    = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
+        outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
+        # outputs = tf.Print(outputs, [tf.shape(attn_weights[attn_idx]), tf.reduce_sum(attn_weights[attn_idx], axis=), attn_weights[attn_idx]], "attn_weights", summarize=1000)
         loss = self.multi_penalties['parents'] * outputs['loss']
         multitask_losses['parents%s' % l] = loss
         multitask_loss_sum += loss
@@ -306,7 +305,10 @@ class Parser(BaseParser):
     output['n_cycles'] = arc_output['n_cycles']
     output['len_2_cycles'] = arc_output['len_2_cycles']
 
-    output['attn_weights'] = attn_weights_by_layer
+    # transpose and softmax attn weights
+    attn_weights_by_layer_softmaxed = {k: tf.transpose(tf.nn.softmax(v), [1, 0, 2 , 3]) for k, v in attn_weights_by_layer.iteritems()}
+
+    output['attn_weights'] = attn_weights_by_layer_softmaxed
 
     # output['cycles'] = arc_output['n_cycles'] + arc_output['len_2_cycles']
 
