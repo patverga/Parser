@@ -21,6 +21,11 @@ class Parser(BaseParser):
   #=============================================================
   def __call__(self, dataset, moving_params=None):
     """"""
+
+    self.multi_penalties = {k: float(v) for k, v in map(lambda s: s.split(':'), self.multitask_penalties.split(
+      ';'))} if self.multitask_penalties else {}
+    self.multi_layers = {k: set(map(int, v.split(','))) for k, v in
+                         map(lambda s: s.split(':'), self.multitask_layers.split(';'))} if self.multitask_layers else {}
     
     vocabs = dataset.vocabs
     inputs = dataset.inputs
@@ -52,9 +57,10 @@ class Parser(BaseParser):
       inputs_to_embed.append(trigger_inputs)
 
     embed_inputs = self.embed_concat(*inputs_to_embed)
-
     
     top_recur = embed_inputs
+
+    attn_weights_by_layer = {}
 
     kernel = 3
     hidden_size = self.num_heads * self.head_size
@@ -88,6 +94,40 @@ class Parser(BaseParser):
           bilou_constraints[s_idx, e_idx] = 1.0
         elif (s_bilou == 'B' or s_bilou == 'I') and s_type == e_type and (e_bilou == 'I' or e_bilou == 'L'):
           bilou_constraints[s_idx, e_idx] = 1.0
+
+    ###### stuff for multitask attention ######
+    multitask_targets = {}
+
+    mask = self.tokens_to_keep3D * tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
+
+    # compute targets adj matrix
+    shape = tf.shape(targets[:, :, 1])
+    batch_size = shape[0]
+    bucket_size = shape[1]
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.stack([i1, i2, targets[:, :, 1]], axis=-1)
+    adj = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+    adj = adj * mask
+
+    roots_mask = 1. - tf.expand_dims(tf.eye(bucket_size), 0)
+
+    # create parents targets
+    parents = targets[:, :, 1]
+    multitask_targets['parents'] = parents
+
+    # create children targets
+    multitask_targets['children'] = tf.transpose(adj, [0, 2, 1]) * roots_mask
+
+    # create grandparents targets
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.reshape(tf.stack([i1, tf.nn.relu(parents)], axis=-1), [-1, 2])
+    grandparents = tf.reshape(tf.gather_nd(parents, idx), [batch_size, bucket_size])
+    multitask_targets['grandparents'] = grandparents
+    grand_idx = tf.stack([i1, i2, grandparents], axis=-1)
+    grand_adj = tf.scatter_nd(grand_idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+    grand_adj = grand_adj * mask
+
+    ###########################################
 
     attn_dropout = 0.67
     prepost_dropout = 0.67
@@ -143,9 +183,27 @@ class Parser(BaseParser):
             top_recur = nn.add_timing_signal_1d(top_recur)
             for i in range(self.n_recur):
               with tf.variable_scope('layer%d' % i, reuse=reuse):
-                top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
-                                             attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
-                                             self.info_func, reuse)
+                if self.inject_manual_attn and moving_params is None and 'parents' in self.multi_layers.keys() and i in \
+                    self.multi_layers['parents']:
+                  manual_attn = adj
+                  top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
+                                                             attn_dropout, relu_dropout, prepost_dropout,
+                                                             self.relu_hidden_size,
+                                                             self.info_func, reuse, manual_attn)
+                elif self.inject_manual_attn and moving_params is None and 'grandparents' in self.multi_layers.keys() and i in \
+                    self.multi_layers['grandparents']:
+                  manual_attn = grand_adj
+                  top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
+                                                             attn_dropout, relu_dropout, prepost_dropout,
+                                                             self.relu_hidden_size,
+                                                             self.info_func, reuse, manual_attn)
+                else:
+                  top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
+                                                             attn_dropout, relu_dropout, prepost_dropout,
+                                                             self.relu_hidden_size, self.info_func, reuse)
+                # head x batch x seq_len x seq_len
+                attn_weights_by_layer[i] = tf.transpose(attn_weights, [1, 0, 2, 3])
+
             # if normalization is done in layer_preprocess, then it should also be done
             # on the output, since the output can grow very large, being the sum of
             # a whole stack of unnormalized layer outputs.
@@ -248,6 +306,32 @@ class Parser(BaseParser):
     #     return rel_output
     # def dummy_compute_rels_output():
 
+    multitask_losses = {}
+    multitask_loss_sum = 0
+    for l, attn_weights in attn_weights_by_layer.iteritems():
+      # attn_weights is: head x batch x seq_len x seq_len
+      # idx into attention heads
+      attn_idx = 0
+      if 'parents' in self.multi_layers.keys() and l in self.multi_layers['parents']:
+        outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']);
+        attn_idx += 1
+        # outputs = tf.Print(outputs, [tf.shape(attn_weights[attn_idx]), tf.reduce_sum(attn_weights[attn_idx], axis=), attn_weights[attn_idx]], "attn_weights", summarize=1000)
+        loss = self.multi_penalties['parents'] * outputs['loss']
+        multitask_losses['parents%s' % l] = loss
+        multitask_loss_sum += loss
+      if 'grandparents' in self.multi_layers.keys() and l in self.multi_layers['grandparents']:
+        outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['grandparents']);
+        attn_idx += 1
+        loss = self.multi_penalties['grandparents'] * outputs['loss']
+        multitask_losses['grandparents%s' % l] = loss
+        multitask_loss_sum += loss
+      if 'children' in self.multi_layers.keys() and l in self.multi_layers['children']:
+        outputs = self.output_multi(attn_weights[attn_idx], multitask_targets['children']);
+        attn_idx += 1
+        loss = self.multi_penalties['children'] * outputs['loss']
+        multitask_losses['children%s' % l] = loss
+        multitask_loss_sum += loss
+
 
     ######## do SRL-specific stuff (rels) ########
     with tf.variable_scope('SRL-MLP', reuse=reuse):
@@ -281,6 +365,9 @@ class Parser(BaseParser):
     actual_srl_loss = tf.cond(tf.logical_and(do_parse_update, tf.not_equal(self.parse_update_proportion, 1.0)), lambda: tf.constant(0.), lambda: tf.add(srl_loss, trigger_loss))
 
     output = {}
+
+    output['multitask_losses'] = multitask_losses
+
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
                                         rel_output['probabilities']])
     output['predictions'] = tf.stack([arc_output['predictions'],
@@ -291,7 +378,7 @@ class Parser(BaseParser):
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
 
-    output['loss'] = actual_srl_loss + actual_parse_loss
+    output['loss'] = actual_srl_loss + actual_parse_loss + multitask_loss_sum
     # output['loss'] = srl_loss + trigger_loss + actual_parse_loss
     # output['loss'] = actual_srl_loss + arc_loss + rel_loss
 
@@ -328,6 +415,12 @@ class Parser(BaseParser):
     output['trigger_loss'] = trigger_loss
     output['trigger_count'] = trigger_output['count']
     output['trigger_correct'] = trigger_output['correct']
+
+    # transpose and softmax attn weights
+    attn_weights_by_layer_softmaxed = {k: tf.transpose(tf.nn.softmax(v), [1, 0, 2, 3]) for k, v in
+                                       attn_weights_by_layer.iteritems()}
+
+    output['attn_weights'] = attn_weights_by_layer_softmaxed
 
     return output
   

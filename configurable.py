@@ -484,6 +484,11 @@ class Configurable(object):
     return self._config.getboolean('Training', 'add_triggers_to_input')
   argparser.add_argument('--add_triggers_to_input')
 
+  @property
+  def save_attn_weights(self):
+    return self._config.getboolean('Training', 'save_attn_weights')
+  argparser.add_argument('--save_attn_weights')
+
   #=============================================================
   # [Transformer]
   @property
@@ -546,3 +551,18 @@ class Configurable(object):
   def parse_update_proportion(self):
     return self._config.getfloat('Training', 'parse_update_proportion')
   argparser.add_argument('--parse_update_proportion')
+
+  @property
+  def multitask_penalties(self):
+    return self._config.get('Training', 'multitask_penalties')
+  argparser.add_argument('--multitask_penalties')
+
+  @property
+  def multitask_layers(self):
+    return self._config.get('Training', 'multitask_layers')
+  argparser.add_argument('--multitask_layers')
+
+  @property
+  def inject_manual_attn(self):
+    return self._config.getboolean('Training', 'inject_manual_attn')
+  argparser.add_argument('--inject_manual_attn')

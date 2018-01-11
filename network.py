@@ -402,12 +402,12 @@ class Network(Configurable):
       filename = self.valid_file
       minibatches = self.valid_minibatches
       dataset = self._validset
-      op = self.ops['test_op'][:11]
+      op = self.ops['test_op'][:12]
     else:
       filename = self.test_file
       minibatches = self.test_minibatches
       dataset = self._testset
-      op = self.ops['test_op'][11:]
+      op = self.ops['test_op'][12:]
     
     all_predictions = [[]]
     all_sents = [[]]
@@ -422,13 +422,16 @@ class Network(Configurable):
     srl_count_total = 0.
     forward_total_time = 0.
     non_tree_preds_total = []
-    for (feed_dict, sents) in minibatches():
+    attention_weights = {}
+    for batch_num, (feed_dict, sents) in enumerate(minibatches()):
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
       forward_start = time.time()
-      probs, n_cycles, len_2_cycles, srl_probs, srl_preds, srl_logits, srl_correct, srl_count, srl_trigger, srl_trigger_targets, transition_params = sess.run(op, feed_dict=feed_dict)
+      probs, n_cycles, len_2_cycles, srl_probs, srl_preds, srl_logits, srl_correct, srl_count, srl_trigger, srl_trigger_targets, transition_params, attn_weights = sess.run(op, feed_dict=feed_dict)
       forward_total_time += time.time() - forward_start
       preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles, srl_preds, srl_logits, srl_trigger, srl_trigger_targets, transition_params)
+      for k, v in attn_weights.iteritems():
+        attention_weights["b%d:layer%d" % (batch_num, k)] = v
       total_time += parse_time
       roots_lt_total += roots_lt
       roots_gt_total += roots_gt
@@ -523,6 +526,10 @@ class Network(Configurable):
     with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
       s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
       f.write(s)
+
+    if validate and self.save_attn_weights:
+        attention_weights = {str(k): v for k, v in attention_weights.iteritems()}
+        np.savez(os.path.join(self.save_dir, 'attention_weights'), **attention_weights)
 
     correct['F1'] = overall_f1
     # if validate:
@@ -623,6 +630,7 @@ class Network(Configurable):
                       valid_output['srl_trigger'],
                       valid_output['srl_trigger_targets'],
                       valid_output['transition_params'],
+                      valid_output['attn_weights'],
                       test_output['probabilities'],
                       test_output['n_cycles'],
                       test_output['len_2_cycles'],
@@ -634,6 +642,7 @@ class Network(Configurable):
                       test_output['srl_trigger'],
                       test_output['srl_trigger_targets'],
                       test_output['transition_params'],
+                      test_output['attn_weights'],
                       ]
     ops['optimizer'] = optimizer
     
