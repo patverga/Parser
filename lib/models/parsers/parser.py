@@ -22,9 +22,6 @@ class Parser(BaseParser):
   def __call__(self, dataset, moving_params=None):
     """"""
 
-    print("self.multitask_penalties: ", self.multitask_penalties)
-    print("self.multitask_layers: ", self.multitask_layers)
-
     self.multi_penalties = {k: float(v) for k, v in map(lambda s: s.split(':'), self.multitask_penalties.split(';'))} if self.multitask_penalties else {}
     self.multi_layers = {k: set(map(int, v.split(','))) for k, v in map(lambda s: s.split(':'), self.multitask_layers.split(';'))} if self.multitask_layers else {}
     
