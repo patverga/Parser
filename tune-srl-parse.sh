@@ -37,7 +37,7 @@ reps="3"
 
 # 4*2*3 = 24
 
-load_dir="saves/rans-fast-srl-pretrain-parser-big-notrigs"
+load_dir="saves/trans-fast-srl-pretrain-parser-big-notrigs"
 
 
 
