@@ -93,6 +93,9 @@ class Parser(BaseParser):
     idx = tf.reshape(tf.stack([i1, tf.nn.relu(parents)], axis=-1), [-1, 2])
     grandparents = tf.reshape(tf.gather_nd(parents, idx), [batch_size, bucket_size])
     multitask_targets['grandparents'] = grandparents
+    grand_idx = tf.stack([i1, i2, grandparents], axis=-1)
+    grand_adj = tf.scatter_nd(grand_idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+    grand_adj = adj * mask
 
 
     attn_dropout = 0.67
@@ -146,6 +149,12 @@ class Parser(BaseParser):
                   top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                                attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                                self.info_func, reuse, manual_attn)
+                elif self.inject_manual_attn and 'grandparents' in self.multi_layers.keys() and i in self.multi_layers['grandparents']:
+                  manual_attn = grand_adj
+                  top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
+                                                             attn_dropout, relu_dropout, prepost_dropout,
+                                                             self.relu_hidden_size,
+                                                             self.info_func, reuse, manual_attn)
                 else:
                   top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                                              attn_dropout, relu_dropout, prepost_dropout,
