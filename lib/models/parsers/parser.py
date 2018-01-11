@@ -73,6 +73,9 @@ class Parser(BaseParser):
     print("cnn2d_layers: ", self.cnn2d_layers)
     print("cnn_dim_2d: ", self.cnn_dim_2d)
 
+    print("multitask penalties: ", self.multi_penalties)
+    print("multitask layers: ", self.multi_layers)
+
     trigger_indices = [i for s, i in vocabs[3].iteritems() if self.trigger_str in s]
 
     # do parse update if the random ~ unif(0,1) < proportion
