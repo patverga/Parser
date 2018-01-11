@@ -260,7 +260,7 @@ def dot_product_attention(q, k, v,
       # heads x batch x seq_len x seq_len
       weights_transpose = tf.transpose(weights, [1, 0, 2, 3])
       weights_rest = weights_transpose[1:]
-      weights_comb = tf.stack([tf.expand_dims(manual_attn, 0), weights_rest], 0)
+      weights_comb = tf.stack([tf.expand_dims(manual_attn, 0), weights_rest], axis=0)
       weights = tf.transpose(weights_comb, [1, 0, 2, 3])
     # dropping out the attention links for each of the heads
     weights_drop = tf.nn.dropout(weights, dropout_rate)
