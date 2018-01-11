@@ -144,12 +144,12 @@ class Parser(BaseParser):
             top_recur = nn.add_timing_signal_1d(top_recur)
             for i in range(self.n_recur):
               with tf.variable_scope('layer%d' % i, reuse=reuse):
-                if self.inject_manual_attn and 'parents' in self.multi_layers.keys() and i in self.multi_layers['parents']:
-                  manual_attn = adj
-                  top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
-                                               attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
-                                               self.info_func, reuse, manual_attn)
-                elif self.inject_manual_attn and 'grandparents' in self.multi_layers.keys() and i in self.multi_layers['grandparents']:
+                # if self.inject_manual_attn and 'parents' in self.multi_layers.keys() and i in self.multi_layers['parents']:
+                #   manual_attn = adj
+                #   top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
+                #                                attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
+                #                                self.info_func, reuse, manual_attn)
+                if self.inject_manual_attn and 'grandparents' in self.multi_layers.keys() and i in self.multi_layers['grandparents']:
                   manual_attn = grand_adj
                   top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                                              attn_dropout, relu_dropout, prepost_dropout,
