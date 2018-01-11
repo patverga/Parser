@@ -37,7 +37,7 @@ reps="3"
 
 # 4*2*3 = 24
 
-load_dir="saves/trans-fast-srl-pretrain-parser-big"
+load_dir="saves/rans-fast-srl-pretrain-parser-big-notrigs"
 
 
 
@@ -66,7 +66,7 @@ for lr in ${lrs[@]}; do
                                                                     if [[ "$load_pretrained" == "True" ]]; then
                                                                         load_pretrained_str="--load_dir $load_dir --load"
                                                                     fi
-                                                                    commands+=("srun --gres=gpu:1 --partition=titanx-long,m40-long --time=24:00:00 --mem=10000
+                                                                    commands+=("srun --gres=gpu:1 --partition=titanx-long,m40-long --mem=12000
                                                                      python network.py \
                                                                     --config_file config/trans-conll12-bio-parse.cfg \
                                                                     --save_dir $OUT_LOG/scores-$fname_append \
