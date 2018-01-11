@@ -22,8 +22,8 @@ epsilons="1e-12"
 warmup_steps="8000"
 batch_sizes="1000"
 
-trans_layers="2" # 3
-cnn_dims="512" # 768
+trans_layers="4" # 3
+cnn_dims="1024" # 768
 num_heads="8" # 4 8"
 head_sizes="64" # 128"
 relu_hidden_sizes="256"
