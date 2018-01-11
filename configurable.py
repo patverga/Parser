@@ -460,3 +460,8 @@ class Configurable(object):
   def multitask_layers(self):
     return self._config.get('Training', 'multitask_layers')
   argparser.add_argument('--multitask_layers')
+
+  @property
+  def inject_manual_attn(self):
+    return self._config.getboolean('Training', 'inject_manual_attn')
+  argparser.add_argument('--inject_manual_attn')
