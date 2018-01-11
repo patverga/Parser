@@ -95,7 +95,7 @@ class Parser(BaseParser):
     multitask_targets['grandparents'] = grandparents
     grand_idx = tf.stack([i1, i2, grandparents], axis=-1)
     grand_adj = tf.scatter_nd(grand_idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
-    grand_adj = adj * mask
+    grand_adj = grand_adj * mask
 
 
     attn_dropout = 0.67
