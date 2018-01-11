@@ -257,9 +257,11 @@ def dot_product_attention(q, k, v,
     weights = tf.nn.softmax(logits, name="attention_weights")
     # weights is batch x heads x seq_len x seq_len
     if manual_attn is not None:
+      # heads x batch x seq_len x seq_len
       weights_transpose = tf.transpose(weights, [1, 0, 2, 3])
-      weights_transpose[0] = manual_attn
-      weights = tf.transpose(weights_transpose, [1, 0, 2, 3])
+      weights_rest = weights_transpose[1:]
+      weights_comb = tf.stack([manual_attn, weights_rest], 0)
+      weights = tf.transpose(weights_comb, [1, 0, 2, 3])
     # dropping out the attention links for each of the heads
     weights_drop = tf.nn.dropout(weights, dropout_rate)
     return tf.matmul(weights_drop, v), logits
