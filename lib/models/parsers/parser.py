@@ -61,6 +61,39 @@ class Parser(BaseParser):
     print("multitask penalties: ", self.multi_penalties)
     print("multitask layers: ", self.multi_layers)
 
+    multitask_targets = {}
+    # multitask_outputs = {}
+
+    mask = self.tokens_to_keep3D * tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
+
+    # compute targets adj matrix
+    shape = tf.shape(targets[:, :, 1])
+    batch_size = shape[0]
+    bucket_size = shape[1]
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.stack([i1, i2, targets[:, :, 1]], axis=-1)
+    adj = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
+    adj = adj * mask
+
+    roots_mask = 1. - tf.expand_dims(tf.eye(bucket_size), 0)
+
+    # normal parse edges
+    # multitask_targets['parents'] = adj
+    # multitask_targets['children'] = tf.transpose(adj, [0, 2, 1]) * roots_mask
+
+    # create parents targets
+    parents = targets[:, :, 1]
+    multitask_targets['parents'] = parents
+
+    # create children targets
+    multitask_targets['children'] = tf.transpose(adj, [0, 2, 1]) * roots_mask
+
+    # create grandparents targets
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.reshape(tf.stack([i1, tf.nn.relu(parents)], axis=-1), [-1, 2])
+    grandparents = tf.reshape(tf.gather_nd(parents, idx), [batch_size, bucket_size])
+    multitask_targets['grandparents'] = grandparents
+
 
     attn_dropout = 0.67
     prepost_dropout = 0.67
@@ -108,9 +141,15 @@ class Parser(BaseParser):
             top_recur = nn.add_timing_signal_1d(top_recur)
             for i in range(self.n_recur):
               with tf.variable_scope('layer%d' % i, reuse=reuse):
-                top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
-                                             attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
-                                             self.info_func, reuse)
+                if 'parents' in self.multi_layers.keys() and i in self.multi_layers['parents']:
+                  manual_attn = adj
+                  top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
+                                               attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
+                                               self.info_func, reuse, manual_attn)
+                else:
+                  top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
+                                                             attn_dropout, relu_dropout, prepost_dropout,
+                                                             self.relu_hidden_size, self.info_func, reuse)
                 # head x batch x seq_len x seq_len
                 attn_weights_by_layer[i] = tf.transpose(attn_weights, [1, 0, 2, 3])
 
@@ -207,38 +246,7 @@ class Parser(BaseParser):
     # attn_multitask_layer = self.n_recur-1
     # attn_weights = attn_weights_by_layer[attn_multitask_layer]
 
-    multitask_targets = {}
-    # multitask_outputs = {}
 
-    mask = self.tokens_to_keep3D * tf.transpose(self.tokens_to_keep3D, [0, 2, 1])
-
-    # compute targets adj matrix
-    shape = tf.shape(targets[:, :, 1])
-    batch_size = shape[0]
-    bucket_size = shape[1]
-    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
-    idx = tf.stack([i1, i2, targets[:, :, 1]], axis=-1)
-    adj = tf.scatter_nd(idx, tf.ones([batch_size, bucket_size]), [batch_size, bucket_size, bucket_size])
-    adj = adj * mask
-
-    roots_mask = 1. - tf.expand_dims(tf.eye(bucket_size), 0)
-
-    # normal parse edges
-    # multitask_targets['parents'] = adj
-    # multitask_targets['children'] = tf.transpose(adj, [0, 2, 1]) * roots_mask
-
-    # create parents targets
-    parents = targets[:, :, 1]
-    multitask_targets['parents'] = parents
-
-    # create children targets
-    multitask_targets['children'] = tf.transpose(adj, [0, 2, 1]) * roots_mask
-
-    # create grandparents targets
-    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
-    idx = tf.reshape(tf.stack([i1, tf.nn.relu(parents)], axis=-1), [-1, 2])
-    grandparents = tf.reshape(tf.gather_nd(parents, idx), [batch_size, bucket_size])
-    multitask_targets['grandparents'] = grandparents
 
     multitask_losses = {}
     multitask_loss_sum = 0

@@ -236,6 +236,7 @@ def combine_heads(x):
 def dot_product_attention(q, k, v,
                           bias,
                           dropout_rate=1.0,
+                          manual_attn=None,
                           name=None):
   """dot-product attention.
   Args:
@@ -254,6 +255,11 @@ def dot_product_attention(q, k, v,
     if bias is not None:
       logits += bias
     weights = tf.nn.softmax(logits, name="attention_weights")
+    # weights is batch x heads x seq_len x seq_len
+    if manual_attn is not None:
+      weights_transpose = tf.transpose(weights, [1, 0, 2, 3])
+      weights_transpose[0] = manual_attn
+      weights = tf.transpose(weights_transpose, [1, 0, 2, 3])
     # dropping out the attention links for each of the heads
     weights_drop = tf.nn.dropout(weights, dropout_rate)
     return tf.matmul(weights_drop, v), logits
@@ -352,7 +358,9 @@ def multihead_attention(antecedent,
                         output_depth,
                         num_heads,
                         dropout_rate,
-                        name=None):
+                        manual_attn=None,
+                        name=None
+                        ):
   """Multihead scaled-dot-product attention with input/output transformations.
   Args:
     bias: bias Tensor (see attention_bias())
@@ -381,7 +389,7 @@ def multihead_attention(antecedent,
     v = split_heads(v, num_heads)
     key_depth_per_head = total_key_depth // num_heads
     q *= key_depth_per_head**-0.5
-    x, attn_weights = dot_product_attention(q, k, v, bias, dropout_rate)
+    x, attn_weights = dot_product_attention(q, k, v, bias, dropout_rate, manual_attn)
     x = combine_heads(x)
     params = tf.get_variable("final_proj", [1, 1, total_key_depth, output_depth])
     x = tf.expand_dims(x, 1)
@@ -544,7 +552,7 @@ class NN(Configurable):
 
   # =============================================================
   def transformer(self, inputs, hidden_size, num_heads, attn_dropout, relu_dropout, prepost_dropout, relu_hidden_size,
-                  nonlinearity, reuse):
+                  nonlinearity, reuse, manual_attn=None):
     """"""
     # input_size = inputs.get_shape().as_list()[-1]
     lengths = tf.reshape(tf.to_int64(self.sequence_lengths), [-1])
@@ -559,7 +567,7 @@ class NN(Configurable):
 
     with tf.variable_scope("self_attention"):
       x = layer_norm(inputs, reuse)
-      y, attn_weights = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout)
+      y, attn_weights = multihead_attention(x, mask, hidden_size, hidden_size, hidden_size, num_heads, attn_dropout, manual_attn)
       x = tf.add(x, tf.nn.dropout(y, prepost_dropout))
 
     with tf.variable_scope("ffnn"):
