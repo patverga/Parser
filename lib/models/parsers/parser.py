@@ -149,7 +149,7 @@ class Parser(BaseParser):
                   top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                                attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
                                                self.info_func, reuse, manual_attn)
-                if self.inject_manual_attn and moving_params is None  and 'grandparents' in self.multi_layers.keys() and i in self.multi_layers['grandparents']:
+                elif self.inject_manual_attn and moving_params is None and 'grandparents' in self.multi_layers.keys() and i in self.multi_layers['grandparents']:
                   manual_attn = grand_adj
                   top_recur, attn_weights = self.transformer(top_recur, hidden_size, self.num_heads,
                                                              attn_dropout, relu_dropout, prepost_dropout,
