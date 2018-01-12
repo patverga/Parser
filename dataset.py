@@ -156,6 +156,8 @@ class Dataset(Configurable):
             rest_with_correct_trigger[t_idx, is_trigger_idx] = trigs["True"][0]
             # print(np.sum(rest_with_correct_trigger[:, is_trigger_idx]))
             correct_srls = srl_part[:, j]
+            print(rest_with_correct_trigger.shape, rest_with_correct_trigger)
+            print(correct_srls.shape, correct_srls)
             new_sent = np.concatenate([rest_with_correct_trigger, correct_srls], axis=1)
             print("new sent", new_sent)
             buff2.append(new_sent)
