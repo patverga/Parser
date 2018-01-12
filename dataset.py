@@ -158,7 +158,7 @@ class Dataset(Configurable):
             correct_srls = srl_part[:, j]
             print(rest_with_correct_trigger.shape, rest_with_correct_trigger)
             print(correct_srls.shape, correct_srls)
-            new_sent = np.concatenate([rest_with_correct_trigger, correct_srls], axis=1)
+            new_sent = np.concatenate([rest_with_correct_trigger, np.expand_dims(correct_srls, -1)], axis=1)
             print("new sent", new_sent)
             buff2.append(new_sent)
             examples += 1
