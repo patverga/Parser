@@ -108,10 +108,12 @@ class Dataset(Configurable):
     words, tags, rels, srls, trigs = self.vocabs
     sents = 0
     toks = 0
+    buff2 = []
     for i, sent in enumerate(buff):
       # if not self.conll2012 or (self.conll2012 and len(list(sent)) > 1):
       # print(sent, len(sent))
       sents += 1
+      trigger_indices = []
       for j, token in enumerate(sent):
         toks += 1
         if self.conll:
@@ -135,10 +137,22 @@ class Dataset(Configurable):
           #   print("srl_fields", [token[idx] for idx in range(len(token)-1)])
           srl_tags = [srls[s][0] for s in srl_fields]
           is_trigger = str(np.any([s in self.trigger_indices for s in srl_tags]))
+          if is_trigger:
+            trigger_indices.append(j)
           buff[i][j] = (word,) + words[word] + tags[tag1] + trigs[is_trigger] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
+      if self.one_example_per_predicate:
+        # grab the sent
+        sent = buff[i]
+        if trigger_indices:
+          for j, t_idx in enumerate(trigger_indices):
+            new_sent = sent
+            buff2.append(new_sent)
+        else:
+          buff2.append(sent)
+        # want to add a copy for each trigger
         # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     print("Loaded %d sentences with %d tokens (%s)" % (sents, toks, self.name))
-    return buff
+    return buff2
   
   #=============================================================
   def reset(self, sizes):
