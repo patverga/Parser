@@ -566,3 +566,8 @@ class Configurable(object):
   def inject_manual_attn(self):
     return self._config.getboolean('Training', 'inject_manual_attn')
   argparser.add_argument('--inject_manual_attn')
+
+  @property
+  def one_example_per_sentence(self):
+    return self._config.getboolean('Training', 'one_example_per_sentence')
+  argparser.add_argument('--one_example_per_sentence')
