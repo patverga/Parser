@@ -108,6 +108,7 @@ class Dataset(Configurable):
     words, tags, rels, srls, trigs = self.vocabs
     sents = 0
     toks = 0
+    examples = 0
     buff2 = []
     for i, sent in enumerate(buff):
       # if not self.conll2012 or (self.conll2012 and len(list(sent)) > 1):
@@ -142,16 +143,26 @@ class Dataset(Configurable):
           buff[i][j] = (word,) + words[word] + tags[tag1] + trigs[is_trigger] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
       if self.one_example_per_predicate:
         # grab the sent
-        sent = buff[i]
+        # should be sent_len x sent_elements
+        sent = np.array(buff[i])
+        srl_part = sent[:, 7:]
+        rest_part = sent[:, :7]
+        is_trigger_idx = 3
         if trigger_indices:
           for j, t_idx in enumerate(trigger_indices):
-            new_sent = sent
+            # should be sent_len x sent_elements
+            rest_with_correct_trigger = rest_part[:,is_trigger_idx] = trigs["False"]
+            rest_with_correct_trigger[t_idx, is_trigger_idx] = trigs["True"]
+            correct_srls = srl_part[:, j]
+            new_sent = np.concatenate([rest_with_correct_trigger, correct_srls], axis=1)
             buff2.append(new_sent)
+            examples += 1
         else:
           buff2.append(sent)
+          examples += 1
         # want to add a copy for each trigger
         # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
-    print("Loaded %d sentences with %d tokens (%s)" % (sents, toks, self.name))
+    print("Loaded %d sentences with %d tokens, %d examples (%s)" % (sents, toks, examples, self.name))
     return buff2
   
   #=============================================================
