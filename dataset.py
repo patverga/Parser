@@ -148,15 +148,14 @@ class Dataset(Configurable):
         is_trigger_idx = 3
         srl_part = sent[:, 7:]
         rest_part = sent[:, :7]
-        rest_part[:, is_trigger_idx] = trigs["False"][0]
         if trigger_indices:
           for j, t_idx in enumerate(trigger_indices):
             # should be sent_len x sent_elements
-            rest_with_correct_trigger = rest_part
-            rest_with_correct_trigger[t_idx, is_trigger_idx] = trigs["True"][0]
-            print(rest_with_correct_trigger[:, is_trigger_idx])
+            rest_part[:, is_trigger_idx] = trigs["False"][0]
+            rest_part[t_idx, is_trigger_idx] = trigs["True"][0]
+            print(rest_part[:, is_trigger_idx])
             correct_srls = srl_part[:, j]
-            new_sent = np.concatenate([rest_with_correct_trigger, np.expand_dims(correct_srls, -1)], axis=1)
+            new_sent = np.concatenate([rest_part, np.expand_dims(correct_srls, -1)], axis=1)
             print("new sent", new_sent)
             buff2.append(new_sent)
             examples += 1
