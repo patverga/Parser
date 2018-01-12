@@ -138,6 +138,7 @@ class Dataset(Configurable):
           #   print("srl_fields", [token[idx] for idx in range(len(token)-1)])
           srl_tags = [srls[s][0] for s in srl_fields]
           is_trigger = str(np.any([s in self.trigger_indices for s in srl_tags]))
+          print("t/f triggers", [s in self.trigger_indices for s in srl_tags])
           if is_trigger:
             trigger_indices.append(j)
           buff[i][j] = (word,) + words[word] + tags[tag1] + trigs[is_trigger] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
