@@ -33,10 +33,11 @@ role_mlp_sizes="256"
 subsample_trigger_rates="1.0"
 add_pos_tags="False"
 trig_embed_sizes="100 50 5 1"
+one_per="True False"
 
 reps="3"
 
-# 4*3 = 12
+# 4*3*2 = 24
 
 
 
@@ -59,38 +60,41 @@ for lr in ${lrs[@]}; do
                                                     for trigger_pred_mlp_size in ${trigger_pred_mlp_sizes[@]}; do
                                                         for add_pos in ${add_pos_tags[@]}; do
                                                             for trig_embed_size in ${trig_embed_sizes[@]}; do
-                                                                for rep in `seq $reps`; do
-                                                                    fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$role_mlp_size-$trigger_mlp_size-$trigger_pred_mlp_size-$add_pos-$trig_embed_size"
-                                                                    commands+=("srun --gres=gpu:1 --partition=titanx-long,m40-long --time=24:00:00 --mem=12000
-                                                                     python network.py \
-                                                                    --config_file config/trans-conll12-bio-goldtrigs.cfg \
-                                                                    --save_dir $OUT_LOG/scores-$fname_append \
-                                                                    --save_every 500 \
-                                                                    --train_iters 500000 \
-                                                                    --train_batch_size $batch_size \
-                                                                    --test_batch_size $batch_size \
-                                                                    --warmup_steps $warmup_steps \
-                                                                    --learning_rate $lr \
-                                                                    --cnn_dim $cnn_dim \
-                                                                    --n_recur $trans_layer \
-                                                                    --num_heads $num_head \
-                                                                    --head_size $head_size \
-                                                                    --relu_hidden_size $relu_hidden_size \
-                                                                    --mu $mu \
-                                                                    --nu $nu \
-                                                                    --epsilon $epsilon \
-                                                                    --trigger_mlp_size $trigger_mlp_size \
-                                                                    --trigger_pred_mlp_size $trigger_pred_mlp_size \
-                                                                    --role_mlp_size $role_mlp_size \
-                                                                    --add_pos_to_input $add_pos \
-                                                                    --add_triggers_to_input True \
-                                                                    --trig_embed_size $trig_embed_size \
-                                                                    --svd_tree False \
-                                                                    --mask_pairs True \
-                                                                    --mask_roots True \
-                                                                    --ensure_tree True \
-                                                                    --save False \
-                                                                    &> $OUT_LOG/train-$fname_append.log")
+                                                                for one_exmaple_per_predicate in ${one_per[@]}; do
+                                                                    for rep in `seq $reps`; do
+                                                                        fname_append="$rep-$lr-$mu-$nu-$epsilon-$warmup_steps-$batch_size-$cnn_dim-$trans_layer-$num_head-$head_size-$relu_hidden_size-$role_mlp_size-$trigger_mlp_size-$trigger_pred_mlp_size-$add_pos-$one_exmaple_per_predicate-$trig_embed_size"
+                                                                        commands+=("srun --gres=gpu:1 --partition=m40-long --time=24:00:00 --mem=12000
+                                                                         python network.py \
+                                                                        --config_file config/trans-conll12-bio-goldtrigs.cfg \
+                                                                        --save_dir $OUT_LOG/scores-$fname_append \
+                                                                        --save_every 500 \
+                                                                        --train_iters 500000 \
+                                                                        --train_batch_size $batch_size \
+                                                                        --test_batch_size $batch_size \
+                                                                        --warmup_steps $warmup_steps \
+                                                                        --learning_rate $lr \
+                                                                        --cnn_dim $cnn_dim \
+                                                                        --n_recur $trans_layer \
+                                                                        --num_heads $num_head \
+                                                                        --head_size $head_size \
+                                                                        --relu_hidden_size $relu_hidden_size \
+                                                                        --mu $mu \
+                                                                        --nu $nu \
+                                                                        --epsilon $epsilon \
+                                                                        --trigger_mlp_size $trigger_mlp_size \
+                                                                        --trigger_pred_mlp_size $trigger_pred_mlp_size \
+                                                                        --role_mlp_size $role_mlp_size \
+                                                                        --add_pos_to_input $add_pos \
+                                                                        --add_triggers_to_input True \
+                                                                        --trig_embed_size $trig_embed_size \
+                                                                        --one_example_per_predicate $one_exmaple_per_predicate \
+                                                                        --svd_tree False \
+                                                                        --mask_pairs True \
+                                                                        --mask_roots True \
+                                                                        --ensure_tree True \
+                                                                        --save False \
+                                                                        &> $OUT_LOG/train-$fname_append.log")
+                                                                    done
                                                                 done
                                                             done
                                                         done
