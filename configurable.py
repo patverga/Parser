@@ -568,6 +568,6 @@ class Configurable(object):
   argparser.add_argument('--inject_manual_attn')
 
   @property
-  def one_example_per_sentence(self):
-    return self._config.getboolean('Training', 'one_example_per_sentence')
-  argparser.add_argument('--one_example_per_sentence')
+  def one_example_per_predicate(self):
+    return self._config.getboolean('Training', 'one_example_per_predicate')
+  argparser.add_argument('--one_example_per_predicate')
