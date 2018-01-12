@@ -137,11 +137,10 @@ class Dataset(Configurable):
           #   print("stuff:",  word, tag1, tag2, head, rel)
           #   print("srl_fields", [token[idx] for idx in range(len(token)-1)])
           srl_tags = [srls[s][0] for s in srl_fields]
-          is_trigger = str(np.any([s in self.trigger_indices for s in srl_tags]))
-          print("t/f triggers", [s in self.trigger_indices for s in srl_tags])
+          is_trigger = np.any([s in self.trigger_indices for s in srl_tags])
           if is_trigger:
             trigger_indices.append(j)
-          buff[i][j] = (word,) + words[word] + tags[tag1] + trigs[is_trigger] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
+          buff[i][j] = (word,) + words[word] + tags[tag1] + trigs[str(is_trigger)] + tags[tag2] + (head,) + rels[rel] + tuple(srl_tags)
       if self.one_example_per_predicate:
         # grab the sent
         # should be sent_len x sent_elements
@@ -151,7 +150,6 @@ class Dataset(Configurable):
         rest_part = sent[:, :7]
         rest_part[:, is_trigger_idx] = trigs["False"][0]
         if trigger_indices:
-          print("trigger_indices", trigger_indices)
           for j, t_idx in enumerate(trigger_indices):
             # should be sent_len x sent_elements
             rest_with_correct_trigger = rest_part
