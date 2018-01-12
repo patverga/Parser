@@ -153,10 +153,8 @@ class Dataset(Configurable):
             # should be sent_len x sent_elements
             rest_part[:, is_trigger_idx] = trigs["False"][0]
             rest_part[t_idx, is_trigger_idx] = trigs["True"][0]
-            print(rest_part[:, is_trigger_idx])
             correct_srls = srl_part[:, j]
             new_sent = np.concatenate([rest_part, np.expand_dims(correct_srls, -1)], axis=1)
-            print("new sent", new_sent)
             buff2.append(new_sent)
             examples += 1
         else:
