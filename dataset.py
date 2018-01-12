@@ -150,6 +150,7 @@ class Dataset(Configurable):
         rest_part = sent[:, :7]
         rest_part[:, is_trigger_idx] = trigs["False"][0]
         if trigger_indices:
+          print("trigger_indices", trigger_indices)
           for j, t_idx in enumerate(trigger_indices):
             # should be sent_len x sent_elements
             rest_with_correct_trigger = rest_part
