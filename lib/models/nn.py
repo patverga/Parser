@@ -1214,7 +1214,7 @@ class NN(Configurable):
     """"""
 
     original_shape = tf.shape(logits3D)
-    # original_shape = tf.Print(original_shape, [original_shape], "original_shape", summarize=100)
+    original_shape = tf.Print(original_shape, [original_shape], "original_shape", summarize=100)
     batch_size = original_shape[0]
     bucket_size = original_shape[1]
     flat_shape = tf.stack([batch_size, bucket_size])
