@@ -146,8 +146,9 @@ class Dataset(Configurable):
         # should be sent_len x sent_elements
         sent = np.array(buff[i])
         is_trigger_idx = 3
-        srl_part = sent[:, 7:]
-        rest_part = sent[:, :7]
+        srl_start_idx = 7
+        srl_part = sent[:, srl_start_idx:]
+        rest_part = sent[:, :srl_start_idx]
         if trigger_indices:
           for j, t_idx in enumerate(trigger_indices):
             # should be sent_len x sent_elements
@@ -223,6 +224,10 @@ class Dataset(Configurable):
       sents = self[bkt_idx].sents[bkt_mb]
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
       np.set_printoptions(threshold=np.nan)
+
+      print("inputs:", data[:,:maxlen,input_idxs])
+      print("targets:", data[:,:maxlen,min(target_idxs):maxlen+max(target_idxs)])
+
 
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
