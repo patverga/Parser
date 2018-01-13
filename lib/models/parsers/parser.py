@@ -285,7 +285,7 @@ class Parser(BaseParser):
         arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
 
         arc_logits = tf.cond(tf.less_equal(tf.shape(tf.shape(arc_logits))[0], 2), lambda: tf.reshape(arc_logits, [tf.shape(arc_logits)[0], 1, 1]), lambda: arc_logits)
-        arc_logits = tf.Print(arc_logits, [tf.shape(arc_logits), tf.shape(tf.shape(arc_logits))], "arc logits", summarize=10)
+        # arc_logits = tf.Print(arc_logits, [tf.shape(arc_logits), tf.shape(tf.shape(arc_logits))], "arc logits", summarize=10)
 
         arc_output = self.output_svd(arc_logits, targets[:,:,1])
         if moving_params is None:
@@ -298,9 +298,11 @@ class Parser(BaseParser):
       rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]),
                                                                          predictions)
 
-      rel_logits = tf.Print(rel_logits, [tf.shape(rel_logits), tf.shape(tf.shape(rel_logits))], "rel logits", summarize=10)
+      # rel_logits = tf.Print(rel_logits, [tf.shape(rel_logits), tf.shape(tf.shape(rel_logits))], "rel logits", summarize=10)
       rel_output = self.output(rel_logits, targets[:, :, 2])
+      rel_logits_cond = tf.Print(rel_logits_cond, [rel_output['loss'], rel_output['n_tokens'], rel_output['n_correct']])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
+
     # def compute_rels_output():
     #   with tf.variable_scope('Rels', reuse=reuse):
     #     rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
