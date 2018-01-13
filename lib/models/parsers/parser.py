@@ -381,10 +381,6 @@ class Parser(BaseParser):
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
 
-    multitask_loss_sum = tf.Print(multitask_loss_sum, [output['srl_count'], output['srl_preds'], output['srl_correct'], output['srl_loss']])
-
-
-    output['loss'] = actual_srl_loss + actual_parse_loss + multitask_loss_sum
     # output['loss'] = srl_loss + trigger_loss + actual_parse_loss
     # output['loss'] = actual_srl_loss + arc_loss + rel_loss
 
@@ -423,6 +419,12 @@ class Parser(BaseParser):
     output['trigger_loss'] = trigger_loss
     output['trigger_count'] = trigger_output['count']
     output['trigger_correct'] = trigger_output['correct']
+
+
+    multitask_loss_sum = tf.Print(multitask_loss_sum, [output['srl_count'], output['srl_preds'], output['srl_correct'], output['srl_loss']])
+
+
+    output['loss'] = actual_srl_loss + actual_parse_loss + multitask_loss_sum
 
     # transpose and softmax attn weights
     attn_weights_by_layer_softmaxed = {k: tf.transpose(tf.nn.softmax(v), [1, 0, 2, 3]) for k, v in
