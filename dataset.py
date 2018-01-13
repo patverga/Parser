@@ -149,6 +149,7 @@ class Dataset(Configurable):
         srl_start_idx = 7
         srl_part = sent[:, srl_start_idx:]
         rest_part = sent[:, :srl_start_idx]
+        print("sent:", sent)
         if trigger_indices:
           for j, t_idx in enumerate(trigger_indices):
             # should be sent_len x sent_elements
@@ -157,6 +158,7 @@ class Dataset(Configurable):
             correct_srls = srl_part[:, j]
             new_sent = np.concatenate([rest_part, np.expand_dims(correct_srls, -1)], axis=1)
             buff2.append(new_sent)
+            print("new sent", new_sent)
             examples += 1
       else:
         buff2.append(sent)
@@ -225,12 +227,14 @@ class Dataset(Configurable):
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
       np.set_printoptions(threshold=np.nan)
 
-      print("inputs:", data[:,:maxlen,input_idxs])
-      print("targets:", data[:,:maxlen,min(target_idxs):maxlen+max(target_idxs)])
+      # print("inputs:", data[:,:maxlen,input_idxs])
+      # print("targets:", data[:,:maxlen,min(target_idxs):maxlen+max(target_idxs)])
 
 
       feed_dict.update({
+        # 0, 1, 2, 3: word, word, tag1, trig
         self.inputs: data[:,:maxlen,input_idxs],
+        # 4, 5, 6, ...: tag2, arc, rel, srls
         self.targets: data[:,:maxlen,min(target_idxs):maxlen+max(target_idxs)]
       })
       yield feed_dict, sents
