@@ -975,7 +975,7 @@ class NN(Configurable):
     correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
     n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
     accuracy = n_correct / self.n_tokens
-    loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D * margin_mask) / self.n_tokens
+    loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D * tf.reshape(margin_mask, [-1])) / self.n_tokens
 
     # compute new margin mask
     # want to mask rows where gold head > next best with margin
