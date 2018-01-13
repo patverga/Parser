@@ -296,6 +296,7 @@ class Parser(BaseParser):
     with tf.variable_scope('Rels', reuse=reuse):
       rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
 
+      rel_logits = tf.Print(rel_logits, [embed_inputs], "embed_inputs", summarize=5000)
 
       rel_logits = tf.Print(rel_logits, [arc_logits], "arc_logits", summarize=5000)
 
