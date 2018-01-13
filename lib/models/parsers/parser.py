@@ -300,7 +300,7 @@ class Parser(BaseParser):
 
       # rel_logits = tf.Print(rel_logits, [tf.shape(rel_logits), tf.shape(tf.shape(rel_logits))], "rel logits", summarize=10)
       rel_output = self.output(rel_logits, targets[:, :, 2])
-      rel_logits_cond = tf.Print(rel_logits_cond, [rel_output['loss'], rel_output['n_tokens'], rel_output['n_correct']])
+      rel_logits_cond = tf.Print(rel_logits_cond, [rel_output['loss'], rel_output['n_tokens'], rel_output['n_correct'], targets[:, :, 2]], summarize=5000)
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
 
     # def compute_rels_output():
