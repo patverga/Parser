@@ -285,7 +285,7 @@ class Parser(BaseParser):
         arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
 
         arc_logits = tf.cond(tf.less_equal(tf.shape(tf.shape(arc_logits))[0], 2), lambda: tf.reshape(arc_logits, [tf.shape(arc_logits)[0], 1, 1]), lambda: arc_logits)
-        # arc_logits = tf.Print(arc_logits, [tf.shape(arc_logits), tf.shape(tf.shape(arc_logits))])
+        arc_logits = tf.Print(arc_logits, [tf.shape(arc_logits), tf.shape(tf.shape(arc_logits))], "arc logits", summarize=10)
 
         arc_output = self.output_svd(arc_logits, targets[:,:,1])
         if moving_params is None:
@@ -298,7 +298,7 @@ class Parser(BaseParser):
       rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]),
                                                                          predictions)
 
-      rel_logits = tf.Print(rel_logits, [tf.shape(rel_logits), tf.shape(tf.shape(rel_logits))], summarize=10)
+      rel_logits = tf.Print(rel_logits, [tf.shape(rel_logits), tf.shape(tf.shape(rel_logits))], "rel logits", summarize=10)
       rel_output = self.output(rel_logits, targets[:, :, 2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
     # def compute_rels_output():
@@ -383,7 +383,7 @@ class Parser(BaseParser):
 
     # output['loss'] = srl_loss + trigger_loss + actual_parse_loss
     # output['loss'] = actual_srl_loss + arc_loss + rel_loss
-
+    output['loss'] = actual_srl_loss + actual_parse_loss + multitask_loss_sum
 
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
@@ -419,12 +419,6 @@ class Parser(BaseParser):
     output['trigger_loss'] = trigger_loss
     output['trigger_count'] = trigger_output['count']
     output['trigger_correct'] = trigger_output['correct']
-
-
-    multitask_loss_sum = tf.Print(multitask_loss_sum, [output['srl_count'], output['srl_preds'], output['srl_correct'], output['srl_loss']])
-
-
-    output['loss'] = actual_srl_loss + actual_parse_loss + multitask_loss_sum
 
     # transpose and softmax attn weights
     attn_weights_by_layer_softmaxed = {k: tf.transpose(tf.nn.softmax(v), [1, 0, 2, 3]) for k, v in
