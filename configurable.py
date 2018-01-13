@@ -470,3 +470,8 @@ class Configurable(object):
   def use_bilinear(self):
     return self._config.getboolean('Training', 'use_bilinear')
   argparser.add_argument('--use_bilinear')
+
+  @property
+  def margin(self):
+    return self._config.getfloat('Training', 'margin')
+  argparser.add_argument('--margin')

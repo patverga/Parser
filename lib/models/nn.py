@@ -954,6 +954,89 @@ class NN(Configurable):
 
     return output
 
+
+  #=============================================================
+  def output_margin(self, logits3D, targets3D, margin_mask):
+    """"""
+
+    original_shape = tf.shape(logits3D)
+    batch_size = original_shape[0]
+    bucket_size = original_shape[1]
+    flat_shape = tf.stack([batch_size, bucket_size])
+
+    logits2D = tf.reshape(logits3D, tf.stack([batch_size*bucket_size, -1]))
+    targets1D = tf.reshape(targets3D, [-1])
+    tokens_to_keep1D = tf.reshape(self.tokens_to_keep3D, [-1])
+
+    predictions1D = tf.to_int32(tf.argmax(logits2D, 1))
+    probabilities2D = tf.nn.softmax(logits2D)
+    cross_entropy1D = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits2D, labels=targets1D)
+
+    correct1D = tf.to_float(tf.equal(predictions1D, targets1D))
+    n_correct = tf.reduce_sum(correct1D * tokens_to_keep1D)
+    accuracy = n_correct / self.n_tokens
+    loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D * margin_mask) / self.n_tokens
+
+    # compute new margin mask
+    # want to mask rows where gold head > next best with margin
+
+    # create adjacency matrix w/ np.NINF instead of ones
+    i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
+    idx = tf.stack([i1, i2, targets3D], axis=-1)
+    targets_mask = tf.scatter_nd(idx, tf.fill([batch_size, bucket_size], np.NINF), [batch_size, bucket_size, bucket_size])
+    logits_augmented = logits3D + targets_mask
+
+    # these are maxes that are not the gold label
+    max_scores = tf.reduce_max(logits_augmented, axis=-1)
+
+    # these are the scores of the gold labels
+    gold_scores = tf.gather_nd(logits3D, idx)
+
+    # these are the margins. we want them to be > self.margin
+    margins = gold_scores - max_scores
+
+    new_margin_mask = tf.cast(tf.less_equal(margins, self.margin), tf.float32)
+
+    # i1, i2, i3 = tf.meshgrid(tf.range(self.batch_size), tf.range(self.max_seq_len - 1), tf.range(self.max_seq_len),
+    #                          indexing="ij")
+    # targ = i1 * self.max_seq_len * (self.max_seq_len - 1) * self.num_classes + i2 * self.max_seq_len * self.num_classes + i3 * self.num_classes + labels
+    # idx = tf.reshape(targ, [-1])
+    # sparse = tf.sparse_to_dense(idx, [self.batch_size * (self.max_seq_len - 1) * self.max_seq_len * self.num_classes],
+    #                             sparse_values=np.NINF, default_value=0.0, name="sparse")
+    # loss_augmented_flat = tf.add(tf.reshape(scores, [-1]), sparse, name="loss_augmented_flat")
+    # loss_augmented = tf.reshape(loss_augmented_flat,
+    #                             [self.batch_size, self.max_seq_len - 1, self.max_seq_len, self.num_classes],
+    #                             name="loss_augmented")
+    #
+    # # maxes excluding true label
+    # max_scores = tf.reshape(tf.reduce_max(loss_augmented, [-1]), [-1])
+    # # zeros with -margin at actual max value locations
+    # sparse = tf.sparse_to_dense(idx, [self.batch_size * (self.max_seq_len - 1) * self.max_seq_len * self.num_classes],
+    #                             sparse_values=-self.margin, name="sparse2")
+    # # logits with margin subtracted from true labels
+    # loss_augmented_flat = tf.add(tf.reshape(scores, [-1]), sparse, name="loss_augmented_flat2")
+    # # scores (with margin subtracted) for actual labels
+    # label_scores = tf.gather(loss_augmented_flat, idx, name="label_scores")
+    # # actual maxes - augmented true label scores
+    # # margin + max_logit - correct_logit == max_logit - (correct - margin)
+    # max2_diffs = tf.subtract(max_scores, label_scores, name="diffs")
+    # mask = tf.reshape(self.input_mask, [-1])
+    # loss = tf.reduce_mean(tf.multiply(mask, tf.nn.relu(max2_diffs)), name="apply_mask")
+
+    output = {
+      'probabilities': tf.reshape(probabilities2D, original_shape),
+      'predictions': tf.reshape(predictions1D, flat_shape),
+      'tokens': tokens_to_keep1D,
+      'correct': correct1D * tokens_to_keep1D,
+      'n_correct': n_correct,
+      'n_tokens': self.n_tokens,
+      'accuracy': accuracy,
+      'loss': loss,
+      'margin_mask': new_margin_mask
+    }
+
+    return output
+
   #=============================================================
   def output_2d(self, logits3D, targets3D, mask):
     """"""

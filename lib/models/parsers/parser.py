@@ -242,6 +242,7 @@ class Parser(BaseParser):
           arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
       else:
         # todo don't hardcode to 0th head
+        # todo right now this head is getting 2x loss
         arc_logits = attn_weights_by_layer[self.n_recur-1][0]
 
       arc_output = self.output_svd(arc_logits, targets[:,:,1])
@@ -261,16 +262,18 @@ class Parser(BaseParser):
     # attn_weights = attn_weights_by_layer[attn_multitask_layer]
 
 
-
+    margin_mask = tf.ones([batch_size, bucket_size], dtype=tf.float32)
     multitask_losses = {}
     multitask_loss_sum = 0
-    for l, attn_weights in attn_weights_by_layer.iteritems():
+    # for l, attn_weights in attn_weights_by_layer.iteritems():
+    for l in sorted(attn_weights_by_layer):
+      attn_weights = attn_weights_by_layer[l]
       # attn_weights is: head x batch x seq_len x seq_len
       # idx into attention heads
       attn_idx = 0
       if 'parents' in self.multi_layers.keys() and l in self.multi_layers['parents']:
-        outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']); attn_idx += 1
-        # outputs = tf.Print(outputs, [tf.shape(attn_weights[attn_idx]), tf.reduce_sum(attn_weights[attn_idx], axis=), attn_weights[attn_idx]], "attn_weights", summarize=1000)
+        outputs = self.output_margin(attn_weights[attn_idx], multitask_targets['parents'], margin_mask); attn_idx += 1
+        margin_mask = outputs['margin_mask'] * margin_mask
         loss = self.multi_penalties['parents'] * outputs['loss']
         multitask_losses['parents%s' % l] = loss
         multitask_loss_sum += loss
