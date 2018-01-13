@@ -407,7 +407,7 @@ class Parser(BaseParser):
     output['len_2_cycles'] = arc_output['len_2_cycles']
 
     output['srl_loss'] = srl_loss
-    output['srl_count'] = srl_output['predictions']
+    output['srl_preds'] = srl_output['predictions']
     output['srl_probs'] = srl_output['probabilities']
     output['srl_logits'] = srl_output['logits']
     output['srl_correct'] = srl_output['correct']
