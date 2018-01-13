@@ -381,6 +381,9 @@ class Parser(BaseParser):
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
 
+    multitask_loss_sum = tf.Print(multitask_loss_sum, [output['srl_count'], output['srl_preds'], output['srl_correct'], output['srl_loss']])
+
+
     output['loss'] = actual_srl_loss + actual_parse_loss + multitask_loss_sum
     # output['loss'] = srl_loss + trigger_loss + actual_parse_loss
     # output['loss'] = actual_srl_loss + arc_loss + rel_loss
@@ -413,7 +416,6 @@ class Parser(BaseParser):
     output['srl_correct'] = srl_output['correct']
     output['srl_count'] = srl_output['count']
 
-    output = tf.Print(output, [output['srl_count'], output['srl_preds'], output['srl_correct'], output['srl_loss']])
 
     output['transition_params'] = transition_params if transition_params is not None else tf.constant(bilou_constraints)
     output['srl_trigger'] = trigger_predictions
