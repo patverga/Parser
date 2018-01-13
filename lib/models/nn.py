@@ -1215,13 +1215,6 @@ class NN(Configurable):
 
     original_shape = tf.shape(logits3D)
     batch_size = original_shape[0]
-    original_shape = tf.Print(original_shape, [original_shape, tf.shape(original_shape), tf.shape(original_shape)[0]], "original_shape", summarize=100)
-    if tf.shape(original_shape)[0] == 1:
-      original_shape = tf.constant([batch_size, 1, 1])
-      logits3D = tf.Print(logits3D, [original_shape, tf.shape(original_shape)], "original_shape if",
-                                summarize=100)
-      logits3D = tf.reshape(logits3D, original_shape)
-
     bucket_size = original_shape[1]
     flat_shape = tf.stack([batch_size, bucket_size])
 

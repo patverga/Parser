@@ -284,7 +284,7 @@ class Parser(BaseParser):
       with tf.variable_scope('Arcs', reuse=reuse):
         arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
 
-        arc_logits = tf.cond(tf.equal(tf.shape(tf.shape(arc_logits))[0], 2), lambda: tf.expand_dims(arc_logits, 0), lambda: arc_logits)
+        arc_logits = tf.cond(tf.less_equal(tf.shape(tf.shape(arc_logits))[0], 2), lambda: tf.reshape(arc_logits, [tf.shape(arc_logits)[0], 1, 1]), lambda: arc_logits)
         # arc_logits = tf.Print(arc_logits, [tf.shape(arc_logits), tf.shape(tf.shape(arc_logits))])
 
         arc_output = self.output_svd(arc_logits, targets[:,:,1])
