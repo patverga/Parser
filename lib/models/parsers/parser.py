@@ -242,7 +242,7 @@ class Parser(BaseParser):
           arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
       else:
         # todo don't hardcode to 0th head
-        arc_logits = attn_weights_by_layer["layer%d" % (self.n_recur-1)][0]
+        arc_logits = attn_weights_by_layer[self.n_recur-1][0]
 
       arc_output = self.output_svd(arc_logits, targets[:,:,1])
       if moving_params is None:
@@ -328,7 +328,7 @@ class Parser(BaseParser):
     output['len_2_cycles'] = arc_output['len_2_cycles']
 
     # transpose and softmax attn weights
-    attn_weights_by_layer_softmaxed = {k: tf.transpose(tf.nn.softmax(v), [1, 0, 2 , 3]) for k, v in attn_weights_by_layer.iteritems()}
+    attn_weights_by_layer_softmaxed = {k: tf.transpose(tf.nn.softmax(v), [1, 0, 2, 3]) for k, v in attn_weights_by_layer.iteritems()}
 
     output['attn_weights'] = attn_weights_by_layer_softmaxed
 
