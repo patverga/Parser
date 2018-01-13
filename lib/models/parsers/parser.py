@@ -298,7 +298,7 @@ class Parser(BaseParser):
       rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]),
                                                                          predictions)
 
-      rel_logits = tf.Print(rel_logits, [tf.shape(rel_logits), tf.shape(tf.shape(rel_logits))])
+      rel_logits = tf.Print(rel_logits, [tf.shape(rel_logits), tf.shape(tf.shape(rel_logits))], summarize=10)
       rel_output = self.output(rel_logits, targets[:, :, 2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
     # def compute_rels_output():
@@ -413,7 +413,7 @@ class Parser(BaseParser):
     output['srl_correct'] = srl_output['correct']
     output['srl_count'] = srl_output['count']
 
-    # output = tf.Print(output, [output['srl_count'], output['srl_count'], output['srl_count'], output['srl_loss']])
+    output = tf.Print(output, [output['srl_count'], output['srl_preds'], output['srl_correct'], output['srl_loss']])
 
     output['transition_params'] = transition_params if transition_params is not None else tf.constant(bilou_constraints)
     output['srl_trigger'] = trigger_predictions
