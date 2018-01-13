@@ -157,9 +157,9 @@ class Dataset(Configurable):
             new_sent = np.concatenate([rest_part, np.expand_dims(correct_srls, -1)], axis=1)
             buff2.append(new_sent)
             examples += 1
-        else:
-          buff2.append(sent)
-          examples += 1
+      else:
+        buff2.append(sent)
+        examples += 1
         # want to add a copy for each trigger
         # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     print("Loaded %d sentences with %d tokens, %d examples (%s)" % (sents, toks, examples, self.name))
@@ -182,7 +182,7 @@ class Dataset(Configurable):
     len_cntr = Counter()
     
     for sent in buff:
-      print(sentd)
+      print(sent)
       len_cntr[len(sent)] += 1
     self.reset(KMeans(self.n_bkts, len_cntr).splits)
     
