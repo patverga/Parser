@@ -465,3 +465,8 @@ class Configurable(object):
   def inject_manual_attn(self):
     return self._config.getboolean('Training', 'inject_manual_attn')
   argparser.add_argument('--inject_manual_attn')
+
+  @property
+  def use_bilinear(self):
+    return self._config.getboolean('Training', 'use_bilinear')
+  argparser.add_argument('--use_bilinear')

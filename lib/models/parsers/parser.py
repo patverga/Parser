@@ -232,18 +232,23 @@ class Parser(BaseParser):
           conditioned = tf.reshape(conditioned, [batch_size, bucket_size, self.cnn_dim_2d])
           dep_rel_mlp, head_rel_mlp = self.MLP(conditioned, self.class_mlp_size + self.attn_mlp_size, n_splits=2)
     else:
-      with tf.variable_scope('MLP', reuse=reuse):
-        dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
-        dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
-        head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
+      if self.use_bilinear:
+        with tf.variable_scope('MLP', reuse=reuse):
+          dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
+          dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
+          head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
 
-      with tf.variable_scope('Arcs', reuse=reuse):
-        arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
-        arc_output = self.output_svd(arc_logits, targets[:,:,1])
-        if moving_params is None:
-          predictions = targets[:,:,1]
-        else:
-          predictions = arc_output['predictions']
+        with tf.variable_scope('Arcs', reuse=reuse):
+          arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
+      else:
+        # todo don't hardcode to 0th head
+        arc_logits = attn_weights_by_layer["layer%d" % self.n_recur-1][0]
+
+      arc_output = self.output_svd(arc_logits, targets[:,:,1])
+      if moving_params is None:
+        predictions = targets[:,:,1]
+      else:
+        predictions = arc_output['predictions']
 
     with tf.variable_scope('Rels', reuse=reuse):
       rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
