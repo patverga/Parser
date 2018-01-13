@@ -375,7 +375,7 @@ class Parser(BaseParser):
     srl_loss = self.role_loss_penalty * srl_output['loss']
     arc_loss = self.arc_loss_penalty * arc_output['loss']
     rel_loss = self.rel_loss_penalty * rel_output['loss']
-    
+
     if self.add_triggers_to_input:
       trigger_loss = tf.constant(0.)
 
