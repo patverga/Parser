@@ -410,7 +410,7 @@ class Parser(BaseParser):
     output['srl_count'] = srl_output['predictions']
     output['srl_probs'] = srl_output['probabilities']
     output['srl_logits'] = srl_output['logits']
-    output['srl_count'] = srl_output['correct']
+    output['srl_correct'] = srl_output['correct']
     output['srl_count'] = srl_output['count']
 
     # output = tf.Print(output, [output['srl_count'], output['srl_count'], output['srl_count'], output['srl_loss']])
