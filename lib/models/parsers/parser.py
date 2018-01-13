@@ -39,7 +39,17 @@ class Parser(BaseParser):
     self.sequence_lengths = tf.reshape(tf.reduce_sum(self.tokens_to_keep3D, [1, 2]), [-1,1])
     self.n_tokens = tf.reduce_sum(self.sequence_lengths)
     self.moving_params = moving_params
-    
+
+    #### OLD ####
+    # word_inputs, pret_inputs = vocabs[0].embedding_lookup(inputs[:,:,0], inputs[:,:,1], moving_params=self.moving_params)
+    # tag_inputs = vocabs[1].embedding_lookup(inputs[:,:,2], moving_params=self.moving_params)
+    # if self.add_to_pretrained:
+    #   word_inputs += pret_inputs
+    # if self.word_l2_reg > 0:
+    #   unk_mask = tf.expand_dims(tf.to_float(tf.greater(inputs[:,:,1], vocabs[0].UNK)),2)
+    #   word_loss = self.word_l2_reg*tf.nn.l2_loss((word_inputs - pret_inputs) * unk_mask)
+    # embed_inputs = self.embed_concat(word_inputs, tag_inputs)
+
     word_inputs, pret_inputs = vocabs[0].embedding_lookup(inputs[:,:,0], inputs[:,:,1], moving_params=self.moving_params)
     if self.add_to_pretrained:
       word_inputs += pret_inputs
@@ -365,6 +375,9 @@ class Parser(BaseParser):
     srl_loss = self.role_loss_penalty * srl_output['loss']
     arc_loss = self.arc_loss_penalty * arc_output['loss']
     rel_loss = self.rel_loss_penalty * rel_output['loss']
+    
+    if self.add_triggers_to_input:
+      trigger_loss = tf.constant(0.)
 
     # if this is a parse update, then actual parse loss equal to sum of rel loss and arc loss
     actual_parse_loss = tf.cond(do_parse_update, lambda: tf.add(rel_loss, arc_loss), lambda: tf.constant(0.))
