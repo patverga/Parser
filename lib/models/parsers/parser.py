@@ -285,7 +285,6 @@ class Parser(BaseParser):
         arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
 
         arc_logits = tf.cond(tf.less_equal(tf.shape(tf.shape(arc_logits))[0], 2), lambda: tf.reshape(arc_logits, [tf.shape(arc_logits)[0], 1, 1]), lambda: arc_logits)
-        # arc_logits = tf.Print(arc_logits, [tf.shape(arc_logits), tf.shape(tf.shape(arc_logits))], "arc logits", summarize=10)
 
         arc_output = self.output_svd(arc_logits, targets[:,:,1])
         if moving_params is None:
@@ -298,7 +297,6 @@ class Parser(BaseParser):
       rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
       rel_logits = tf.Print(rel_logits, [targets[:, :, 2]], "targets", summarize=5000)
 
-      # rel_logits = tf.Print(rel_logits, [tf.shape(rel_logits), tf.shape(tf.shape(rel_logits))], "rel logits", summarize=10)
       rel_output = self.output(rel_logits, targets[:, :, 2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
 
@@ -319,7 +317,6 @@ class Parser(BaseParser):
       if 'parents' in self.multi_layers.keys() and l in self.multi_layers['parents']:
         outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['parents'])
         attn_idx += 1
-        # outputs = tf.Print(outputs, [tf.shape(attn_weights[attn_idx]), tf.reduce_sum(attn_weights[attn_idx], axis=), attn_weights[attn_idx]], "attn_weights", summarize=1000)
         loss = self.multi_penalties['parents'] * outputs['loss']
         multitask_losses['parents%s' % l] = loss
         multitask_loss_sum += loss
