@@ -297,6 +297,8 @@ class Parser(BaseParser):
     with tf.variable_scope('Rels', reuse=reuse):
       rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]),
                                                                          predictions)
+
+      rel_logits = tf.Print(rel_logits, [tf.shape(rel_logits), tf.shape(tf.shape(rel_logits))])
       rel_output = self.output(rel_logits, targets[:, :, 2])
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
     # def compute_rels_output():
@@ -405,11 +407,14 @@ class Parser(BaseParser):
     output['len_2_cycles'] = arc_output['len_2_cycles']
 
     output['srl_loss'] = srl_loss
-    output['srl_preds'] = srl_output['predictions']
+    output['srl_count'] = srl_output['predictions']
     output['srl_probs'] = srl_output['probabilities']
     output['srl_logits'] = srl_output['logits']
-    output['srl_correct'] = srl_output['correct']
+    output['srl_count'] = srl_output['correct']
     output['srl_count'] = srl_output['count']
+
+    # output = tf.Print(output, [output['srl_count'], output['srl_count'], output['srl_count'], output['srl_loss']])
+
     output['transition_params'] = transition_params if transition_params is not None else tf.constant(bilou_constraints)
     output['srl_trigger'] = trigger_predictions
     output['srl_trigger_targets'] = trigger_output['targets']
