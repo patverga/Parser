@@ -145,8 +145,8 @@ class Dataset(Configurable):
         # grab the sent
         # should be sent_len x sent_elements
         sent = np.array(buff[i])
-        is_trigger_idx = 3
-        srl_start_idx = 7
+        is_trigger_idx = 4
+        srl_start_idx = 8
         srl_part = sent[:, srl_start_idx:]
         rest_part = sent[:, :srl_start_idx]
         print("sent:", sent)
