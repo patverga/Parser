@@ -985,7 +985,7 @@ class NN(Configurable):
     accuracy = n_correct / self.n_tokens
     loss = tf.reduce_sum(cross_entropy1D * tokens_to_keep1D) / self.n_tokens
 
-    loss = tf.Print(loss, [tf.reduce_sum(cross_entropy1D * tokens_to_keep1D), cross_entropy1D], summarize=100)
+    loss = tf.Print(loss, [tf.reduce_sum(cross_entropy1D * tokens_to_keep1D), tf.reduce_sum(cross_entropy1D), tf.reduce_sum(tokens_to_keep1D)], "loss", summarize=100)
 
     output = {
       'probabilities': tf.reshape(probabilities2D, original_shape),

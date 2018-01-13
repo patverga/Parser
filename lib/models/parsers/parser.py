@@ -295,12 +295,11 @@ class Parser(BaseParser):
 
     ######## do parse-specific stuff (rels) ########
     with tf.variable_scope('Rels', reuse=reuse):
-      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]),
-                                                                         predictions)
+      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
+      rel_logits = tf.Print(rel_logits, [targets[:, :, 2]], "targets", summarize=5000)
 
       # rel_logits = tf.Print(rel_logits, [tf.shape(rel_logits), tf.shape(tf.shape(rel_logits))], "rel logits", summarize=10)
       rel_output = self.output(rel_logits, targets[:, :, 2])
-      rel_logits_cond = tf.Print(rel_logits_cond, [rel_output['loss'], rel_output['n_tokens'], rel_output['n_correct'], targets[:, :, 2]], summarize=5000)
       rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
 
     # def compute_rels_output():
@@ -318,20 +317,20 @@ class Parser(BaseParser):
       # idx into attention heads
       attn_idx = 0
       if 'parents' in self.multi_layers.keys() and l in self.multi_layers['parents']:
-        outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['parents']);
+        outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['parents'])
         attn_idx += 1
         # outputs = tf.Print(outputs, [tf.shape(attn_weights[attn_idx]), tf.reduce_sum(attn_weights[attn_idx], axis=), attn_weights[attn_idx]], "attn_weights", summarize=1000)
         loss = self.multi_penalties['parents'] * outputs['loss']
         multitask_losses['parents%s' % l] = loss
         multitask_loss_sum += loss
       if 'grandparents' in self.multi_layers.keys() and l in self.multi_layers['grandparents']:
-        outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['grandparents']);
+        outputs = self.output_svd(attn_weights[attn_idx], multitask_targets['grandparents'])
         attn_idx += 1
         loss = self.multi_penalties['grandparents'] * outputs['loss']
         multitask_losses['grandparents%s' % l] = loss
         multitask_loss_sum += loss
       if 'children' in self.multi_layers.keys() and l in self.multi_layers['children']:
-        outputs = self.output_multi(attn_weights[attn_idx], multitask_targets['children']);
+        outputs = self.output_multi(attn_weights[attn_idx], multitask_targets['children'])
         attn_idx += 1
         loss = self.multi_penalties['children'] * outputs['loss']
         multitask_losses['children%s' % l] = loss
