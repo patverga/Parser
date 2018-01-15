@@ -42,8 +42,9 @@ class Parser(BaseParser):
     if self.word_l2_reg > 0:
       unk_mask = tf.expand_dims(tf.to_float(tf.greater(inputs[:,:,1], vocabs[0].UNK)),2)
       word_loss = self.word_l2_reg*tf.nn.l2_loss((word_inputs - pret_inputs) * unk_mask)
-    embed_inputs = self.embed_concat(word_inputs, tag_inputs)
-    
+    embed_inputs = self.embed_concat(word_inputs)
+    # embed_inputs = self.embed_concat(word_inputs, tag_inputs)
+
     top_recur = embed_inputs
     attn_weights_by_layer = {}
 
@@ -252,9 +253,10 @@ class Parser(BaseParser):
         predictions = arc_output['predictions']
 
     with tf.variable_scope('Rels', reuse=reuse):
-      rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
+      # rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
+      rel_logits = self.MLP(dep_mlp, len(vocabs[2]))
       rel_output = self.output(rel_logits, targets[:, :, 2])
-      rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
+      # rel_output['probabilities'] = tf.constant(69) # self.conditional_probabilities(rel_logits_cond)
 
     # attn_weights_by_layer[i] = num_heads x seq_len x seq_len for transformer layer i
     # todo pass this in at command line
@@ -309,7 +311,8 @@ class Parser(BaseParser):
     output['n_correct'] = tf.reduce_sum(output['correct'])
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
-    output['loss'] = arc_output['loss'] + rel_output['loss'] + multitask_loss_sum
+    # output['loss'] = arc_output['loss'] + rel_output['loss'] + multitask_loss_sum
+    output['loss'] = rel_output['loss']
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 
@@ -337,70 +340,6 @@ class Parser(BaseParser):
 
     # output['cycles'] = arc_output['n_cycles'] + arc_output['len_2_cycles']
 
-    #### OLD: TRANSFORMER ####
-    # top_recur = nn.add_timing_signal_1d(top_recur)
-    #
-    # for i in xrange(self.n_recur):
-    #   # RNN:
-    #   # with tf.variable_scope('RNN%d' % i, reuse=reuse):
-    #   #   top_recur, _ = self.RNN(top_recur)
-    #
-    #   # Transformer:
-    #   with tf.variable_scope('Transformer%d' % i, reuse=reuse):
-    #     top_recur = self.transformer(top_recur, hidden_size, self.num_heads,
-    #                                  attn_dropout, relu_dropout, prepost_dropout, self.relu_hidden_size,
-    #                                  self.info_func, reuse)
-    # # if normalization is done in layer_preprocess, then it shuold also be done
-    # # on the output, since the output can grow very large, being the sum of
-    # # a whole stack of unnormalized layer outputs.
-    # top_recur = nn.layer_norm(top_recur, reuse)
-    #
-    # with tf.variable_scope('MLP', reuse=reuse):
-    #   dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
-    #   dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
-    #   head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
-    #
-    # with tf.variable_scope('Arcs', reuse=reuse):
-    #   arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
-    #   # arc_output = self.output(arc_logits, targets[:,:,1])
-    #   arc_output = self.output_svd(arc_logits, targets[:,:,1])
-    #   if moving_params is None:
-    #     predictions = targets[:,:,1]
-    #   else:
-    #     predictions = arc_output['predictions']
-    # with tf.variable_scope('Rels', reuse=reuse):
-    #   rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
-    #   rel_output = self.output(rel_logits, targets[:,:,2])
-    #   rel_output['probabilities'] = self.conditional_probabilities(rel_logits_cond)
-    #
-    # output = {}
-    # output['probabilities'] = tf.tuple([arc_output['probabilities'],
-    #                                     rel_output['probabilities']])
-    # output['predictions'] = tf.stack([arc_output['predictions'],
-    #                                  rel_output['predictions']])
-    # output['correct'] = arc_output['correct'] * rel_output['correct']
-    # output['tokens'] = arc_output['tokens']
-    # output['n_correct'] = tf.reduce_sum(output['correct'])
-    # output['n_tokens'] = self.n_tokens
-    # output['accuracy'] = output['n_correct'] / output['n_tokens']
-    # output['loss'] = arc_output['loss'] + rel_output['loss']
-    # if self.word_l2_reg > 0:
-    #   output['loss'] += word_loss
-    #
-    # output['embed'] = embed_inputs
-    # output['recur'] = top_recur
-    # output['dep_arc'] = dep_arc_mlp
-    # output['head_dep'] = head_arc_mlp
-    # output['dep_rel'] = dep_rel_mlp
-    # output['head_rel'] = head_rel_mlp
-    # output['arc_logits'] = arc_logits
-    # output['rel_logits'] = rel_logits
-    #
-    # output['rel_loss'] = rel_output['loss']
-    # output['log_loss'] = arc_output['log_loss']
-    # output['2cycle_loss'] = arc_output['2cycle_loss']
-    # output['roots_loss'] = arc_output['roots_loss']
-    # output['svd_loss'] = arc_output['svd_loss']
     return output
   
   #=============================================================
@@ -408,7 +347,15 @@ class Parser(BaseParser):
     """"""
     start_time = time.time()
     parse_preds, roots_lt, roots_gt = self.parse_argmax(parse_probs, tokens_to_keep, n_cycles, len_2_cycles)
-    rel_probs = rel_probs[np.arange(len(parse_preds)), parse_preds]
-    rel_preds = self.rel_argmax(rel_probs, tokens_to_keep)
+    # print('parse_preds')
+    # print(parse_preds)
+    # print(parse_preds.shape)
+    # print('rel_probs')
+    # print(rel_probs)
+    # print(rel_probs.shape)
+    # rel_probs = rel_probs[np.arange(len(parse_preds)), parse_preds]
+    rel_preds = np.argmax(rel_probs, axis=1)
+    length = np.sum(tokens_to_keep)
+    rel_preds = rel_preds[:length]
     total_time = time.time() - start_time
     return parse_preds, rel_preds, total_time, roots_lt, roots_gt

@@ -100,11 +100,17 @@ class Dataset(Configurable):
     words, tags, rels = self.vocabs
     for i, sent in enumerate(buff):
       for j, token in enumerate(sent):
-        word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
-        if rel == 'root':
-          head = j
-        else:
-          head = int(head) - 1
+        # print(sent)
+        # word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
+        word, tag1, rel = token[words.conll_idx], token[tags.conll_idx], token[rels.conll_idx]
+
+        head = 0
+        tag2 = 'O'
+        # print (word)
+        # print (tag1)
+        # print (tag2)
+        # print (head)
+        # print (rel)
         buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
       # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
     return buff

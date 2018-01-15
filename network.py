@@ -23,6 +23,8 @@ import os
 import sys
 import time
 import pickle as pkl
+from subprocess import CalledProcessError
+from subprocess import check_output
 
 import numpy as np
 import tensorflow as tf
@@ -58,9 +60,9 @@ class Network(Configurable):
     self._model = model(self._config, global_step=self.global_step)
     
     self._vocabs = []
-    vocab_files = [(self.word_file, 1, 'Words'),
-                   (self.tag_file, [3, 4], 'Tags'),
-                   (self.rel_file, 7, 'Rels')]
+    vocab_files = [(self.word_file, 0, 'Words'),
+                   (self.tag_file, 2, 'Tags'),
+                   (self.rel_file, 1, 'Rels')]
     for i, (vocab_file, index, name) in enumerate(vocab_files):
       vocab = Vocab(vocab_file, index, self._config,
                     name=name,
@@ -305,41 +307,50 @@ class Network(Configurable):
         if bkt_idx < len(dataset._metabucket):
           all_predictions.append([])
           all_sents.append([])
-    print("Total time in prob_argmax: %f" % total_time)
-    print("Total time in forward: %f" % forward_total_time)
-    print("Not tree: %d" % not_tree_total)
-    print("Roots < 1: %d; Roots > 1: %d; 2-cycles: %d; n-cycles: %d" % (roots_lt_total, roots_gt_total, cycles_2_total, cycles_n_total))
-    with open(os.path.join(self.save_dir, os.path.basename(filename)), 'w') as f:
+
+
+
+    # save SRL output
+    ner_preds_fname = os.path.join(self.save_dir, 'ner_preds.tsv')
+    with open(ner_preds_fname, 'w') as f:
       for bkt_idx, idx in dataset._metabucket.data:
+        # for each word, if trigger print word, otherwise -
+        # then all the SRL labels
         data = dataset._metabucket[bkt_idx].data[idx]
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
-        for i, (datum, word, pred) in enumerate(zip(data, words, preds)):
-          tup = (
-            i+1,
-            word,
-            self.tags[pred[3]] if pred[3] != -1 else self.tags[datum[2]],
-            self.tags[pred[4]] if pred[4] != -1 else self.tags[datum[3]],
-            str(pred[5]) if pred[5] != -1 else str(datum[4]),
-            self.rels[pred[6]] if pred[6] != -1 else self.rels[datum[5]],
-            str(pred[7]) if pred[7] != -1 else '_',
-            self.rels[pred[8]] if pred[8] != -1 else '_',
-          )
-          f.write('%s\t%s\t_\t%s\t%s\t_\t%s\t%s\t%s\t%s\n' % tup)
+        for i, (datum, word) in enumerate(zip(data, words)):
+          pred = self.rels[preds[i, 6]]
+          gold = self.rels[preds[i, 8]]
+          # print(word)
+          # print(preds[:,4])
+          # print(preds[:,7:])
+          # print(gold)
+          owpl_str = ' '.join([word, gold, pred])
+          f.write(owpl_str + "\n")
         f.write('\n')
-    with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
-      s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
-      f.write(s)
-    if validate:
-      attention_weights = {str(k): v for k, v in attention_weights.iteritems()}
-      np.savez(os.path.join(self.save_dir, 'attention_weights'), **attention_weights)
+
+    try:
+      ner_eval = check_output('perl conlleval.pl < %s' % ner_preds_fname, shell=True)
+      print(ner_eval)
+      overall_f1 = float(ner_eval.split('\n')[1].split(' ')[-1])
+    except CalledProcessError as e:
+      print("Call to eval failed: %s" % e.output)
+      overall_f1 = 0.
+
+    # with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
+    #   s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
+    #   f.write(s)
+
+    correct = {'LAS': 0, 'UAS': 0, 'F1': overall_f1}
+    # if validate:
+    #   np.savez(os.path.join(self.save_dir, 'non_tree_preds.txt'), non_tree_preds_total)
     # print(non_tree_preds_total)
     # print(non_tree_preds_total, file=f)
-    las = np.mean(correct["LAS"]) * 100
-    uas = np.mean(correct["UAS"]) * 100
-    print('UAS: %.2f    LAS: %.2f' % (uas, las))
+    print('SRL F1: %.2f' % (overall_f1))
     return correct
-  
+
+
   #=============================================================
   def savefigs(self, sess, optimizer=False):
     """"""

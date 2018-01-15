@@ -134,17 +134,19 @@ class Vocab(Configurable):
     counts = Counter()
     with open(self.train_file) as f:
       buff = []
+      # print(self.train_file, self.conll_idx)
       for line_num, line in enumerate(f):
         line = line.strip().split()
         if line:
-          if len(line) == 10:
-            if hasattr(self.conll_idx, '__iter__'):
-              for idx in self.conll_idx:
-                self.add(counts, line[idx])
-            else:
-              self.add(counts, line[self.conll_idx])
+          # print(line)
+          # if len(line) == 10:
+          if hasattr(self.conll_idx, '__iter__'):
+            for idx in self.conll_idx:
+              self.add(counts, line[idx])
           else:
-            raise ValueError('The training file is misformatted at line %d' % (line_num+1))
+            self.add(counts, line[self.conll_idx])
+          # else:
+          #   raise ValueError('The training file is misformatted at line %d' % (line_num+1))
 
     self._counts = counts
     self._str2idx, self._idx2str = self.index_vocab(counts)
