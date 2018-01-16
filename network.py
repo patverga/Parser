@@ -25,6 +25,7 @@ import time
 import pickle as pkl
 from subprocess import CalledProcessError
 from subprocess import check_output
+from collections import defaultdict
 
 import numpy as np
 import tensorflow as tf
@@ -58,7 +59,7 @@ class Network(Configurable):
     self._global_step = tf.Variable(0., trainable=False)
     self._global_epoch = tf.Variable(0., trainable=False)
     self._model = model(self._config, global_step=self.global_step)
-    
+
     self._vocabs = []
     vocab_files = [(self.word_file, 0, 'Words'),
                    (self.tag_file, 2, 'Tags'),
@@ -70,10 +71,25 @@ class Network(Configurable):
                     use_pretrained=(not i),
                     global_step=self.global_step)
       self._vocabs.append(vocab)
+    # TODO: gross - read in relation annotations
+    rel_label_path = '%s/relations' % self.data_dir
+    rel_map = {}
+    relation_vocab = {'Null': 0}
+    with open(rel_label_path, 'r') as f:
+      for l in f:
+        e1, e2, doc_id, rel = l.strip().split('\t')
+        # e1 = self._vocabs[1][e1][0]
+        # e2 = self._vocabs[1][e2][0]
+        if rel not in relation_vocab:
+          relation_vocab[rel] = len(relation_vocab)
+        #TODO: eps with multiple relations in doc
+        rel_map['%s::%s::%s' % (doc_id, e1, e2)] = relation_vocab[rel]
+
+    self._vocabs.append(relation_vocab)
     
-    self._trainset = Dataset(self.train_file, self._vocabs, model, self._config, name='Trainset')
-    self._validset = Dataset(self.valid_file, self._vocabs, model, self._config, name='Validset')
-    self._testset = Dataset(self.test_file, self._vocabs, model, self._config, name='Testset')
+    self._trainset = Dataset(rel_map, self.train_file, self._vocabs, model, self._config, name='Trainset')
+    self._validset = Dataset(rel_map, self.valid_file, self._vocabs, model, self._config, name='Validset')
+    self._testset = Dataset(rel_map, self.test_file, self._vocabs, model, self._config, name='Testset')
 
     self._ops = self._gen_ops()
     self._save_vars = filter(lambda x: u'Pretrained' not in x.name, tf.global_variables())
@@ -322,10 +338,6 @@ class Network(Configurable):
         for i, (datum, word) in enumerate(zip(data, words)):
           pred = self.rels[preds[i, 6]]
           gold = self.rels[preds[i, 8]]
-          # print(word)
-          # print(preds[:,4])
-          # print(preds[:,7:])
-          # print(gold)
           owpl_str = ' '.join([word, gold, pred])
           f.write(owpl_str + "\n")
         f.write('\n')
@@ -347,14 +359,14 @@ class Network(Configurable):
     #   np.savez(os.path.join(self.save_dir, 'non_tree_preds.txt'), non_tree_preds_total)
     # print(non_tree_preds_total)
     # print(non_tree_preds_total, file=f)
-    print('SRL F1: %.2f' % (overall_f1))
+    print('NER F1: %.2f' % (overall_f1))
     return correct
 
 
   #=============================================================
   def savefigs(self, sess, optimizer=False):
     """"""
-    
+
     import gc
     import matplotlib as mpl
     mpl.use('Agg')

@@ -21,7 +21,9 @@ from __future__ import print_function
 
 import numpy as np
 import tensorflow as tf
-from collections import Counter
+from collections import Counter, defaultdict
+import itertools
+import sys
 
 from lib.etc.k_means import KMeans
 from configurable import Configurable
@@ -33,7 +35,7 @@ class Dataset(Configurable):
   """"""
   
   #=============================================================
-  def __init__(self, filename, vocabs, builder, *args, **kwargs):
+  def __init__(self, rel_map, filename, vocabs, builder, *args, **kwargs):
     """"""
     
     super(Dataset, self).__init__(*args, **kwargs)
@@ -42,10 +44,16 @@ class Dataset(Configurable):
     self._metabucket = Metabucket(self._config, n_bkts=self.n_bkts)
     self._data = None
     self.vocabs = vocabs
+    self.reverse_vocabs = [{v: k for k, v in vocab.iteritems()} for vocab in vocabs]
+    self.rel_map = rel_map
     self.rebucket()
     
     self.inputs = tf.placeholder(dtype=tf.int32, shape=(None,None,None), name='inputs')
     self.targets = tf.placeholder(dtype=tf.int32, shape=(None,None,None), name='targets')
+    self.gather_idx = tf.placeholder(dtype=tf.int32, shape=(None,None), name='gather_idx')
+    self.scatter_idx = tf.placeholder(dtype=tf.int32, shape=(None,None), name='scatter_idx')
+    self.scatter_shape = tf.placeholder(dtype=tf.int32, shape=(None), name='scatter_shape')
+    self.rel_labels = tf.placeholder(dtype=tf.int32, shape=(None), name='rel_targets')
     self.builder = builder()
   
   #=============================================================
@@ -97,28 +105,23 @@ class Dataset(Configurable):
   def _process_buff(self, buff):
     """"""
     
-    words, tags, rels = self.vocabs
+    words, tags, rels, _ = self.vocabs
     for i, sent in enumerate(buff):
       for j, token in enumerate(sent):
         # print(sent)
-        # word, tag1, tag2, head, rel = token[words.conll_idx], token[tags.conll_idx[0]], token[tags.conll_idx[1]], token[6], token[rels.conll_idx]
         word, tag1, rel = token[words.conll_idx], token[tags.conll_idx], token[rels.conll_idx]
-
-        head = 0
         tag2 = 'O'
-        # print (word)
-        # print (tag1)
-        # print (tag2)
-        # print (head)
-        # print (rel)
-        buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (head,) + rels[rel]
-      # sent.insert(0, ('root', Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, Vocab.ROOT, 0, Vocab.ROOT))
+        try:
+          docid = int(token[3])
+        except:
+          print(token)
+          sys.exit(1)
+        buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (docid,) + rels[rel]
     return buff
   
   #=============================================================
   def reset(self, sizes):
     """"""
-    
     self._data = []
     self._targets = []
     self._metabucket.reset(sizes)
@@ -143,14 +146,75 @@ class Dataset(Configurable):
   #=============================================================
   def _finalize(self):
     """"""
-    
     self._metabucket._finalize()
     return
-  
+
+
+  #================
+  def get_gather_indices(self, data, sents):
+    # TODO make sure that none of the entity ids are being set to UNK for some reason
+    keep_labels = {'B-Chemical', 'I-Chemical', 'B-Disease', 'I-Disease', 'B-Gene', 'I-Gene'}
+    # print(sents.shape)
+    # print(data.shape)
+    all_ep_idx = []
+    for batch_idx in range(data.shape[0]):
+      # each element of seq has same docid, take first
+      docid = data[batch_idx, 0, 4]
+      for seq_idx in range(data.shape[1]):
+        ner_label = data[batch_idx, seq_idx, 5]
+
+      # convert the ner label and entity id back to str using reverse dict
+      entity_idx = [(seq_idx,
+                     self.reverse_vocabs[2][data[batch_idx, seq_idx, 5]],
+                     self.reverse_vocabs[1][data[batch_idx, seq_idx, 2]]
+                     )
+                    for seq_idx in range(data.shape[1])
+                    if self.reverse_vocabs[2][data[batch_idx, seq_idx, 5]] in keep_labels]
+      # print(entity_idx)
+      ep_idx = [(batch_idx, docid, idx1, idx2, '%s::%s' % (e1, e2))
+                for ((idx1, label1, e1), (idx2, label2, e2))
+                in itertools.permutations(entity_idx, 2)
+                if e1 != e2 and e1 != 'UNK' and e1 != '-1' and e2 != 'UNK' and e2 != '-1']
+      all_ep_idx.append(ep_idx)
+    # end batch iteration
+
+    all_ep_idx = [x for sublist in all_ep_idx for x in sublist]
+    gather_idx = [(b, e1, e2) for b, docid, e1, e2, ep in all_ep_idx]
+    ep_doc_id_map = {ep: i for i, ep in enumerate({'%s::%s' % (docid, _ep) for b, docid, e1, e2, _ep in all_ep_idx})}
+    ep_doc_count = defaultdict(int)
+    scatter_idx = []
+    labels = []
+    max_ep_count = 0
+    for b, docid, e1, e2, ep in all_ep_idx:
+      ep_doc = '%s::%s' % (docid, ep)
+      i = ep_doc_id_map[ep_doc]
+      j = ep_doc_count[ep_doc]
+      ep_doc_count[ep_doc] += 1
+      if ep_doc_count[ep_doc] > max_ep_count:
+        max_ep_count = ep_doc_count[ep_doc]
+      scatter_idx.append((i, j))
+
+    labels = np.ones(len(ep_doc_count))
+    for ep_doc, i in ep_doc_id_map.iteritems():
+      label = self.rel_map[ep_doc] if ep_doc in self.rel_map else self.vocabs[3]['Null']
+      labels[i] = label
+
+    scatter_shape = [len(ep_doc_count), max_ep_count, len(self.vocabs[3])]
+
+
+    # print(len(gather_idx))
+    # print(len(scatter_idx))
+    # sys.exit(1)
+
+    # print(gather_idx)
+    # print(scatter_idx)
+    return gather_idx, scatter_idx, scatter_shape, labels
+
+
   #=============================================================
   def get_minibatches(self, batch_size, input_idxs, target_idxs, shuffle=True):
     """"""
-    
+
     minibatches = []
     for bkt_idx, bucket in enumerate(self._metabucket):
       if batch_size == 0:
@@ -171,10 +235,16 @@ class Dataset(Configurable):
       feed_dict = {}
       data = self[bkt_idx].data[bkt_mb]
       sents = self[bkt_idx].sents[bkt_mb]
+
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
+      gather, scatter, scatter_shape, labels = self.get_gather_indices(data[:, :maxlen, :], sents)
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
-        self.targets: data[:,:maxlen,target_idxs]
+        self.targets: data[:,:maxlen,target_idxs],
+        self.gather_idx: gather,
+        self.scatter_idx: scatter,
+        self.scatter_shape: scatter_shape,
+        self.rel_labels: labels
       })
       yield feed_dict, sents
   

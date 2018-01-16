@@ -71,7 +71,7 @@ class Configurable(object):
   #=============================================================
   argparser = argparse.ArgumentParser()
   argparser.add_argument('--config_file')
-  argparser.add_argument('--data_dir')
+  # argparser.add_argument('--data_dir')
   argparser.add_argument('--embed_dir')
   
   @property
@@ -85,6 +85,10 @@ class Configurable(object):
   def word_file(self):
     return self._config.get('OS', 'word_file')
   argparser.add_argument('--word_file')
+  @property
+  def data_dir(self):
+    return self._config.get('OS', 'data_dir')
+  argparser.add_argument('--data_dir')
   @property
   def tag_file(self):
     return self._config.get('OS', 'tag_file')

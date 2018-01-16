@@ -185,76 +185,43 @@ class Parser(BaseParser):
         if self.num_blocks > 1:
           top_recur = nn.layer_norm(top_recur, reuse)
 
-    ####### 2D CNN ########
-    if self.cnn2d_layers > 0:
-      with tf.variable_scope('proj2', reuse=reuse):
-        top_recur_rows, top_recur_cols = self.MLP(top_recur, self.cnn_dim_2d//2, n_splits=2)
-        # top_recur_rows, top_recur_cols = self.MLP(top_recur, self.cnn_dim // 4, n_splits=2)
 
-      top_recur_rows = nn.add_timing_signal_1d(top_recur_rows)
-      top_recur_cols = nn.add_timing_signal_1d(top_recur_cols)
+    with tf.variable_scope('MLP', reuse=reuse):
+      dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
+      dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
+      head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
 
-      with tf.variable_scope('2d', reuse=reuse):
-        # set up input (split -> 2d)
-        input_shape = tf.shape(embed_inputs)
-        bucket_size = input_shape[1]
-        top_recur_rows = tf.tile(tf.expand_dims(top_recur_rows, 1), [1, bucket_size, 1, 1])
-        top_recur_cols = tf.tile(tf.expand_dims(top_recur_cols, 2), [1, 1, bucket_size, 1])
-        top_recur_2d = tf.concat([top_recur_cols, top_recur_rows], axis=-1)
+    with tf.variable_scope('Arcs', reuse=reuse):
+      num_rel_classes = len(vocabs[3])
+      arc_logits = self.bilinear_classifier_nary(dep_arc_mlp, head_arc_mlp, num_rel_classes)
 
-        # apply num_convs 2d conv layers (residual)
-        for i in xrange(self.cnn2d_layers):  # todo pass this in
-          with tf.variable_scope('CNN%d' % i, reuse=reuse):
-            top_recur_2d += self.CNN(top_recur_2d, kernel, kernel, self.cnn_dim_2d,  # todo pass this in
-                                    self.recur_keep_prob if i < self.cnn2d_layers - 1 else 1.0,
-                                    self.info_func if i < self.cnn2d_layers - 1 else tf.identity)
-            top_recur_2d = nn.layer_norm(top_recur_2d, reuse)
+    # relation prediction
 
-        with tf.variable_scope('Arcs', reuse=reuse):
-          arc_logits = self.MLP(top_recur_2d, 1, n_splits=1)
-          arc_logits = tf.squeeze(arc_logits, axis=-1)
-          arc_output = self.output_svd(arc_logits, targets[:, :, 1])
-          if moving_params is None:
-            predictions = targets[:, :, 1]
-          else:
-            predictions = arc_output['predictions']
+    # arc_logits = tf.Print(arc_logits, [tf.shape(arc_logits), tf.shape(head_arc_mlp)], message='shapes', summarize=10)
+    # b x s x s x r
+    arc_logits = tf.transpose(arc_logits, [0, 1, 3, 2])
+    gathered = tf.gather_nd(arc_logits, dataset.gather_idx)
+    # gathered = tf.Print(gathered, [tf.shape(gathered)], message='gathered', summarize=10)
+    # gathered = tf.Print(gathered, [tf.shape(gathered)], message='gathered', summarize=10)
+    scattered = tf.scatter_nd(dataset.scatter_idx, gathered, dataset.scatter_shape)
+    # scattered = tf.Print(scattered, [tf.shape(scattered)], message='scattered', summarize=10)
 
-        # Project each predicted (or gold) edge into head and dep rel representations
-        with tf.variable_scope('MLP', reuse=reuse):
-          # flat_labels = tf.reshape(predictions, [-1])
-          original_shape = tf.shape(arc_logits)
-          batch_size = original_shape[0]
-          bucket_size = original_shape[1]
-          # num_classes = len(vocabs[2])
-          i1, i2 = tf.meshgrid(tf.range(batch_size), tf.range(bucket_size), indexing="ij")
-          targ = i1 * bucket_size * bucket_size + i2 * bucket_size + predictions
-          idx = tf.reshape(targ, [-1])
-          conditioned = tf.gather(tf.reshape(top_recur_2d, [-1, self.cnn_dim_2d]), idx)
-          conditioned = tf.reshape(conditioned, [batch_size, bucket_size, self.cnn_dim_2d])
-          dep_rel_mlp, head_rel_mlp = self.MLP(conditioned, self.class_mlp_size + self.attn_mlp_size, n_splits=2)
+
+    ep_scores = tf.reduce_logsumexp(scattered, 1)
+    rel_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=dataset.rel_labels, logits=ep_scores)
+    rel_loss = tf.reduce_mean(rel_loss)
+
+
+    arc_output = self.output_svd(attn_weights_by_layer[self.n_recur-1][0], targets[:,:,1])
+    if moving_params is None:
+      predictions = targets[:,:,1]
     else:
-      with tf.variable_scope('MLP', reuse=reuse):
-        dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
-        dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
-        head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
-
-      if self.use_bilinear:
-        with tf.variable_scope('Arcs', reuse=reuse):
-          arc_logits = self.bilinear_classifier(dep_arc_mlp, head_arc_mlp)
-      else:
-        # todo don't hardcode to 0th head
-        # todo right now this head is getting 2x loss
-        arc_logits = attn_weights_by_layer[self.n_recur-1][0]
-
-      arc_output = self.output_svd(arc_logits, targets[:,:,1])
-      if moving_params is None:
-        predictions = targets[:,:,1]
-      else:
-        predictions = arc_output['predictions']
+      predictions = arc_output['predictions']
 
     with tf.variable_scope('Rels', reuse=reuse):
+      # NER predictions
       # rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
-      rel_logits = self.MLP(dep_mlp, len(vocabs[2]))
+      rel_logits = self.MLP(top_recur, len(vocabs[2]))
       rel_output = self.output(rel_logits, targets[:, :, 2])
       # rel_output['probabilities'] = tf.constant(69) # self.conditional_probabilities(rel_logits_cond)
 
@@ -312,7 +279,7 @@ class Parser(BaseParser):
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
     # output['loss'] = arc_output['loss'] + rel_output['loss'] + multitask_loss_sum
-    output['loss'] = rel_output['loss']
+    output['loss'] = rel_output['loss'] + rel_loss
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 
@@ -328,7 +295,7 @@ class Parser(BaseParser):
     output['rel_loss'] = rel_output['loss']
     output['log_loss'] = arc_output['log_loss']
     output['2cycle_loss'] = arc_output['2cycle_loss']
-    output['roots_loss'] = arc_output['roots_loss']
+    output['roots_loss'] = rel_loss
     output['svd_loss'] = arc_output['svd_loss']
     output['n_cycles'] = arc_output['n_cycles']
     output['len_2_cycles'] = arc_output['len_2_cycles']
