@@ -54,6 +54,7 @@ class Dataset(Configurable):
     self.scatter_idx = tf.placeholder(dtype=tf.int32, shape=(None,None), name='scatter_idx')
     self.scatter_shape = tf.placeholder(dtype=tf.int32, shape=(None), name='scatter_shape')
     self.rel_labels = tf.placeholder(dtype=tf.int32, shape=(None), name='rel_targets')
+    self.rel_eps = tf.placeholder(dtype=tf.string, shape=(None), name='rel_eps')
     self.builder = builder()
   
   #=============================================================
@@ -114,6 +115,7 @@ class Dataset(Configurable):
         try:
           docid = int(token[3])
         except:
+          print('Incorrect number of fields in input file for line: ')
           print(token)
           sys.exit(1)
         buff[i][j] = (word,) + words[word] + tags[tag1] + tags[tag2] + (docid,) + rels[rel]
@@ -183,7 +185,6 @@ class Dataset(Configurable):
     ep_doc_id_map = {ep: i for i, ep in enumerate({'%s::%s' % (docid, _ep) for b, docid, e1, e2, _ep in all_ep_idx})}
     ep_doc_count = defaultdict(int)
     scatter_idx = []
-    labels = []
     max_ep_count = 0
     for b, docid, e1, e2, ep in all_ep_idx:
       ep_doc = '%s::%s' % (docid, ep)
@@ -195,9 +196,11 @@ class Dataset(Configurable):
       scatter_idx.append((i, j))
 
     labels = np.ones(len(ep_doc_count))
+    rel_eps = [''] * len(ep_doc_count)
     for ep_doc, i in ep_doc_id_map.iteritems():
       label = self.rel_map[ep_doc] if ep_doc in self.rel_map else self.vocabs[3]['Null']
       labels[i] = label
+      rel_eps[i] = ep_doc
 
     scatter_shape = [len(ep_doc_count), max_ep_count, len(self.vocabs[3])]
 
@@ -208,7 +211,7 @@ class Dataset(Configurable):
 
     # print(gather_idx)
     # print(scatter_idx)
-    return gather_idx, scatter_idx, scatter_shape, labels
+    return gather_idx, scatter_idx, scatter_shape, labels, rel_eps
 
 
   #=============================================================
@@ -237,14 +240,15 @@ class Dataset(Configurable):
       sents = self[bkt_idx].sents[bkt_mb]
 
       maxlen = np.max(np.sum(np.greater(data[:,:,0], 0), axis=1))
-      gather, scatter, scatter_shape, labels = self.get_gather_indices(data[:, :maxlen, :], sents)
+      gather, scatter, scatter_shape, labels, rel_eps = self.get_gather_indices(data[:, :maxlen, :], sents)
       feed_dict.update({
         self.inputs: data[:,:maxlen,input_idxs],
         self.targets: data[:,:maxlen,target_idxs],
         self.gather_idx: gather,
         self.scatter_idx: scatter,
         self.scatter_shape: scatter_shape,
-        self.rel_labels: labels
+        self.rel_labels: labels,
+        self.rel_eps: rel_eps
       })
       yield feed_dict, sents
   

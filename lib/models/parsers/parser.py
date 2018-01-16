@@ -196,34 +196,22 @@ class Parser(BaseParser):
       arc_logits = self.bilinear_classifier_nary(dep_arc_mlp, head_arc_mlp, num_rel_classes)
 
     # relation prediction
-
-    # arc_logits = tf.Print(arc_logits, [tf.shape(arc_logits), tf.shape(head_arc_mlp)], message='shapes', summarize=10)
-    # b x s x s x r
+    # transpose to be : b x s x s x r
     arc_logits = tf.transpose(arc_logits, [0, 1, 3, 2])
     gathered = tf.gather_nd(arc_logits, dataset.gather_idx)
-    # gathered = tf.Print(gathered, [tf.shape(gathered)], message='gathered', summarize=10)
-    # gathered = tf.Print(gathered, [tf.shape(gathered)], message='gathered', summarize=10)
     scattered = tf.scatter_nd(dataset.scatter_idx, gathered, dataset.scatter_shape)
-    # scattered = tf.Print(scattered, [tf.shape(scattered)], message='scattered', summarize=10)
-
-
     ep_scores = tf.reduce_logsumexp(scattered, 1)
     rel_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=dataset.rel_labels, logits=ep_scores)
     rel_loss = tf.reduce_mean(rel_loss)
+    rel_outputs = {'labels': dataset.rel_labels, 'scores': ep_scores, 'eps': dataset.rel_eps}
 
 
     arc_output = self.output_svd(attn_weights_by_layer[self.n_recur-1][0], targets[:,:,1])
-    if moving_params is None:
-      predictions = targets[:,:,1]
-    else:
-      predictions = arc_output['predictions']
 
-    with tf.variable_scope('Rels', reuse=reuse):
+    with tf.variable_scope('NER', reuse=reuse):
       # NER predictions
-      # rel_logits, rel_logits_cond = self.conditional_bilinear_classifier(dep_rel_mlp, head_rel_mlp, len(vocabs[2]), predictions)
-      rel_logits = self.MLP(top_recur, len(vocabs[2]))
-      rel_output = self.output(rel_logits, targets[:, :, 2])
-      # rel_output['probabilities'] = tf.constant(69) # self.conditional_probabilities(rel_logits_cond)
+      ner_logits = self.MLP(top_recur, len(vocabs[2]))
+      ner_output = self.output(ner_logits, targets[:, :, 2])
 
     # attn_weights_by_layer[i] = num_heads x seq_len x seq_len for transformer layer i
     # todo pass this in at command line
@@ -270,16 +258,16 @@ class Parser(BaseParser):
     output['multitask_losses'] = multitask_losses
 
     output['probabilities'] = tf.tuple([arc_output['probabilities'],
-                                        rel_output['probabilities']])
+                                        ner_output['probabilities']])
     output['predictions'] = tf.stack([arc_output['predictions'],
-                                      rel_output['predictions']])
-    output['correct'] = arc_output['correct'] * rel_output['correct']
+                                      ner_output['predictions']])
+    output['correct'] = arc_output['correct'] * ner_output['correct']
     output['tokens'] = arc_output['tokens']
     output['n_correct'] = tf.reduce_sum(output['correct'])
     output['n_tokens'] = self.n_tokens
     output['accuracy'] = output['n_correct'] / output['n_tokens']
     # output['loss'] = arc_output['loss'] + rel_output['loss'] + multitask_loss_sum
-    output['loss'] = rel_output['loss'] + rel_loss
+    output['loss'] = ner_output['loss'] + rel_loss
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 
@@ -290,15 +278,16 @@ class Parser(BaseParser):
     output['dep_rel'] = dep_rel_mlp
     output['head_rel'] = head_rel_mlp
     output['arc_logits'] = arc_logits
-    output['rel_logits'] = rel_logits
+    output['rel_logits'] = ner_output
 
-    output['rel_loss'] = rel_output['loss']
+    output['rel_loss'] = ner_output['loss']
     output['log_loss'] = arc_output['log_loss']
     output['2cycle_loss'] = arc_output['2cycle_loss']
     output['roots_loss'] = rel_loss
     output['svd_loss'] = arc_output['svd_loss']
     output['n_cycles'] = arc_output['n_cycles']
     output['len_2_cycles'] = arc_output['len_2_cycles']
+    output['relations'] = rel_outputs
 
     # transpose and softmax attn weights
     attn_weights_by_layer_softmaxed = {k: tf.transpose(tf.nn.softmax(v), [1, 0, 2, 3]) for k, v in attn_weights_by_layer.iteritems()}

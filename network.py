@@ -281,42 +281,27 @@ class Network(Configurable):
       filename = self.valid_file
       minibatches = self.valid_minibatches
       dataset = self._validset
-      op = self.ops['test_op'][:4]
+      op = self.ops['test_op'][:5]
     else:
       filename = self.test_file
       minibatches = self.test_minibatches
       dataset = self._testset
-      op = self.ops['test_op'][4:]
+      op = self.ops['test_op'][5:]
     
     all_predictions = [[]]
     all_sents = [[]]
     bkt_idx = 0
-    total_time = 0.
-    roots_lt_total = 0.
-    roots_gt_total = 0.
-    cycles_2_total = 0.
-    cycles_n_total = 0.
-    not_tree_total = 0.
-    forward_total_time = 0.
-    non_tree_preds_total = []
     attention_weights = {}
+    all_rel_preds = []
     for batch_num, (feed_dict, sents) in enumerate(minibatches()):
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
-      forward_start = time.time()
-      probs, n_cycles, len_2_cycles, attn_weights = sess.run(op, feed_dict=feed_dict)
+      probs, n_cycles, len_2_cycles, attn_weights, rel_outputs = sess.run(op, feed_dict=feed_dict)
       for k, v in attn_weights.iteritems():
         attention_weights["b%d:layer%d" % (batch_num, k)] = v
-      forward_total_time += time.time() - forward_start
       preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles)
-      total_time += parse_time
-      roots_lt_total += roots_lt
-      roots_gt_total += roots_gt
-      cycles_2_total += cycles_2
-      cycles_n_total += cycles_n
-      not_tree_total += non_trees
-      non_tree_preds_total.extend(non_tree_preds)
       all_predictions[-1].extend(preds)
+      all_rel_preds.append(rel_outputs)
       all_sents[-1].extend(sents)
       if len(all_predictions[-1]) == len(dataset[bkt_idx]):
         bkt_idx += 1
@@ -325,13 +310,36 @@ class Network(Configurable):
           all_sents.append([])
 
 
+    # save relation output
+    rel_preds_fname = os.path.join(self.save_dir, 'rel_preds.tsv')
+    # TODO dont hardcode this file
+    gold_file = '%s/dev.gold' % self.data_dir
+    with open(rel_preds_fname, 'w') as f:
+      for rel_preds in all_rel_preds:
+        scores = rel_preds['scores']
+        eps = rel_preds['eps']
+        for score, ep in zip(scores, eps):
+          doc_id, e1, e2 = ep.split('::')
+          pred_label = dataset.reverse_vocabs[3][np.argmax(score)]
+          if pred_label != 'Null':
+            owpl_str = '\t'.join([doc_id, pred_label, e1, e2])
+            f.write(owpl_str + "\n")
+    try:
+      # TODO redirect the output
+      rel_eval = check_output('sh bc6_eval.sh %s %s' % (rel_preds_fname, gold_file), shell=True)
+      result_file = rel_eval.split('\n')[2].strip()
+      with open(result_file, 'r') as res_file:
+        rel_f1 = res_file.readlines()[-1].split(' ')[-1]
+        rel_f1 = 0.0 if rel_f1.lower() == 'nan' else float(rel_f1)
+      print(rel_f1)
+    except CalledProcessError as e:
+      rel_f1 = 0.0
+      print("Call to bc6 eval failed: %s" % e.output)
 
-    # save SRL output
+    # save NER output
     ner_preds_fname = os.path.join(self.save_dir, 'ner_preds.tsv')
     with open(ner_preds_fname, 'w') as f:
       for bkt_idx, idx in dataset._metabucket.data:
-        # for each word, if trigger print word, otherwise -
-        # then all the SRL labels
         data = dataset._metabucket[bkt_idx].data[idx]
         preds = all_predictions[bkt_idx][idx]
         words = all_sents[bkt_idx][idx]
@@ -341,25 +349,19 @@ class Network(Configurable):
           owpl_str = ' '.join([word, gold, pred])
           f.write(owpl_str + "\n")
         f.write('\n')
-
     try:
       ner_eval = check_output('perl conlleval.pl < %s' % ner_preds_fname, shell=True)
       print(ner_eval)
-      overall_f1 = float(ner_eval.split('\n')[1].split(' ')[-1])
+      ner_eval = ner_eval.split('\n')[1].split(' ')[-1]
+      ner_eval = 0.0 if ner_eval.lower() == 'nan' else float(ner_eval)
     except CalledProcessError as e:
-      print("Call to eval failed: %s" % e.output)
-      overall_f1 = 0.
+      print("Call to conll eval failed: %s" % e.output)
+      ner_eval = 0.
 
-    # with open(os.path.join(self.save_dir, 'scores.txt'), 'a') as f:
-    #   s, correct = self.model.evaluate(os.path.join(self.save_dir, os.path.basename(filename)), punct=self.model.PUNCT)
-    #   f.write(s)
-
+    overall_f1 = rel_f1
     correct = {'LAS': 0, 'UAS': 0, 'F1': overall_f1}
-    # if validate:
-    #   np.savez(os.path.join(self.save_dir, 'non_tree_preds.txt'), non_tree_preds_total)
-    # print(non_tree_preds_total)
-    # print(non_tree_preds_total, file=f)
-    print('NER F1: %.2f' % (overall_f1))
+    print('Relation F1: %2.2f' % (rel_f1*100))
+    print('NER F1: %.2f' % ner_eval)
     return correct
 
 
@@ -439,10 +441,12 @@ class Network(Configurable):
                       valid_output['n_cycles'],
                       valid_output['len_2_cycles'],
                       valid_output['attn_weights'],
+                      valid_output['relations'],
                       test_output['probabilities'],
                       test_output['n_cycles'],
                       test_output['len_2_cycles'],
                       test_output['attn_weights'],
+                      test_output['relations'],
                       ]
     ops['optimizer'] = optimizer
     
