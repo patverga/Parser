@@ -202,8 +202,10 @@ class Parser(BaseParser):
     scattered = tf.scatter_nd(dataset.scatter_idx, gathered, dataset.scatter_shape)
     ep_scores = tf.reduce_logsumexp(scattered, 1)
     rel_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=dataset.rel_labels, logits=ep_scores)
+    # downweight null class TODO dont hardcode null weight
+    null_weight = 1.0
+    rel_loss = tf.where(tf.equal(dataset.rel_labels, dataset.vocabs[3]['Null']), rel_loss, (rel_loss*null_weight))
     rel_loss = tf.reduce_mean(rel_loss)
-    rel_outputs = {'labels': dataset.rel_labels, 'scores': ep_scores, 'eps': dataset.rel_eps}
 
 
     arc_output = self.output_svd(attn_weights_by_layer[self.n_recur-1][0], targets[:,:,1])
@@ -287,7 +289,7 @@ class Parser(BaseParser):
     output['svd_loss'] = arc_output['svd_loss']
     output['n_cycles'] = arc_output['n_cycles']
     output['len_2_cycles'] = arc_output['len_2_cycles']
-    output['relations'] = rel_outputs
+    output['relations'] = {'labels': dataset.rel_labels, 'scores': ep_scores, 'eps': dataset.rel_eps}
 
     # transpose and softmax attn weights
     attn_weights_by_layer_softmaxed = {k: tf.transpose(tf.nn.softmax(v), [1, 0, 2, 3]) for k, v in attn_weights_by_layer.iteritems()}

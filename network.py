@@ -329,9 +329,10 @@ class Network(Configurable):
       rel_eval = check_output('sh bc6_eval.sh %s %s' % (rel_preds_fname, gold_file), shell=True)
       result_file = rel_eval.split('\n')[2].strip()
       with open(result_file, 'r') as res_file:
-        rel_f1 = res_file.readlines()[-1].split(' ')[-1]
+        rel_f1 = res_file.readlines()
+        print(''.join(rel_f1))
+        rel_f1 = rel_f1[-1].split(' ')[-1]
         rel_f1 = 0.0 if rel_f1.lower() == 'nan' else float(rel_f1)
-      print(rel_f1)
     except CalledProcessError as e:
       rel_f1 = 0.0
       print("Call to bc6 eval failed: %s" % e.output)
