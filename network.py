@@ -190,12 +190,13 @@ class Network(Configurable):
             n_valid_sents = 0
             n_valid_correct = 0
             n_valid_tokens = 0
+            accuracy = 0.0
             with open(os.path.join(self.save_dir, 'sanitycheck.txt'), 'w') as f:
               for k, (feed_dict, _) in enumerate(self.valid_minibatches()):
                 inputs = feed_dict[self._validset.inputs]
                 targets = feed_dict[self._validset.targets]
                 start_time = time.time()
-                loss, n_correct, n_tokens, predictions, cycles = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
+                loss, n_correct, n_tokens, predictions, accuracy = sess.run(self.ops['valid_op'], feed_dict=feed_dict)
                 valid_time += time.time() - start_time
                 valid_loss += loss
                 n_valid_sents += len(targets)
@@ -203,7 +204,7 @@ class Network(Configurable):
                 n_valid_tokens += n_tokens
                 self.model.sanity_check(inputs, targets, predictions, self._vocabs, f, feed_dict=feed_dict)
             valid_loss /= k+1
-            valid_accuracy = 100 * n_valid_correct / n_valid_tokens
+            valid_accuracy = accuracy
             valid_time = n_valid_sents / valid_time
             self.history['valid_loss'].append(valid_loss)
             self.history['valid_accuracy'].append(valid_accuracy)
@@ -437,7 +438,7 @@ class Network(Configurable):
                        valid_output['n_correct'],
                        valid_output['n_tokens'],
                        valid_output['predictions'],
-                       valid_output['n_cycles']]
+                       valid_output['accuracy']]
     ops['test_op'] = [valid_output['probabilities'],
                       valid_output['n_cycles'],
                       valid_output['len_2_cycles'],

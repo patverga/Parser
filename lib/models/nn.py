@@ -649,7 +649,7 @@ class NN(Configurable):
   #=============================================================
   def MLP(self, inputs, output_size, func=None, keep_prob=None, n_splits=1):
     """"""
-    
+
     n_dims = len(inputs.get_shape().as_list())
     batch_size = tf.shape(inputs)[0]
     bucket_size = tf.shape(inputs)[1]

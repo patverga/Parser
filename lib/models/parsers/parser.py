@@ -186,34 +186,102 @@ class Parser(BaseParser):
           top_recur = nn.layer_norm(top_recur, reuse)
 
 
-    with tf.variable_scope('MLP', reuse=reuse):
-      dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
-      dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
-      head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
+    # NER predictions
+    with tf.variable_scope('NER', reuse=reuse):
+      ner_logits = self.MLP(top_recur, len(vocabs[2]))
+      ner_output = self.output(ner_logits, targets[:, :, 2])
+      ner_output['loss'] = self.ner_loss_weight * ner_output['loss']
 
-    with tf.variable_scope('Arcs', reuse=reuse):
-      num_rel_classes = len(vocabs[3])
-      arc_logits = self.bilinear_classifier_nary(dep_arc_mlp, head_arc_mlp, num_rel_classes)
+
+    # entity link prediction
+    with tf.variable_scope('entities', reuse=reuse):
+      entities_gathered = tf.gather_nd(top_recur, dataset.entity_gather_idx)
+      entities_scattered = tf.scatter_nd(dataset.entity_scatter_idx, entities_gathered, dataset.entity_scatter_shape)
+      # mask pad tokens
+      entities_scattered = tf.where(tf.not_equal(entities_scattered, 0.0),
+                                    entities_scattered, tf.ones_like(entities_scattered)*-1e10)
+      entities = tf.reduce_max(entities_scattered, 1)
+
+      # project entities
+      entities = tf.reshape(entities, [dataset.entity_scatter_shape[0], hidden_size])
+      entities = self.MLP(entities, hidden_size)
+      num_entities = len(vocabs[1])
+      entity_labels = tf.reshape(dataset.entity_labels, [dataset.entity_scatter_shape[0], 1])
+      entity_embeddings = tf.get_variable('entity_embeddings',
+                                          shape=[num_entities, hidden_size],
+                                          initializer=tf.contrib.layers.xavier_initializer())
+      # get loss from subset of negative entities
+      samples = min(100, num_entities)
+      zero_bias = tf.constant(0.0, shape=[num_entities], dtype=tf.float32)
+      entity_loss = tf.nn.sampled_softmax_loss(entity_embeddings, zero_bias,
+                                               labels=entity_labels, inputs=entities,
+                                               num_sampled=samples, num_classes=num_entities)
+      entity_loss = self.entity_loss_weight * tf.reduce_mean(entity_loss)
+
+      entity_logits = tf.nn.xw_plus_b(entities, tf.transpose(entity_embeddings, [1,0]), zero_bias)
+      entity_preds = tf.cast(tf.argmax(entity_logits, -1), tf.int32)
+      entity_accuracy = tf.reduce_mean(tf.cast(tf.equal(entity_preds, dataset.entity_labels), tf.float32))
+
+
+    #entity relation prediction
+    if self.rel_loss_weight > 0.0:
+      null_weight = 1.0
+      with tf.variable_scope('MLP', reuse=reuse):
+        entities = tf.reshape(entities, [1, dataset.entity_scatter_shape[0], hidden_size])
+        dep_mlp, head_mlp = self.MLP(entities, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
+        dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
+        head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
+      with tf.variable_scope('Arcs', reuse=reuse):
+        num_rel_classes = len(vocabs[3])
+        arc_logits = self.bilinear_classifier_nary(dep_arc_mlp, head_arc_mlp, num_rel_classes)
+      # TODO dont hardcode null weight
+      # transpose to be : b x s x s x r
+      arc_logits = tf.transpose(arc_logits, [0, 1, 3, 2])
+      # TODO: remove if batching of entities gets fixed
+      arc_logits = tf.squeeze(arc_logits, 0)
+      eps_gathered = tf.gather_nd(arc_logits, dataset.gather_idx)
+      eps_scattered = tf.scatter_nd(dataset.scatter_idx, eps_gathered, dataset.scatter_shape)
+      ep_scores = tf.reduce_logsumexp(eps_scattered, 1)
+      rel_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=dataset.rel_labels, logits=ep_scores)
+      rel_loss = self.rel_loss_weight * tf.reduce_mean(rel_loss)
+      # # downweight null class
+      # null_mask = tf.equal(dataset.rel_labels, vocabs[3]['Null'])
+      # non_null_mask = tf.equal(dataset.rel_labels, vocabs[3]['Null'])
+      # null_count = tf.reduce_sum(tf.cast(null_mask, tf.float32))
+      # non_null_count = tf.reduce_sum(tf.cast(non_null_mask, tf.float32))
+      # null_loss = tf.where(null_mask, rel_loss, tf.zeros_like(rel_loss))
+      # non_null_loss = tf.where(non_null_mask, rel_loss, tf.zeros_like(rel_loss))
+      # null_loss = tf.reduce_sum(null_loss) / null_count
+      # non_null_loss = tf.reduce_sum(non_null_loss) / non_null_count
+      # rel_loss = self.rel_loss_weight * (non_null_loss + (null_weight * null_loss)) / 2.0
+    else:
+      ep_scores = tf.reduce_max(tf.ones(dataset.scatter_shape), 1)
+
+
 
     # relation prediction
-    # transpose to be : b x s x s x r
-    arc_logits = tf.transpose(arc_logits, [0, 1, 3, 2])
-    gathered = tf.gather_nd(arc_logits, dataset.gather_idx)
-    scattered = tf.scatter_nd(dataset.scatter_idx, gathered, dataset.scatter_shape)
-    ep_scores = tf.reduce_logsumexp(scattered, 1)
-    rel_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=dataset.rel_labels, logits=ep_scores)
-    # downweight null class TODO dont hardcode null weight
-    null_weight = 1.0
-    rel_loss = tf.where(tf.equal(dataset.rel_labels, dataset.vocabs[3]['Null']), rel_loss, (rel_loss*null_weight))
-    rel_loss = tf.reduce_mean(rel_loss)
+    # with tf.variable_scope('MLP', reuse=reuse):
+    #   dep_mlp, head_mlp = self.MLP(top_recur, self.class_mlp_size+self.attn_mlp_size, n_splits=2)
+    #   dep_arc_mlp, dep_rel_mlp = dep_mlp[:,:,:self.attn_mlp_size], dep_mlp[:,:,self.attn_mlp_size:]
+    #   head_arc_mlp, head_rel_mlp = head_mlp[:,:,:self.attn_mlp_size], head_mlp[:,:,self.attn_mlp_size:]
+    # with tf.variable_scope('Arcs', reuse=reuse):
+    #   num_rel_classes = len(vocabs[3])
+    #   arc_logits = self.bilinear_classifier_nary(dep_arc_mlp, head_arc_mlp, num_rel_classes)
+    # rel_loss_weight = 1 / float(len(vocabs[3]))
+    # # transpose to be : b x s x s x r
+    # arc_logits = tf.transpose(arc_logits, [0, 1, 3, 2])
+    # eps_gathered = tf.gather_nd(arc_logits, dataset.gather_idx)
+    # eps_scattered = tf.scatter_nd(dataset.scatter_idx, eps_gathered, dataset.scatter_shape)
+    # ep_scores = tf.reduce_max(eps_scattered, 1)
+    # rel_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=dataset.rel_labels, logits=ep_scores)
+    # # downweight null class TODO dont hardcode null weight
+    # null_weight = 1.0
+    # rel_loss = tf.where(tf.equal(dataset.rel_labels, vocabs[3]['Null']), rel_loss, (rel_loss*null_weight))
+    # rel_loss = rel_loss_weight * tf.reduce_mean(rel_loss)
 
 
     arc_output = self.output_svd(attn_weights_by_layer[self.n_recur-1][0], targets[:,:,1])
 
-    with tf.variable_scope('NER', reuse=reuse):
-      # NER predictions
-      ner_logits = self.MLP(top_recur, len(vocabs[2]))
-      ner_output = self.output(ner_logits, targets[:, :, 2])
 
     # attn_weights_by_layer[i] = num_heads x seq_len x seq_len for transformer layer i
     # todo pass this in at command line
@@ -265,27 +333,37 @@ class Parser(BaseParser):
                                       ner_output['predictions']])
     output['correct'] = arc_output['correct'] * ner_output['correct']
     output['tokens'] = arc_output['tokens']
-    output['n_correct'] = tf.reduce_sum(output['correct'])
+    output['n_correct'] = self.n_tokens
     output['n_tokens'] = self.n_tokens
-    output['accuracy'] = output['n_correct'] / output['n_tokens']
+    output['accuracy'] = entity_accuracy
     # output['loss'] = arc_output['loss'] + rel_output['loss'] + multitask_loss_sum
-    output['loss'] = ner_output['loss'] + rel_loss
+    output['loss'] = 0.0
+    if self.ner_loss_weight > 0.0:
+      output['loss'] += ner_output['loss']
+    if self.rel_loss_weight > 0.0:
+      output['loss'] += rel_loss
+      output['roots_loss'] = rel_loss
+    else:
+      output['roots_loss'] = tf.constant(0)
+    if self.entity_loss_weight > 0.0:
+      output['loss'] += entity_loss
+      output['2cycle_loss'] = entity_loss
+    else:
+      output['2cycle_loss'] = tf.constant(0)
     if self.word_l2_reg > 0:
       output['loss'] += word_loss
 
-    output['embed'] = embed_inputs
-    output['recur'] = top_recur
+    # output['embed'] = embed_inputs
+    # output['recur'] = top_recur
     # output['dep_arc'] = dep_arc_mlp
     # output['head_dep'] = head_arc_mlp
-    output['dep_rel'] = dep_rel_mlp
-    output['head_rel'] = head_rel_mlp
-    output['arc_logits'] = arc_logits
-    output['rel_logits'] = ner_output
+    # output['dep_rel'] = dep_rel_mlp
+    # output['head_rel'] = head_rel_mlp
+    # output['arc_logits'] = arc_logits
+    # output['rel_logits'] = ner_output
 
     output['rel_loss'] = ner_output['loss']
     output['log_loss'] = arc_output['log_loss']
-    output['2cycle_loss'] = arc_output['2cycle_loss']
-    output['roots_loss'] = rel_loss
     output['svd_loss'] = arc_output['svd_loss']
     output['n_cycles'] = arc_output['n_cycles']
     output['len_2_cycles'] = arc_output['len_2_cycles']
