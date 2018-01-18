@@ -479,3 +479,18 @@ class Configurable(object):
   def margin(self):
     return self._config.getfloat('Training', 'margin')
   argparser.add_argument('--margin')
+
+  @property
+  def rel_loss_weight(self):
+    return self._config.getfloat('Training', 'rel_loss_weight')
+  argparser.add_argument('--rel_loss_weight')
+
+  @property
+  def entity_loss_weight(self):
+    return self._config.getfloat('Training', 'entity_loss_weight')
+  argparser.add_argument('--entity_loss_weight')
+
+  @property
+  def ner_loss_weight(self):
+    return self._config.getfloat('Training', 'ner_loss_weight')
+  argparser.add_argument('--ner_loss_weight')
