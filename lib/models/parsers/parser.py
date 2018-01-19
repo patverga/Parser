@@ -200,27 +200,40 @@ class Parser(BaseParser):
       # mask pad tokens
       entities_scattered = tf.where(tf.not_equal(entities_scattered, 0.0),
                                     entities_scattered, tf.ones_like(entities_scattered)*-1e10)
+      # convert multi-token entity mentions to single embedding with max pool
       entities = tf.reduce_max(entities_scattered, 1)
 
       # project entities
       entities = tf.reshape(entities, [dataset.entity_scatter_shape[0], hidden_size])
       entities = self.MLP(entities, hidden_size)
       num_entities = len(vocabs[1])
-      entity_labels = tf.reshape(dataset.entity_labels, [dataset.entity_scatter_shape[0], 1])
-      entity_embeddings = tf.get_variable('entity_embeddings',
-                                          shape=[num_entities, hidden_size],
-                                          initializer=tf.contrib.layers.xavier_initializer())
-      # get loss from subset of negative entities
-      samples = min(100, num_entities)
-      zero_bias = tf.constant(0.0, shape=[num_entities], dtype=tf.float32)
-      entity_loss = tf.nn.sampled_softmax_loss(entity_embeddings, zero_bias,
-                                               labels=entity_labels, inputs=entities,
-                                               num_sampled=samples, num_classes=num_entities)
-      entity_loss = self.entity_loss_weight * tf.reduce_mean(entity_loss)
 
-      entity_logits = tf.nn.xw_plus_b(entities, tf.transpose(entity_embeddings, [1,0]), zero_bias)
-      entity_preds = tf.cast(tf.argmax(entity_logits, -1), tf.int32)
-      entity_accuracy = tf.reduce_mean(tf.cast(tf.equal(entity_preds, dataset.entity_labels), tf.float32))
+      # get loss from subset of negative entities
+      #TODO is this better sampled softmax with mlp projection of entities
+      #TODO entity prediction as isa bilinear
+      sampled_softmax = False
+      if sampled_softmax:
+        samples = min(1000, num_entities)
+        entity_labels = tf.reshape(dataset.entity_labels, [dataset.entity_scatter_shape[0], 1])
+        entity_embeddings = tf.get_variable('entity_embeddings',
+                                            shape=[num_entities, hidden_size],
+                                            initializer=tf.contrib.layers.xavier_initializer())
+        zero_bias = tf.constant(0.0, shape=[num_entities], dtype=tf.float32)
+        entity_loss = tf.nn.sampled_softmax_loss(entity_embeddings, zero_bias,
+                                                 labels=entity_labels, inputs=entities,
+                                                 num_sampled=samples, num_classes=num_entities)
+        entity_loss = self.entity_loss_weight * tf.reduce_mean(entity_loss)
+
+        entity_logits = tf.nn.xw_plus_b(entities, tf.transpose(entity_embeddings, [1,0]), zero_bias)
+        entity_preds = tf.cast(tf.argmax(entity_logits, -1), tf.int32)
+        entity_accuracy = tf.reduce_mean(tf.cast(tf.equal(entity_preds, dataset.entity_labels), tf.float32))
+      else:
+        with tf.variable_scope('entities_loss', reuse=reuse):
+          entity_logits = self.MLP(entities, num_entities)
+          entity_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=dataset.entity_labels, logits=entity_logits)
+          entity_loss = self.entity_loss_weight * tf.reduce_mean(entity_loss)
+          entity_preds = tf.cast(tf.argmax(entity_logits, -1), tf.int32)
+          entity_accuracy = tf.constant(100.0)*tf.reduce_mean(tf.cast(tf.equal(entity_preds, dataset.entity_labels), tf.float32))
 
 
     #entity relation prediction

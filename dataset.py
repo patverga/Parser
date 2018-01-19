@@ -344,9 +344,6 @@ class Dataset(Configurable):
         self.entity_scatter_idx: entity_scatter,
         self.entity_scatter_shape: entity_scatter_shape,
         self.entity_labels: entity_labels,
-      })
-      if self.rel_loss_weight > 0:
-        feed_dict.update({
         self.gather_idx: rel_gather,
         self.scatter_idx: rel_scatter,
         self.scatter_shape: rel_scatter_shape,
