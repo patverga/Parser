@@ -409,10 +409,10 @@ def conv_hidden_relu(inputs,
   with tf.variable_scope("conv_hidden_relu", [inputs]):
     inputs = tf.expand_dims(inputs, 1)
     in_size = inputs.get_shape().as_list()[-1]
-    kernel = 3
-    params1 = tf.get_variable("ff1", [1, 1, in_size, hidden_size])
-    params2 = tf.get_variable("ff2", [1, kernel, hidden_size, hidden_size])
-    params3 = tf.get_variable("ff3", [1, 1, hidden_size, output_size])
+    kernel = 5
+    params1 = tf.get_variable("ff1", [1, 1, in_size, hidden_size*4])
+    params2 = tf.get_variable("ff2", [1, kernel, hidden_size*4, hidden_size*4])
+    params3 = tf.get_variable("ff3", [1, 1, hidden_size*4, output_size])
     h = tf.nn.conv2d(inputs, params1, [1, 1, 1, 1], "SAME")
     h = nonlinearity(h)
     h = tf.nn.dropout(h, dropout)
