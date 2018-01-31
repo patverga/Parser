@@ -293,10 +293,13 @@ class Network(Configurable):
     bkt_idx = 0
     attention_weights = {}
     all_rel_preds = []
+    total_time = 0.0
     for batch_num, (feed_dict, sents) in enumerate(minibatches()):
       mb_inputs = feed_dict[dataset.inputs]
       mb_targets = feed_dict[dataset.targets]
+      t1 = time.time()
       probs, n_cycles, len_2_cycles, attn_weights, rel_outputs = sess.run(op, feed_dict=feed_dict)
+      total_time += (time.time() - t1)
       for k, v in attn_weights.iteritems():
         attention_weights["b%d:layer%d" % (batch_num, k)] = v
       preds, parse_time, roots_lt, roots_gt, cycles_2, cycles_n, non_trees, non_tree_preds = self.model.validate(mb_inputs, mb_targets, probs, n_cycles, len_2_cycles)
@@ -308,6 +311,8 @@ class Network(Configurable):
         if bkt_idx < len(dataset._metabucket):
           all_predictions.append([])
           all_sents.append([])
+
+    print('Total time: %2.2f  num sents: %d   time/batch: %2.2f' % (total_time, len(all_sents), total_time/batch_num))
 
 
     # save relation output
